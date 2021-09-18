@@ -1,0 +1,3 @@
+- git: {local-name: catkin_simple, uri: 'https://github.com/catkin/catkin_simple'} 
+- git: {local-name: eigen_catkin, uri: 'https://github.com/ethz-asl/eigen_catkin'}
+- git: {local-name: grid_map, uri: 'https://github.com/ANYbotics/grid_map.git', version: 9589c30ec87a44b6eec82dbc0fa5b3c2ba051a9b}
