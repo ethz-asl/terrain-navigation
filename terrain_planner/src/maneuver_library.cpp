@@ -83,10 +83,25 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
 
 bool ManeuverLibrary::Solve() {
   /// TODO: Run Validity checks
+  std::vector<Trajectory> valid_primitives = checkCollisions(); // TODO: Define minimum distance?
 
   /// TODO: Rank primitives
   return true;
 }
+
+std::vector<Trajectory>& ManeuverLibrary::checkCollisions() {
+  // Return only the reference of trajectories
+}
+
+bool ManeuverLibrary::checkTrajectoryCollision(Trajectory& trajectory) {
+  bool under_terrain = false;
+  ///TODO: Reference gridmap terrain
+  if (under_terrain) {
+    return false;
+  }
+  return true;
+}
+
 
 void ManeuverLibrary::AppendSegment(Trajectory &trajectory, const Eigen::Vector3d &rate, const Eigen::Vector3d &end_pos,
                                     const Eigen::Vector3d &end_vel) {

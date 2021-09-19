@@ -52,14 +52,16 @@ class ManeuverLibrary {
   Trajectory& getBestPrimitive();
   Trajectory& getRandomPrimitive();
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, Eigen::Vector3d current_pos, Eigen::Vector3d current_vel);
-  static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
-  void AppendSegment(Trajectory& trajectory, const Eigen::Vector3d& rate, const Eigen::Vector3d& end_pos,
-                     const Eigen::Vector3d& end_vel);
   double getPlanningHorizon() { return planning_horizon_; };
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
   bool Solve();
 
  private:
+  static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
+  void AppendSegment(Trajectory& trajectory, const Eigen::Vector3d& rate, const Eigen::Vector3d& end_pos,
+                     const Eigen::Vector3d& end_vel);
+  std::vector<Trajectory>& checkCollisions();
+  bool checkTrajectoryCollision(Trajectory& trajectory);
   // Planner configurations
   std::vector<Eigen::Vector3d> primitive_rates_;
   int num_segments{3};
