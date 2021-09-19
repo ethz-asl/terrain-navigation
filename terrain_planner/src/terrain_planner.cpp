@@ -42,10 +42,20 @@
 
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
+  vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
   cmdloop_timer_ = nh_.createTimer(ros::Duration(0.01), &TerrainPlanner::cmdloopCallback,
                                    this);  // Define timer for constant loop rate
   statusloop_timer_ = nh_.createTimer(ros::Duration(1), &TerrainPlanner::statusloopCallback,
                                       this);  // Define timer for constant loop rate
+
+  mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
+                               ros::TransportHints().tcpNoDelay());
+  mavtwist_sub_ = nh_.subscribe("mavros/local_position/velocity_local", 1, &TerrainPlanner::mavtwistCallback, this,
+                                ros::TransportHints().tcpNoDelay());
+
+  maneuver_library_ = std::make_shared<ManeuverLibrary>();
+  maneuver_library_->setPlanningHorizon(5.0);
+  planner_profiler_ = std::make_shared<Profiler>("planner");
 }
 TerrainPlanner::~TerrainPlanner() {
   // Destructor
@@ -53,4 +63,41 @@ TerrainPlanner::~TerrainPlanner() {
 
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {}
 
-void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {}
+void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
+  /// TODO: Subscribe to current state
+
+  // planner_profiler_->tic();
+  maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_);
+
+  bool result = maneuver_library_->Solve();
+
+  Trajectory primitive = maneuver_library_->getRandomPrimitive();
+  // planner_profiler_->toc();
+  publishTrajectory(primitive.position());
+}
+
+void TerrainPlanner::publishTrajectory(std::vector<Eigen::Vector3d> trajectory) {
+  nav_msgs::Path msg;
+  std::vector<geometry_msgs::PoseStamped> posestampedhistory_vector;
+  Eigen::Vector4d orientation(1.0, 0.0, 0.0, 0.0);
+  for (auto pos : trajectory) {
+    posestampedhistory_vector.insert(posestampedhistory_vector.begin(), vector3d2PoseStampedMsg(pos, orientation));
+  }
+  msg.header.stamp = ros::Time::now();
+  msg.header.frame_id = "map";
+  msg.poses = posestampedhistory_vector;
+  vehicle_path_pub_.publish(msg);
+}
+
+void TerrainPlanner::mavposeCallback(const geometry_msgs::PoseStamped &msg) {
+  vehicle_position_ = toEigen(msg.pose.position);
+  // mavAtt_(0) = msg.pose.orientation.w;
+  // mavAtt_(1) = msg.pose.orientation.x;
+  // mavAtt_(2) = msg.pose.orientation.y;
+  // mavAtt_(3) = msg.pose.orientation.z;
+}
+
+void TerrainPlanner::mavtwistCallback(const geometry_msgs::TwistStamped &msg) {
+  vehicle_velocity_ = toEigen(msg.twist.linear);
+  // mavRate_ = toEigen(msg.twist.angular);
+}

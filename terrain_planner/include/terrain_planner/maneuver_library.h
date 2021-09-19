@@ -12,7 +12,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name terrain-navigation nor the names of its contributors may be
+ * 3. Neither the name PX4 nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -37,20 +37,10 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
+#include "terrain_planner/trajectory.h"
+
 #include <Eigen/Dense>
 #include <vector>
-
-struct State {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Eigen::Vector3d position;
-  Eigen::Vector3d velocity;
-  Eigen::Vector4d attitude;
-};
-
-struct Trajectory {
-  std::vector<State> states;
-  double utility{0.0};
-};
 
 class ManeuverLibrary {
  public:
@@ -66,11 +56,14 @@ class ManeuverLibrary {
   void AppendSegment(Trajectory& trajectory, const Eigen::Vector3d& rate, const Eigen::Vector3d& end_pos,
                      const Eigen::Vector3d& end_vel);
   double getPlanningHorizon() { return planning_horizon_; };
+  void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
+  bool Solve();
 
  private:
   // Planner configurations
   std::vector<Eigen::Vector3d> primitive_rates_;
-  double sampling_time_{2.0};
+  int num_segments{3};
+  double sampling_time_{0.1};
   double planning_horizon_{10.0};
   double cruise_speed_{15.0};
 

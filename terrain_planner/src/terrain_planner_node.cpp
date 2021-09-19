@@ -40,7 +40,7 @@
 #include "terrain_planner/terrain_planner.h"
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "adaptive_viewutility");
+  ros::init(argc, argv, "terrain_planner");
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 

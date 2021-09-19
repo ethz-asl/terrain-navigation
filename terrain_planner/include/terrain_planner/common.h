@@ -43,6 +43,16 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+Eigen::Vector3d toEigen(const geometry_msgs::Point &p) {
+  Eigen::Vector3d ev3(p.x, p.y, p.z);
+  return ev3;
+}
+
+Eigen::Vector3d toEigen(const geometry_msgs::Vector3 &v3) {
+  Eigen::Vector3d ev3(v3.x, v3.y, v3.z);
+  return ev3;
+}
+
 geometry_msgs::Pose vector3d2PoseMsg(const Eigen::Vector3d position, const Eigen::Vector4d orientation) {
   geometry_msgs::Pose encode_msg;
 

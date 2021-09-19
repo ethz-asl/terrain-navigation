@@ -30,12 +30,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/**
- * @brief View Planner class
- *
- *
- * @author Jaeyoung Lim <jalim@ethz.ch>
- */
+
+#ifndef TRAJECTORY_H
+#define TRAJECTORY_H
 
 #include <Eigen/Dense>
 #include <vector>
@@ -47,32 +44,21 @@ struct State {
   Eigen::Vector4d attitude;
 };
 
-struct Trajectory {
+class Trajectory {
+ public:
+  Trajectory(){};
+  virtual ~Trajectory(){};
+  std::vector<Eigen::Vector3d> position() {
+    std::vector<Eigen::Vector3d> pos_vector;
+    for (auto state : states) {
+      pos_vector.push_back(state.position);
+    }
+    return pos_vector;
+  }
   std::vector<State> states;
   double utility{0.0};
-};
-
-class ManeuverLibrary {
- public:
-  ManeuverLibrary();
-  virtual ~ManeuverLibrary();
-  std::vector<Trajectory>& generateMotionPrimitives(const Eigen::Vector3d current_pos,
-                                                    const Eigen::Vector3d current_vel);
-  std::vector<Trajectory>& getMotionPrimitives() { return motion_primitives_; }
-  Trajectory& getBestPrimitive();
-  Trajectory& getRandomPrimitive();
-  Trajectory generateArcTrajectory(Eigen::Vector3d rates, Eigen::Vector3d current_pos, Eigen::Vector3d current_vel);
-  static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
-  void AppendSegment(Trajectory& trajectory, const Eigen::Vector3d& rate, const Eigen::Vector3d& end_pos,
-                     const Eigen::Vector3d& end_vel);
-  double getPlanningHorizon() { return planning_horizon_; };
 
  private:
-  // Planner configurations
-  std::vector<Eigen::Vector3d> primitive_rates_;
-  double sampling_time_{2.0};
-  double planning_horizon_{10.0};
-  double cruise_speed_{15.0};
-
-  std::vector<Trajectory> motion_primitives_;
 };
+
+#endif

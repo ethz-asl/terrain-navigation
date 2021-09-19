@@ -41,22 +41,43 @@
 #ifndef TERRAIN_PLANNER_H
 #define TERRAIN_PLANNER_H
 
+#include "terrain_planner/common.h"
+#include "terrain_planner/maneuver_library.h"
+#include "terrain_planner/profiler.h"
+
 #include <ros/ros.h>
+
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <nav_msgs/Path.h>
 
 #include <Eigen/Dense>
 
 class TerrainPlanner {
- private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle nh_private_;
-  ros::Timer cmdloop_timer_, statusloop_timer_;
-
-  void cmdloopCallback(const ros::TimerEvent &event);
-  void statusloopCallback(const ros::TimerEvent &event);
-
  public:
   TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
   virtual ~TerrainPlanner();
+
+ private:
+  void cmdloopCallback(const ros::TimerEvent &event);
+  void statusloopCallback(const ros::TimerEvent &event);
+  void publishTrajectory(std::vector<Eigen::Vector3d> trajectory);
+  void mavposeCallback(const geometry_msgs::PoseStamped &msg);
+  void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
+
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
+  ros::Publisher vehicle_path_pub_;
+  ros::Subscriber mavpose_sub_;
+  ros::Subscriber mavtwist_sub_;
+  ros::Timer cmdloop_timer_, statusloop_timer_;
+
+  std::shared_ptr<ManeuverLibrary> maneuver_library_;
+  std::shared_ptr<Profiler> planner_profiler_;
+
+  std::vector<Eigen::Vector3d> vehicle_position_history_;
+  Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
+  Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
 };
 
 #endif
