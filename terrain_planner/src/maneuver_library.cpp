@@ -44,6 +44,7 @@
 #include <iostream>
 
 ManeuverLibrary::ManeuverLibrary() {
+  terrain_map_ = std::make_shared<TerrainMap>();
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.25));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.25));
@@ -83,25 +84,24 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
 
 bool ManeuverLibrary::Solve() {
   /// TODO: Run Validity checks
-  std::vector<Trajectory> valid_primitives = checkCollisions(); // TODO: Define minimum distance?
+  std::vector<Trajectory> valid_primitives = checkCollisions();  // TODO: Define minimum distance?
 
   /// TODO: Rank primitives
   return true;
 }
 
-std::vector<Trajectory>& ManeuverLibrary::checkCollisions() {
+std::vector<Trajectory> &ManeuverLibrary::checkCollisions() {
   // Return only the reference of trajectories
 }
 
-bool ManeuverLibrary::checkTrajectoryCollision(Trajectory& trajectory) {
+bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory) {
   bool under_terrain = false;
-  ///TODO: Reference gridmap terrain
+  /// TODO: Reference gridmap terrain
   if (under_terrain) {
     return false;
   }
   return true;
 }
-
 
 void ManeuverLibrary::AppendSegment(Trajectory &trajectory, const Eigen::Vector3d &rate, const Eigen::Vector3d &end_pos,
                                     const Eigen::Vector3d &end_vel) {

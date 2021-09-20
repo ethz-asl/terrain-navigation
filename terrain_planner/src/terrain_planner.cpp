@@ -39,22 +39,28 @@
  */
 
 #include "terrain_planner/terrain_planner.h"
+#include <grid_map_msgs/GridMap.h>
+#include <grid_map_ros/GridMapRosConverter.hpp>
 
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
   vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
   cmdloop_timer_ = nh_.createTimer(ros::Duration(0.01), &TerrainPlanner::cmdloopCallback,
                                    this);  // Define timer for constant loop rate
-  statusloop_timer_ = nh_.createTimer(ros::Duration(1), &TerrainPlanner::statusloopCallback,
+  statusloop_timer_ = nh_.createTimer(ros::Duration(2.0), &TerrainPlanner::statusloopCallback,
                                       this);  // Define timer for constant loop rate
+
+  grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
                                ros::TransportHints().tcpNoDelay());
   mavtwist_sub_ = nh_.subscribe("mavros/local_position/velocity_local", 1, &TerrainPlanner::mavtwistCallback, this,
                                 ros::TransportHints().tcpNoDelay());
-
+  std::string map_path;
+  nh_private.param<std::string>("terrain_path", map_path, "resources/cadastre.tif");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(5.0);
+  maneuver_library_->setTerrainMap(map_path);
   planner_profiler_ = std::make_shared<Profiler>("planner");
 }
 TerrainPlanner::~TerrainPlanner() {
@@ -74,6 +80,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   Trajectory primitive = maneuver_library_->getRandomPrimitive();
   // planner_profiler_->toc();
   publishTrajectory(primitive.position());
+  MapPublishOnce();
 }
 
 void TerrainPlanner::publishTrajectory(std::vector<Eigen::Vector3d> trajectory) {
@@ -100,4 +107,11 @@ void TerrainPlanner::mavposeCallback(const geometry_msgs::PoseStamped &msg) {
 void TerrainPlanner::mavtwistCallback(const geometry_msgs::TwistStamped &msg) {
   vehicle_velocity_ = toEigen(msg.twist.linear);
   // mavRate_ = toEigen(msg.twist.angular);
+}
+
+void TerrainPlanner::MapPublishOnce() {
+  maneuver_library_->getGridMap().setTimestamp(ros::Time::now().toNSec());
+  grid_map_msgs::GridMap message;
+  grid_map::GridMapRosConverter::toMessage(maneuver_library_->getGridMap(), message);
+  grid_map_pub_.publish(message);
 }

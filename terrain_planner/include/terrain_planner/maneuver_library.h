@@ -37,9 +37,11 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
+#include "terrain_planner/terrain_map.h"
 #include "terrain_planner/trajectory.h"
 
 #include <Eigen/Dense>
+#include <memory>
 #include <vector>
 
 class ManeuverLibrary {
@@ -54,7 +56,9 @@ class ManeuverLibrary {
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, Eigen::Vector3d current_pos, Eigen::Vector3d current_vel);
   double getPlanningHorizon() { return planning_horizon_; };
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
+  void setTerrainMap(const std::string& map_path) { terrain_map_->initializeFromGeotiff(map_path); };
   bool Solve();
+  grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
 
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
@@ -62,12 +66,14 @@ class ManeuverLibrary {
                      const Eigen::Vector3d& end_vel);
   std::vector<Trajectory>& checkCollisions();
   bool checkTrajectoryCollision(Trajectory& trajectory);
+
+  std::shared_ptr<TerrainMap> terrain_map_;
+
   // Planner configurations
+  std::vector<Trajectory> motion_primitives_;
   std::vector<Eigen::Vector3d> primitive_rates_;
   int num_segments{3};
   double sampling_time_{0.1};
   double planning_horizon_{10.0};
   double cruise_speed_{15.0};
-
-  std::vector<Trajectory> motion_primitives_;
 };

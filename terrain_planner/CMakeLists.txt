@@ -37,6 +37,7 @@ add_library(${PROJECT_NAME}
   src/profiler.cpp
   src/maneuver_library.cpp
   src/terrain_planner.cpp
+  src/terrain_map.cpp
 )
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

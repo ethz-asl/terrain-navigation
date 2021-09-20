@@ -30,56 +30,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/**
- * @brief Motion primtiive based Terrain planner library
- *
- * Motion primitive based terrain planner library
- *
- * @author Jaeyoung Lim <jalim@ethz.ch>
- */
 
-#ifndef TERRAIN_PLANNER_H
-#define TERRAIN_PLANNER_H
+#ifndef TERRAIN_MAP_H
+#define TERRAIN_MAP_H
 
-#include "terrain_planner/common.h"
-#include "terrain_planner/maneuver_library.h"
-#include "terrain_planner/profiler.h"
+// #include <grid_map_msgs/GridMap.h>
+#include <grid_map_core/GridMap.hpp>
+#include <grid_map_core/iterators/GridMapIterator.hpp>
 
-#include <ros/ros.h>
+#include <gdal/cpl_string.h>
+#include <gdal/gdal.h>
+#include <gdal/gdal_priv.h>
+#include <gdal/ogr_spatialref.h>
 
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/TwistStamped.h>
-#include <nav_msgs/Path.h>
+#include <iostream>
 
-#include <Eigen/Dense>
-
-class TerrainPlanner {
+class TerrainMap {
  public:
-  TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
-  virtual ~TerrainPlanner();
+  TerrainMap();
+  virtual ~TerrainMap();
+  bool initializeFromGeotiff(const std::string& path);
+  grid_map::GridMap& getGridMap() { return grid_map_; }
 
  private:
-  void cmdloopCallback(const ros::TimerEvent &event);
-  void statusloopCallback(const ros::TimerEvent &event);
-  void publishTrajectory(std::vector<Eigen::Vector3d> trajectory);
-  void mavposeCallback(const geometry_msgs::PoseStamped &msg);
-  void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
-  void MapPublishOnce();
-
-  ros::NodeHandle nh_;
-  ros::NodeHandle nh_private_;
-  ros::Publisher vehicle_path_pub_;
-  ros::Publisher grid_map_pub_;
-  ros::Subscriber mavpose_sub_;
-  ros::Subscriber mavtwist_sub_;
-  ros::Timer cmdloop_timer_, statusloop_timer_;
-
-  std::shared_ptr<ManeuverLibrary> maneuver_library_;
-  std::shared_ptr<Profiler> planner_profiler_;
-
-  std::vector<Eigen::Vector3d> vehicle_position_history_;
-  Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
-  Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
+  grid_map::GridMap grid_map_;
 };
-
 #endif
