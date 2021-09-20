@@ -43,6 +43,16 @@ TerrainMap::TerrainMap() {}
 
 TerrainMap::~TerrainMap() {}
 
+bool TerrainMap::isInCollision(const Eigen::Vector3d &position) {
+  Eigen::Vector2d position_2d(position(0), position(1));
+  double elevation = grid_map_.atPosition("elevation", position_2d);
+  if (elevation > position(3)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   GDALAllRegister();
   GDALDataset *dataset = (GDALDataset *)GDALOpen(path.c_str(), GA_ReadOnly);

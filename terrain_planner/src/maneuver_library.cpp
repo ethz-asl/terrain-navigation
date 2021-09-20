@@ -92,13 +92,18 @@ bool ManeuverLibrary::Solve() {
 
 std::vector<Trajectory> &ManeuverLibrary::checkCollisions() {
   // Return only the reference of trajectories
+  for (auto trajectory : motion_primitives_) {
+    bool no_collision = checkTrajectoryCollision(trajectory);
+  }
 }
 
 bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory) {
   bool under_terrain = false;
   /// TODO: Reference gridmap terrain
-  if (under_terrain) {
-    return false;
+  for (auto position : trajectory.position()) {
+    if (terrain_map_->isInCollision(position)) {
+      return false;
+    }
   }
   return true;
 }
