@@ -51,7 +51,6 @@ class TerrainMap {
   virtual ~TerrainMap();
   bool initializeFromGeotiff(const std::string& path);
   grid_map::GridMap& getGridMap() { return grid_map_; }
-  bool isInCollision(const Eigen::Vector3d& position);
 
  private:
   grid_map::GridMap grid_map_;
