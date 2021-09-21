@@ -45,12 +45,14 @@
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
   vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
-  cmdloop_timer_ = nh_.createTimer(ros::Duration(0.01), &TerrainPlanner::cmdloopCallback,
+  cmdloop_timer_ = nh_.createTimer(ros::Duration(0.1), &TerrainPlanner::cmdloopCallback,
                                    this);  // Define timer for constant loop rate
   statusloop_timer_ = nh_.createTimer(ros::Duration(2.0), &TerrainPlanner::statusloopCallback,
                                       this);  // Define timer for constant loop rate
 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
+
+  posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
                                ros::TransportHints().tcpNoDelay());
@@ -67,7 +69,9 @@ TerrainPlanner::~TerrainPlanner() {
   // Destructor
 }
 
-void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {}
+void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
+  publishPoseHistory();
+}
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   /// TODO: Subscribe to current state
@@ -114,4 +118,21 @@ void TerrainPlanner::MapPublishOnce() {
   grid_map_msgs::GridMap message;
   grid_map::GridMapRosConverter::toMessage(maneuver_library_->getGridMap(), message);
   grid_map_pub_.publish(message);
+}
+
+void TerrainPlanner::publishPoseHistory() {
+  int posehistory_window_ = 20000;
+  Eigen::Vector4d vehicle_attitude(1.0, 0.0, 0.0, 0.0);
+  posehistory_vector_.insert(posehistory_vector_.begin(),
+                             vector3d2PoseStampedMsg(vehicle_position_, vehicle_attitude));
+  if (posehistory_vector_.size() > posehistory_window_) {
+    posehistory_vector_.pop_back();
+  }
+
+  nav_msgs::Path msg;
+  msg.header.stamp = ros::Time::now();
+  msg.header.frame_id = "map";
+  msg.poses = posehistory_vector_;
+
+  posehistory_pub_.publish(msg);
 }
