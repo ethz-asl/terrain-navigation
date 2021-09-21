@@ -27,10 +27,12 @@
 
     <include file="$(find px4)/launch/posix_sitl.launch">
         <arg name="vehicle" value="$(arg mav_name)"/>
+        <arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/duerrboden.world"/>
     </include>
 
     <node pkg="terrain_planner" type="terrain_planner_node" name="terrain_planner" output="screen">
-        <param name="terrain_path" value="$(find terrain_planner)/../resources/fluela.tif"/>
+        <!-- <param name="terrain_path" value="$(find terrain_planner)/../resources/fluela.tif"/> -->
+        <param name="terrain_path" value="$(find terrain_planner)/../resources/duerrboden.tif"/>
     </node>
     <group if="$(arg visualization)">
         <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config.rviz" />

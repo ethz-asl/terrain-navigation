@@ -68,10 +68,9 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   const char *pszProjection = dataset->GetProjectionRef();
   std::cout << std::endl << "Wkt ProjectionRef: " << pszProjection << std::endl;
   /// TODO: Get proper projection references using gDal
-  // Fluela
-  double center_latitude = 46.95240555555556;
-  double center_longitude = 7.439583333333333;
-  double center_altitude = 2500.0;  /// TODO: Get center altitude as minimum altitude
+  double center_latitude = 46.9524;
+  double center_longitude = 7.43958;
+  double center_altitude = 2050.0;  /// TODO: Get center altitude as minimum altitude
 
   // Get image metadata
   unsigned width = dataset->GetRasterXSize();
