@@ -59,6 +59,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   candidate_manuever_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
   position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
+  vehicle_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_pose_marker", 1, true);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
                                ros::TransportHints().tcpNoDelay());
@@ -88,13 +89,14 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
       i++;
     }
   }
+  publishVehiclePose(vehicle_position_, vehicle_attitude_);
   publishPoseHistory();
 }
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // planner_profiler_->tic();
   ///TODO: Plan from next segment
-  Eigen::Vector3d start_position = vehicle_position_ + vehicle_velocity_ * 0.5;
+  Eigen::Vector3d start_position = vehicle_position_ + vehicle_velocity_ * 0.4;
   maneuver_library_->generateMotionPrimitives(start_position, vehicle_velocity_);
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
@@ -122,10 +124,10 @@ void TerrainPlanner::publishTrajectory(std::vector<Eigen::Vector3d> trajectory) 
 
 void TerrainPlanner::mavposeCallback(const geometry_msgs::PoseStamped &msg) {
   vehicle_position_ = toEigen(msg.pose.position);
-  // mavAtt_(0) = msg.pose.orientation.w;
-  // mavAtt_(1) = msg.pose.orientation.x;
-  // mavAtt_(2) = msg.pose.orientation.y;
-  // mavAtt_(3) = msg.pose.orientation.z;
+  vehicle_attitude_(0) = msg.pose.orientation.w;
+  vehicle_attitude_(1) = msg.pose.orientation.x;
+  vehicle_attitude_(2) = msg.pose.orientation.y;
+  vehicle_attitude_(3) = msg.pose.orientation.z;
 }
 
 void TerrainPlanner::mavtwistCallback(const geometry_msgs::TwistStamped &msg) {
@@ -214,4 +216,24 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position) {
   marker.pose.orientation.z = 0.0;
 
   position_target_pub_.publish(marker);
+}
+
+void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude) {
+  Eigen::Vector4d mesh_attitude = quatMultiplication(attitude, Eigen::Vector4d(std::cos(M_PI/2), 0.0, 0.0, std::sin(M_PI/2)));
+  geometry_msgs::Pose vehicle_pose = vector3d2PoseMsg(position, mesh_attitude);
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.header.frame_id = "map";
+  marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+  marker.ns = "my_namespace";
+  marker.mesh_resource = "file:///home/jaeyoung/src/PX4-Autopilot/Tools/sitl_gazebo/models/believer/meshes/believer_body.dae";
+  marker.scale.x = 10.0;
+  marker.scale.y = 10.0;
+  marker.scale.z = 10.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.r = 0.5;
+  marker.color.g = 0.5;
+  marker.color.b = 0.5;
+  marker.pose = vehicle_pose;
+  vehicle_pose_pub_.publish(marker);
 }
