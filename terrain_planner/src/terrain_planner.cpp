@@ -41,16 +41,16 @@
 #include "terrain_planner/terrain_planner.h"
 
 #include <grid_map_msgs/GridMap.h>
+#include <mavros_msgs/PositionTarget.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
-#include <mavros_msgs/PositionTarget.h>
 
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
   vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
   cmdloop_timer_ = nh_.createTimer(ros::Duration(0.1), &TerrainPlanner::cmdloopCallback,
                                    this);  // Define timer for constant loop rate
-  statusloop_timer_ = nh_.createTimer(ros::Duration(2.0), &TerrainPlanner::statusloopCallback,
+  statusloop_timer_ = nh_.createTimer(ros::Duration(5.0), &TerrainPlanner::statusloopCallback,
                                       this);  // Define timer for constant loop rate
 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
@@ -76,12 +76,12 @@ TerrainPlanner::~TerrainPlanner() {
 }
 
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
-  //TODO: Get position setpoint based on time
+  // TODO: Get position setpoint based on time
   double time_since_start = (ros::Time::now() - plan_time_).toSec();
   std::vector<Eigen::Vector3d> trajectory = reference_primitive_.position();
   int i = 1;
-  for (auto& position: trajectory) {
-    if (time_since_start > 0.1 * i) {
+  for (auto position : trajectory) {
+    if (time_since_start < 0.1 * i) {
       publishPositionSetpoints(position);
       break;
     } else {
@@ -93,8 +93,10 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // planner_profiler_->tic();
-  maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_);
-  ///TODO: Switch to chrono
+  ///TODO: Plan from next segment
+  Eigen::Vector3d start_position = vehicle_position_ + vehicle_velocity_ * 0.5;
+  maneuver_library_->generateMotionPrimitives(start_position, vehicle_velocity_);
+  /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
   bool result = maneuver_library_->Solve();
 
@@ -193,7 +195,7 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position) {
   marker.id = 0;
   marker.action = visualization_msgs::Marker::DELETEALL;
   position_target_pub_.publish(marker);
-  
+
   marker.header.stamp = ros::Time::now();
   marker.action = visualization_msgs::Marker::ADD;
   marker.scale.x = 10.0;
@@ -210,6 +212,6 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position) {
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
-  
+
   position_target_pub_.publish(marker);
 }

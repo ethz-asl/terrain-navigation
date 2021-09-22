@@ -55,6 +55,13 @@ class Trajectory {
     }
     return pos_vector;
   }
+  std::vector<Eigen::Vector3d> velocity() {
+    std::vector<Eigen::Vector3d> vel_vector;
+    for (auto state : states) {
+      vel_vector.push_back(state.velocity);
+    }
+    return vel_vector;
+  }
   bool valid() { return validity; }
   std::vector<State> states;
   double utility{0.0};

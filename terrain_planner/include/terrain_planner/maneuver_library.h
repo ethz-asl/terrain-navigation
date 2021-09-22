@@ -60,7 +60,7 @@ class ManeuverLibrary {
   void setTerrainMap(const std::string& map_path) { terrain_map_->initializeFromGeotiff(map_path); };
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
-  double getTimeStep() { return dt_;}
+  double getTimeStep() { return dt_; }
 
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);

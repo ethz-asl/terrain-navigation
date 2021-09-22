@@ -53,7 +53,7 @@ bool TerrainMap::isInCollision(const Eigen::Vector3d &position) {
       return false;
     }
   }
-  return false;
+  return true; // Do not allow vehicle to go outside the map
 }
 
 bool TerrainMap::initializeFromGeotiff(const std::string &path) {
