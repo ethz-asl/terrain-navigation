@@ -40,6 +40,7 @@
 
 #include "terrain_planner/terrain_planner.h"
 #include <grid_map_msgs/GridMap.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
@@ -53,6 +54,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
 
   posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
+  candidate_manuever_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
                                ros::TransportHints().tcpNoDelay());
@@ -81,6 +83,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
 
   Trajectory primitive = maneuver_library_->getRandomPrimitive();
   // planner_profiler_->toc();
+  publishCandidateManeuvers();
   publishTrajectory(primitive.position());
   MapPublishOnce();
 }
@@ -132,4 +135,16 @@ void TerrainPlanner::publishPoseHistory() {
   msg.poses = posehistory_vector_;
 
   posehistory_pub_.publish(msg);
+}
+
+void TerrainPlanner::publishCandidateManeuvers() {
+  visualization_msgs::MarkerArray msg;
+  std::vector<visualization_msgs::Marker> maneuver_library_vector;
+  int i = 0;
+  for (auto maneuver : maneuver_library_->getMotionPrimitives()) {
+    maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));
+    i++;
+  }
+  msg.markers = maneuver_library_vector;
+  candidate_manuever_pub_.publish(msg);
 }

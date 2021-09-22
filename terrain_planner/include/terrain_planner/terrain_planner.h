@@ -66,12 +66,14 @@ class TerrainPlanner {
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
   void MapPublishOnce();
   void publishPoseHistory();
+  void publishCandidateManeuvers();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;
   ros::Publisher grid_map_pub_;
   ros::Publisher posehistory_pub_;
+  ros::Publisher candidate_manuever_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Timer cmdloop_timer_, statusloop_timer_;

@@ -34,6 +34,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "terrain_planner/trajectory.h"
+
 #include <Eigen/Dense>
 #include <fstream>
 
@@ -141,6 +143,37 @@ visualization_msgs::Marker normals2ArrowsMsg(const Eigen::Vector3d &position, co
   marker.color.r = 1.0;
   marker.color.g = 0.0;
   marker.color.b = 0.0;
+  return marker;
+}
+
+visualization_msgs::Marker trajectory2MarkerMsg(Trajectory &trajectory, const int id) {
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "normals";
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  std::vector<geometry_msgs::Point> points;
+  for (auto position : trajectory.position()) {
+    geometry_msgs::Point point;
+    point.x = position(0);
+    point.y = position(1);
+    point.z = position(2);
+    points.push_back(point);
+  }
+  marker.points = points;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.5;
+  marker.scale.y = 1.0;
+  marker.scale.z = 1.0;
+  marker.color.a = 0.2;
+  marker.color.r = 0.5;
+  marker.color.g = 0.5;
+  marker.color.b = 0.5;
   return marker;
 }
 
