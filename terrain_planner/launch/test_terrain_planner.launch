@@ -27,7 +27,7 @@
 
     <include file="$(find px4)/launch/posix_sitl.launch">
         <arg name="vehicle" value="$(arg mav_name)"/>
-        <arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/duerrboden.world"/>
+        <arg name="world" default="$(find terrain_planner)/../resources/duerrboden.world"/>
     </include>
 
     <node pkg="terrain_planner" type="terrain_planner_node" name="terrain_planner" output="screen">

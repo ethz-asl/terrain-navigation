@@ -68,9 +68,19 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   const char *pszProjection = dataset->GetProjectionRef();
   std::cout << std::endl << "Wkt ProjectionRef: " << pszProjection << std::endl;
   /// TODO: Get proper projection references using gDal
-  double center_latitude = 46.9524;
-  double center_longitude = 7.43958;
-  double center_altitude = 2050.0;  /// TODO: Get center altitude as minimum altitude
+  // double center_latitude = 46.7240653;
+  // double center_longitude = 9.912185;
+  double mapcenter_e = 789738.500;
+  double mapcenter_n = 177105.500;
+
+  double center_altitude = 2010.0;  /// TODO: Get center altitude as minimum altitude
+
+  // duerrboden berghaus
+  double localorigin_e = 789823.93;
+  double localorigin_n = 177416.56;
+
+  double map_position_x = mapcenter_e - localorigin_e;
+  double map_position_y = mapcenter_n - localorigin_n;
 
   // Get image metadata
   unsigned width = dataset->GetRasterXSize();
@@ -83,7 +93,9 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   const double lengthX = resolution * width;
   const double lengthY = resolution * height;
   grid_map::Length length(lengthX, lengthY);
-  Eigen::Vector2d position = Eigen::Vector2d::Zero();
+  Eigen::Vector2d position = Eigen::Vector2d(map_position_x, map_position_y);
+  std::cout << "map position: " << position.transpose() << std::endl;
+  // Eigen::Vector2d position = Eigen::Vector2d::Zero();
   grid_map_.setGeometry(length, resolution, position);
   grid_map_.setFrameId("world");
   grid_map_.add("elevation");
@@ -95,9 +107,9 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   grid_map::Matrix &layer_elevation = grid_map_["elevation"];
   for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index gridMapIndex = *iterator;
-
-    int x = gridMapIndex(0);
-    int y = height - 1 - gridMapIndex(1);
+    // TODO: This may be wrong if the pixelSizeY > 0
+    int x = width - 1 - gridMapIndex(0);
+    int y = gridMapIndex(1);
 
     layer_elevation(x, y) = data[gridMapIndex(0) + width * gridMapIndex(1)] - center_altitude;
   }

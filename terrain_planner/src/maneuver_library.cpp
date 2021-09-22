@@ -84,7 +84,7 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
 
 bool ManeuverLibrary::Solve() {
   /// TODO: Run Validity checks
-  std::vector<Trajectory> valid_primitives = checkCollisions();  // TODO: Define minimum distance?
+  // std::vector<Trajectory> valid_primitives = checkCollisions();  // TODO: Define minimum distance?
 
   /// TODO: Rank primitives
   return true;

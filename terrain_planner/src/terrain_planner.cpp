@@ -69,9 +69,7 @@ TerrainPlanner::~TerrainPlanner() {
   // Destructor
 }
 
-void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
-  publishPoseHistory();
-}
+void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) { publishPoseHistory(); }
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   /// TODO: Subscribe to current state
@@ -123,8 +121,7 @@ void TerrainPlanner::MapPublishOnce() {
 void TerrainPlanner::publishPoseHistory() {
   int posehistory_window_ = 20000;
   Eigen::Vector4d vehicle_attitude(1.0, 0.0, 0.0, 0.0);
-  posehistory_vector_.insert(posehistory_vector_.begin(),
-                             vector3d2PoseStampedMsg(vehicle_position_, vehicle_attitude));
+  posehistory_vector_.insert(posehistory_vector_.begin(), vector3d2PoseStampedMsg(vehicle_position_, vehicle_attitude));
   if (posehistory_vector_.size() > posehistory_window_) {
     posehistory_vector_.pop_back();
   }
