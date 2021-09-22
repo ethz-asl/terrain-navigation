@@ -57,6 +57,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
   candidate_manuever_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
+  position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
@@ -75,23 +76,32 @@ TerrainPlanner::~TerrainPlanner() {
 }
 
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
-  Eigen::Vector3d position_setpoint = Eigen::Vector3d(0.0, 0.0, 50.0);
-  publishPositionSetpoints(position_setpoint);
+  //TODO: Get position setpoint based on time
+  double time_since_start = (ros::Time::now() - plan_time_).toSec();
+  std::vector<Eigen::Vector3d> trajectory = reference_primitive_.position();
+  int i = 1;
+  for (auto& position: trajectory) {
+    if (time_since_start > 0.1 * i) {
+      publishPositionSetpoints(position);
+      break;
+    } else {
+      i++;
+    }
+  }
   publishPoseHistory();
 }
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
-  /// TODO: Subscribe to current state
-
   // planner_profiler_->tic();
   maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_);
-
+  ///TODO: Switch to chrono
+  plan_time_ = ros::Time::now();
   bool result = maneuver_library_->Solve();
 
-  Trajectory primitive = maneuver_library_->getRandomPrimitive();
+  reference_primitive_ = maneuver_library_->getRandomPrimitive();
   // planner_profiler_->toc();
   publishCandidateManeuvers(maneuver_library_->getMotionPrimitives());
-  publishTrajectory(primitive.position());
+  publishTrajectory(reference_primitive_.position());
   MapPublishOnce();
 }
 
@@ -175,4 +185,31 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position) {
   msg.position.y = position(1);
   msg.position.z = position(2);
   position_setpoint_pub_.publish(msg);
+
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.header.frame_id = "map";
+  marker.id = 0;
+  marker.action = visualization_msgs::Marker::DELETEALL;
+  position_target_pub_.publish(marker);
+  
+  marker.header.stamp = ros::Time::now();
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = 10.0;
+  marker.scale.y = 10.0;
+  marker.scale.z = 10.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+  marker.pose.position.x = position(0);
+  marker.pose.position.y = position(1);
+  marker.pose.position.z = position(2);
+  marker.pose.orientation.w = 1.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  
+  position_target_pub_.publish(marker);
 }

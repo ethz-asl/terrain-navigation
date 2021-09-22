@@ -75,12 +75,15 @@ class TerrainPlanner {
   ros::Publisher posehistory_pub_;
   ros::Publisher candidate_manuever_pub_;
   ros::Publisher position_setpoint_pub_;
+  ros::Publisher position_target_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Timer cmdloop_timer_, statusloop_timer_;
+  ros::Time plan_time_;
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
   std::shared_ptr<Profiler> planner_profiler_;
+  Trajectory reference_primitive_;
 
   std::vector<Eigen::Vector3d> vehicle_position_history_;
   std::vector<geometry_msgs::PoseStamped> posehistory_vector_;

@@ -60,6 +60,7 @@ class ManeuverLibrary {
   void setTerrainMap(const std::string& map_path) { terrain_map_->initializeFromGeotiff(map_path); };
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
+  double getTimeStep() { return dt_;}
 
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
@@ -75,7 +76,7 @@ class ManeuverLibrary {
   std::vector<Trajectory> valid_primitives_;
   std::vector<Eigen::Vector3d> primitive_rates_;
   int num_segments{3};
-  double sampling_time_{0.1};
+  double dt_{0.1};
   double planning_horizon_{10.0};
   double cruise_speed_{15.0};
 };
