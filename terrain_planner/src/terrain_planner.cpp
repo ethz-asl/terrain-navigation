@@ -39,9 +39,11 @@
  */
 
 #include "terrain_planner/terrain_planner.h"
+
 #include <grid_map_msgs/GridMap.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
+#include <mavros_msgs/PositionTarget.h>
 
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
@@ -55,6 +57,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
   candidate_manuever_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
+  position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
                                ros::TransportHints().tcpNoDelay());
@@ -71,7 +74,11 @@ TerrainPlanner::~TerrainPlanner() {
   // Destructor
 }
 
-void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) { publishPoseHistory(); }
+void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
+  Eigen::Vector3d position_setpoint = Eigen::Vector3d(0.0, 0.0, 50.0);
+  publishPositionSetpoints(position_setpoint);
+  publishPoseHistory();
+}
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   /// TODO: Subscribe to current state
@@ -155,4 +162,17 @@ void TerrainPlanner::publishCandidateManeuvers(const std::vector<Trajectory> &ca
   }
   msg.markers = maneuver_library_vector;
   candidate_manuever_pub_.publish(msg);
+}
+
+void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position) {
+  using namespace mavros_msgs;
+  // Publishes position setpoints sequentially as trajectory setpoints
+  mavros_msgs::PositionTarget msg;
+  msg.header.stamp = ros::Time::now();
+  msg.coordinate_frame = PositionTarget::FRAME_LOCAL_NED;
+  msg.type_mask = PositionTarget::IGNORE_AFX | PositionTarget::IGNORE_AFY | PositionTarget::IGNORE_AFZ;
+  msg.position.x = position(0);
+  msg.position.y = position(1);
+  msg.position.z = position(2);
+  position_setpoint_pub_.publish(msg);
 }

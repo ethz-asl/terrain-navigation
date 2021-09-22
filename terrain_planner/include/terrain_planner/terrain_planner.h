@@ -67,13 +67,14 @@ class TerrainPlanner {
   void MapPublishOnce();
   void publishPoseHistory();
   void publishCandidateManeuvers(const std::vector<Trajectory> &candidate_maneuvers);
-
+  void publishPositionSetpoints(const Eigen::Vector3d &position);
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;
   ros::Publisher grid_map_pub_;
   ros::Publisher posehistory_pub_;
   ros::Publisher candidate_manuever_pub_;
+  ros::Publisher position_setpoint_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Timer cmdloop_timer_, statusloop_timer_;
