@@ -66,7 +66,7 @@ class TerrainPlanner {
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
   void MapPublishOnce();
   void publishPoseHistory();
-  void publishCandidateManeuvers();
+  void publishCandidateManeuvers(const std::vector<Trajectory> &candidate_maneuvers);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;

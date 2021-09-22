@@ -78,27 +78,39 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
       }
     }
   }
-
   return motion_primitives_;
 }
 
 bool ManeuverLibrary::Solve() {
-  /// TODO: Run Validity checks
-  // std::vector<Trajectory> valid_primitives = checkCollisions();  // TODO: Define minimum distance?
-
+  valid_primitives_ = checkCollisions();  // TODO: Define minimum distance?
+  if (valid_primitives_.size() < 1) {
+    return false;  // No valid motion primitive
+  }
   /// TODO: Rank primitives
   return true;
 }
 
-std::vector<Trajectory> &ManeuverLibrary::checkCollisions() {
+std::vector<Trajectory> ManeuverLibrary::checkCollisions() {
   // Return only the reference of trajectories
+  std::vector<Trajectory> valid_primitives;
+  for (auto &trajectory : motion_primitives_) {
+    bool no_collision = checkTrajectoryCollision(trajectory);
+    if (no_collision) {
+      trajectory.validity = true;
+      valid_primitives.push_back(trajectory);
+    } else {
+      trajectory.validity = false;
+    }
+  }
+  return valid_primitives;
 }
 
 bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory) {
-  bool under_terrain = false;
   /// TODO: Reference gridmap terrain
-  if (under_terrain) {
-    return false;
+  for (auto position : trajectory.position()) {
+    if (terrain_map_->isInCollision(position)) {
+      return false;
+    }
   }
   return true;
 }
@@ -154,8 +166,14 @@ Trajectory &ManeuverLibrary::getBestPrimitive() {
 }
 
 Trajectory &ManeuverLibrary::getRandomPrimitive() {
-  int i = std::rand() % motion_primitives_.size();
-  return motion_primitives_[i];
+  int i = 0;
+  if (valid_primitives_.size() > 0) {
+    i = std::rand() % valid_primitives_.size();
+    return valid_primitives_[i];
+  } else {
+    i = std::rand() % motion_primitives_.size();
+    return motion_primitives_[i];
+  }
 }
 
 Eigen::Vector4d ManeuverLibrary::rpy2quaternion(double roll, double pitch, double yaw) {

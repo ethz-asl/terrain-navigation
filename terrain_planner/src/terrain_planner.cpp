@@ -83,7 +83,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
 
   Trajectory primitive = maneuver_library_->getRandomPrimitive();
   // planner_profiler_->toc();
-  publishCandidateManeuvers();
+  publishCandidateManeuvers(maneuver_library_->getMotionPrimitives());
   publishTrajectory(primitive.position());
   MapPublishOnce();
 }
@@ -137,11 +137,19 @@ void TerrainPlanner::publishPoseHistory() {
   posehistory_pub_.publish(msg);
 }
 
-void TerrainPlanner::publishCandidateManeuvers() {
+void TerrainPlanner::publishCandidateManeuvers(const std::vector<Trajectory> &candidate_maneuvers) {
   visualization_msgs::MarkerArray msg;
+
+  std::vector<visualization_msgs::Marker> marker;
+  visualization_msgs::Marker mark;
+  mark.action = visualization_msgs::Marker::DELETEALL;
+  marker.push_back(mark);
+  msg.markers = marker;
+  candidate_manuever_pub_.publish(msg);
+
   std::vector<visualization_msgs::Marker> maneuver_library_vector;
   int i = 0;
-  for (auto maneuver : maneuver_library_->getMotionPrimitives()) {
+  for (auto maneuver : candidate_maneuvers) {
     maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));
     i++;
   }
