@@ -53,7 +53,7 @@ bool TerrainMap::isInCollision(const std::string &layer, const Eigen::Vector3d &
       return false;
     }
   } else {
-    return true; // Do not allow vehicle to go outside the map
+    return true;  // Do not allow vehicle to go outside the map
   }
 }
 
@@ -113,12 +113,14 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   grid_map_.setGeometry(length, resolution, position);
   grid_map_.setFrameId("world");
   grid_map_.add("elevation");
+  grid_map_.add("max_elevation");
   GDALRasterBand *elevationBand = dataset->GetRasterBand(1);
 
   std::vector<float> data(width * height, 0.0f);
   elevationBand->RasterIO(GF_Read, 0, 0, width, height, &data[0], width, height, GDT_Float32, 0, 0);
 
   grid_map::Matrix &layer_elevation = grid_map_["elevation"];
+  grid_map::Matrix &layer_max_elevation = grid_map_["max_elevation"];
   for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index gridMapIndex = *iterator;
     // TODO: This may be wrong if the pixelSizeY > 0
@@ -126,6 +128,7 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
     int y = gridMapIndex(1);
 
     layer_elevation(x, y) = data[gridMapIndex(0) + width * gridMapIndex(1)] - center_altitude;
+    layer_max_elevation(x, y) = layer_elevation(x, y) + 150.0;
   }
   return true;
 }

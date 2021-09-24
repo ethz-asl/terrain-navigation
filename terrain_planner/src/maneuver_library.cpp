@@ -108,7 +108,8 @@ std::vector<Trajectory> ManeuverLibrary::checkCollisions() {
 bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory) {
   /// TODO: Reference gridmap terrain
   for (auto position : trajectory.position()) {
-    if (terrain_map_->isInCollision("elevation", position)) {
+    // TODO: Make max terrain optional
+    if (terrain_map_->isInCollision("elevation", position) || !terrain_map_->isInCollision("max_elevation", position)) {
       return false;
     }
   }

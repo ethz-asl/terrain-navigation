@@ -95,7 +95,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // planner_profiler_->tic();
-  ///TODO: Plan from next segment
+  /// TODO: Plan from next segment
   Eigen::Vector3d start_position = vehicle_position_ + vehicle_velocity_ * 0.4;
   maneuver_library_->generateMotionPrimitives(start_position, vehicle_velocity_);
   /// TODO: Switch to chrono
@@ -219,14 +219,16 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position) {
 }
 
 void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude) {
-  Eigen::Vector4d mesh_attitude = quatMultiplication(attitude, Eigen::Vector4d(std::cos(M_PI/2), 0.0, 0.0, std::sin(M_PI/2)));
+  Eigen::Vector4d mesh_attitude =
+      quatMultiplication(attitude, Eigen::Vector4d(std::cos(M_PI / 2), 0.0, 0.0, std::sin(M_PI / 2)));
   geometry_msgs::Pose vehicle_pose = vector3d2PoseMsg(position, mesh_attitude);
   visualization_msgs::Marker marker;
   marker.header.stamp = ros::Time::now();
   marker.header.frame_id = "map";
   marker.type = visualization_msgs::Marker::MESH_RESOURCE;
   marker.ns = "my_namespace";
-  marker.mesh_resource = "file:///home/jaeyoung/src/PX4-Autopilot/Tools/sitl_gazebo/models/believer/meshes/believer_body.dae";
+  marker.mesh_resource =
+      "file:///home/jaeyoung/src/PX4-Autopilot/Tools/sitl_gazebo/models/believer/meshes/believer_body.dae";
   marker.scale.x = 10.0;
   marker.scale.y = 10.0;
   marker.scale.z = 10.0;
