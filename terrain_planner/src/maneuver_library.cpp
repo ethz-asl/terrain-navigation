@@ -46,10 +46,12 @@
 ManeuverLibrary::ManeuverLibrary() {
   terrain_map_ = std::make_shared<TerrainMap>();
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.25));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.25));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.25));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -3.0, -0.25));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.314));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.314));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.15));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.15));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -3.0, -0.15));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, -3.0, -0.0));
 }
@@ -62,22 +64,38 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
 
   /// TODO: Reformulate as recursive
   /// TODO: Introduce segments
+  std::vector<Trajectory> first_segment;
   for (auto rate : primitive_rates_) {
     Trajectory trajectory = generateArcTrajectory(rate, current_pos, current_vel);
-    Eigen::Vector3d end_pos = trajectory.states.back().position;
-    Eigen::Vector3d end_vel = trajectory.states.back().velocity;
+    first_segment.push_back(trajectory);
+  }
+
+  // Append second segment for each primitive
+  std::vector<Trajectory> second_segment;
+  for (auto trajectory : first_segment) {
     for (auto rate : primitive_rates_) {
-      Trajectory trajectory_1 = trajectory;
-      AppendSegment(trajectory_1, rate, end_pos, end_vel);
-      Eigen::Vector3d end_pos2 = trajectory_1.states.back().position;
-      Eigen::Vector3d end_vel2 = trajectory_1.states.back().velocity;
-      for (auto rate : primitive_rates_) {
-        Trajectory trajectory_2 = trajectory_1;
-        AppendSegment(trajectory_2, rate, end_pos2, end_vel2);
-        motion_primitives_.push_back(trajectory_2);
-      }
+      Eigen::Vector3d end_pos = trajectory.states.back().position;
+      Eigen::Vector3d end_vel = trajectory.states.back().velocity;
+      Trajectory new_segment = generateArcTrajectory(rate, end_pos, end_vel);
+      Trajectory trajectory_2 = trajectory;
+      trajectory_2.states.insert(trajectory_2.states.end(), new_segment.states.begin(), new_segment.states.end());
+      second_segment.push_back(trajectory_2);
     }
   }
+
+  std::vector<Trajectory> third_segment;
+  for (auto trajectory : first_segment) {
+    for (auto rate : primitive_rates_) {
+      Eigen::Vector3d end_pos = trajectory.states.back().position;
+      Eigen::Vector3d end_vel = trajectory.states.back().velocity;
+      Trajectory new_segment = generateArcTrajectory(rate, end_pos, end_vel);
+      Trajectory trajectory_2 = trajectory;
+      trajectory_2.states.insert(trajectory_2.states.end(), new_segment.states.begin(), new_segment.states.end());
+      third_segment.push_back(trajectory_2);
+    }
+  }
+  motion_primitives_ = third_segment;
+
   return motion_primitives_;
 }
 

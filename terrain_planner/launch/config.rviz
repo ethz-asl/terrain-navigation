@@ -121,7 +121,7 @@ Visualization Manager:
       Unreliable: false
       Use Rainbow: true
       Value: true
-    - Alpha: 0.5
+    - Alpha: 0.20000000298023224
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
       Color: 255; 0; 0
@@ -201,25 +201,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1166.6904296875
+      Distance: 2533.80224609375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -20.0589599609375
-        Y: -121.47795104980469
-        Z: 116.33721923828125
+        X: -371.89501953125
+        Y: -107.34437561035156
+        Z: -41.85490417480469
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.47570157051086426
+      Pitch: 0.5247969031333923
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.5619093775749207
+      Yaw: 6.208251476287842
     Saved: ~
 Window Geometry:
   Displays:
