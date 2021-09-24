@@ -13,6 +13,8 @@
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
+  <build_depend>mavros</build_depend>
+  <build_depend>mavros_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>grid_map_core</build_depend>
@@ -21,11 +23,13 @@
   <build_depend>grid_map_msgs</build_depend>
   <build_depend>grid_map_pcl</build_depend>
   <build_depend>tf</build_depend>
+  <build_depend>interactive_markers</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend> grid_map_visualization</run_depend>
   <run_depend>grid_map_rviz_plugin</run_depend>
- 
+  <run_depend>interactive_markers</run_depend>
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_msgs
   grid_map_ros
   grid_map_pcl
+  interactive_markers
 )
 
 catkin_package(
