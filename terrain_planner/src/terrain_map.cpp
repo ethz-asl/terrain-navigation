@@ -43,17 +43,18 @@ TerrainMap::TerrainMap() {}
 
 TerrainMap::~TerrainMap() {}
 
-bool TerrainMap::isInCollision(const Eigen::Vector3d &position) {
+bool TerrainMap::isInCollision(const std::string &layer, const Eigen::Vector3d &position) {
   Eigen::Vector2d position_2d(position(0), position(1));
   if (grid_map_.isInside(position_2d)) {
-    double elevation = grid_map_.atPosition("elevation", position_2d);
+    double elevation = grid_map_.atPosition(layer, position_2d);
     if (elevation > position(2)) {
       return true;
     } else {
       return false;
     }
+  } else {
+    return true; // Do not allow vehicle to go outside the map
   }
-  return true; // Do not allow vehicle to go outside the map
 }
 
 bool TerrainMap::initializeFromGeotiff(const std::string &path) {
