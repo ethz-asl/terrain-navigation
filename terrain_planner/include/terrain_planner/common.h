@@ -55,6 +55,11 @@ Eigen::Vector3d toEigen(const geometry_msgs::Vector3 &v3) {
   return ev3;
 }
 
+Eigen::Vector3d toEigen(const geometry_msgs::Pose &p) {
+  Eigen::Vector3d position(p.position.x, p.position.y, p.position.z);
+  return position;
+}
+
 geometry_msgs::Pose vector3d2PoseMsg(const Eigen::Vector3d position, const Eigen::Vector4d orientation) {
   geometry_msgs::Pose encode_msg;
 

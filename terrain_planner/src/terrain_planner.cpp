@@ -50,7 +50,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
   cmdloop_timer_ = nh_.createTimer(ros::Duration(0.1), &TerrainPlanner::cmdloopCallback,
                                    this);  // Define timer for constant loop rate
-  statusloop_timer_ = nh_.createTimer(ros::Duration(5.0), &TerrainPlanner::statusloopCallback,
+  statusloop_timer_ = nh_.createTimer(ros::Duration(10.0), &TerrainPlanner::statusloopCallback,
                                       this);  // Define timer for constant loop rate
 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
@@ -72,7 +72,6 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   maneuver_library_->setTerrainMap(map_path);
   planner_profiler_ = std::make_shared<Profiler>("planner");
 
-
   set_goal_marker_.header.frame_id = "map";
   set_goal_marker_.name = "set_pose";
   set_goal_marker_.scale = 100.0;
@@ -88,11 +87,9 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   control.orientation.y = kSqrt2Over2;
   control.orientation.z = 0;
   control.name = "rotate_yaw";
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
+  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
   set_goal_marker_.controls.push_back(control);
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
   control.name = "move z";
   set_goal_marker_.controls.push_back(control);
 
@@ -100,8 +97,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   control.orientation.x = kSqrt2Over2;
   control.orientation.y = 0;
   control.orientation.z = 0;
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
   control.name = "move x";
   set_goal_marker_.controls.push_back(control);
 
@@ -109,16 +105,12 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   control.orientation.x = 0;
   control.orientation.y = 0;
   control.orientation.z = kSqrt2Over2;
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
   control.name = "move y";
   set_goal_marker_.controls.push_back(control);
 
   marker_server_.insert(set_goal_marker_);
-    marker_server_.setCallback(
-        set_goal_marker_.name,
-        boost::bind(&TerrainPlanner::processSetPoseFeedback, this,
-                    _1));
+  marker_server_.setCallback(set_goal_marker_.name, boost::bind(&TerrainPlanner::processSetPoseFeedback, this, _1));
   marker_server_.applyChanges();
 }
 TerrainPlanner::~TerrainPlanner() {
@@ -151,7 +143,8 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   plan_time_ = ros::Time::now();
   bool result = maneuver_library_->Solve();
 
-  reference_primitive_ = maneuver_library_->getRandomPrimitive();
+  // reference_primitive_ = maneuver_library_->getRandomPrimitive();
+  reference_primitive_ = maneuver_library_->getBestPrimitive();
   // planner_profiler_->toc();
   publishCandidateManeuvers(maneuver_library_->getMotionPrimitives());
   publishTrajectory(reference_primitive_.position());
@@ -292,11 +285,11 @@ void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const E
   vehicle_pose_pub_.publish(marker);
 }
 
-void TerrainPlanner::processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
-  //TODO: Set goal position from menu
-  if (feedback->event_type ==
-      visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP) {
-
+void TerrainPlanner::processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  // TODO: Set goal position from menu
+  if (feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP) {
+    goal_pos_ = toEigen(feedback->pose);
+    maneuver_library_->setGoalPosition(goal_pos_);
   }
   marker_server_.applyChanges();
 }

@@ -62,6 +62,7 @@ class ManeuverLibrary {
     terrain_map_->initializeFromGeotiff(map_path);
     terrain_map_->AddLayerDistanceTransform("distance_surface");
   };
+  void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
   double getTimeStep() { return dt_; }
@@ -80,6 +81,7 @@ class ManeuverLibrary {
   std::vector<Trajectory> valid_primitives_;
   std::vector<Eigen::Vector3d> primitive_rates_;
   int num_segments{3};
+  Eigen::Vector3d goal_pos_;
   double dt_{0.1};
   double planning_horizon_{10.0};
   double cruise_speed_{15.0};

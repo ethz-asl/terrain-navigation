@@ -167,15 +167,26 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
 }
 
 Trajectory &ManeuverLibrary::getBestPrimitive() {
+  // Calculate utilities of each primitives
+  for (auto &trajectory : valid_primitives_) {
+    Eigen::Vector3d end_pos = trajectory.states.back().position;
+    Eigen::Vector3d distance_vector = end_pos - goal_pos_;
+    trajectory.utility = 1 / distance_vector.norm();
+  }
+
   double best_utility = 0.0;
   int best_index = 0;
-  for (int k = 0; k < motion_primitives_.size(); k++) {
-    if (motion_primitives_[k].utility > best_utility) {
-      best_utility = motion_primitives_[k].utility;
-      best_index = k;
+  if (valid_primitives_.size() > 0) {
+    for (int k = 0; k < valid_primitives_.size(); k++) {
+      if (valid_primitives_[k].utility > best_utility) {
+        best_utility = valid_primitives_[k].utility;
+        best_index = k;
+      }
     }
+    return valid_primitives_[best_index];
+  } else {
+    return getRandomPrimitive();
   }
-  return motion_primitives_[best_index];
 }
 
 Trajectory &ManeuverLibrary::getRandomPrimitive() {

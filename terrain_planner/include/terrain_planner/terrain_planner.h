@@ -49,8 +49,8 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <nav_msgs/Path.h>
 #include <interactive_markers/interactive_marker_server.h>
+#include <nav_msgs/Path.h>
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
 
 #include <Eigen/Dense>
@@ -71,7 +71,7 @@ class TerrainPlanner {
   void publishCandidateManeuvers(const std::vector<Trajectory> &candidate_maneuvers);
   void publishPositionSetpoints(const Eigen::Vector3d &position);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
-  void processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;
@@ -87,6 +87,7 @@ class TerrainPlanner {
   ros::Time plan_time_;
   interactive_markers::InteractiveMarkerServer marker_server_;
   visualization_msgs::InteractiveMarker set_goal_marker_;
+  Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
   std::shared_ptr<Profiler> planner_profiler_;
