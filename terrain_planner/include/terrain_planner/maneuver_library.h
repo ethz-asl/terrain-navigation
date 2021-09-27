@@ -57,7 +57,10 @@ class ManeuverLibrary {
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, Eigen::Vector3d current_pos, Eigen::Vector3d current_vel);
   double getPlanningHorizon() { return planning_horizon_; };
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
-  void setTerrainMap(const std::string& map_path) { terrain_map_->initializeFromGeotiff(map_path); };
+  void setTerrainMap(const std::string& map_path) {
+    terrain_map_->initializeFromGeotiff(map_path);
+    terrain_map_->AddLayerDistanceTransform("distance_surface");
+  };
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
   double getTimeStep() { return dt_; }

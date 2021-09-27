@@ -132,3 +132,13 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   }
   return true;
 }
+
+bool TerrainMap::AddLayerDistanceTransform(const std::string &string) {
+  grid_map_.add("distance_surface");
+
+  grid_map::Matrix &layer_elevation = grid_map_["elevation"];
+  for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
+    const grid_map::Index MapIndex = *iterator;
+  }
+  return true;
+}
