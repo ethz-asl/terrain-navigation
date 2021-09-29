@@ -7,6 +7,6 @@
         <param name="terrain_path" value="$(find terrain_planner)/../resources/duerrboden.tif"/>
     </node>
     <group if="$(arg visualization)">
-        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config.rviz" />
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config_dfs.rviz" />
     </group>
 </launch>
