@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   std::shared_ptr<ManeuverLibrary> maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setTerrainMap(map_path);
 
-  while(true) {
+  while (true) {
     maneuver_library_->getGridMap().setTimestamp(ros::Time::now().toNSec());
     grid_map_msgs::GridMap message;
     grid_map::GridMapRosConverter::toMessage(maneuver_library_->getGridMap(), message);

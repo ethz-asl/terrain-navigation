@@ -38,6 +38,8 @@
  */
 
 #include "terrain_planner/terrain_map.h"
+#include <grid_map_core/iterators/CircleIterator.hpp>
+#include <grid_map_core/iterators/GridMapIterator.hpp>
 
 TerrainMap::TerrainMap() {}
 
@@ -139,6 +141,21 @@ bool TerrainMap::AddLayerDistanceTransform(const std::string &string) {
   grid_map::Matrix &layer_elevation = grid_map_["elevation"];
   for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index MapIndex = *iterator;
+    /// TODO: Add circle iterator
+    Eigen::Vector3d center_pos;
+    grid_map_.getPosition3("elevation", MapIndex, center_pos);
+    Eigen::Vector2d center_pos_2d(center_pos(0), center_pos(1));
+    double surface_distance = 50.0;
+    for (grid_map::CircleIterator submapIterator(grid_map_, center_pos_2d, surface_distance); !submapIterator.isPastEnd();
+         ++submapIterator) {
+      const grid_map::Index SubmapIndex = *submapIterator;
+      Eigen::Vector3d cell_position;
+      grid_map_.getPosition3("elevation", SubmapIndex, cell_position);
+      double distance = (cell_position - center_pos).norm();
+      if (distance < surface_distance) {
+        grid_map_.at("distance_surface", MapIndex) = std::sqrt(std::pow(surface_distance, 2) - std::pow(distance, 2));
+      }
+    }
   }
   return true;
 }
