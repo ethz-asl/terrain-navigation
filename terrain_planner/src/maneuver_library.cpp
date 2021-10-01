@@ -66,36 +66,15 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
   /// TODO: Introduce segments
   std::vector<Trajectory> first_segment;
   for (auto rate : primitive_rates_) {
-    Trajectory trajectory = generateArcTrajectory(rate, current_pos, current_vel);
+    Trajectory trajectory = generateArcTrajectory(rate, planning_horizon_, current_pos, current_vel);
     first_segment.push_back(trajectory);
   }
 
   // Append second segment for each primitive
-  std::vector<Trajectory> second_segment;
-  for (auto trajectory : first_segment) {
-    for (auto rate : primitive_rates_) {
-      Eigen::Vector3d end_pos = trajectory.states.back().position;
-      Eigen::Vector3d end_vel = trajectory.states.back().velocity;
-      Trajectory new_segment = generateArcTrajectory(rate, end_pos, end_vel);
-      Trajectory trajectory_2 = trajectory;
-      trajectory_2.states.insert(trajectory_2.states.end(), new_segment.states.begin(), new_segment.states.end());
-      second_segment.push_back(trajectory_2);
-    }
-  }
+  std::vector<Trajectory> second_segment = AppendSegment(first_segment, primitive_rates_, planning_horizon_);
+  std::vector<Trajectory> third_segment = AppendSegment(second_segment, primitive_rates_, planning_horizon_);
 
-  std::vector<Trajectory> third_segment;
-  for (auto trajectory : first_segment) {
-    for (auto rate : primitive_rates_) {
-      Eigen::Vector3d end_pos = trajectory.states.back().position;
-      Eigen::Vector3d end_vel = trajectory.states.back().velocity;
-      Trajectory new_segment = generateArcTrajectory(rate, end_pos, end_vel);
-      Trajectory trajectory_2 = trajectory;
-      trajectory_2.states.insert(trajectory_2.states.end(), new_segment.states.begin(), new_segment.states.end());
-      third_segment.push_back(trajectory_2);
-    }
-  }
   motion_primitives_ = third_segment;
-
   return motion_primitives_;
 }
 
@@ -134,14 +113,25 @@ bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory) {
   return true;
 }
 
-void ManeuverLibrary::AppendSegment(Trajectory &trajectory, const Eigen::Vector3d &rate, const Eigen::Vector3d &end_pos,
-                                    const Eigen::Vector3d &end_vel) {
-  Trajectory trajectory_2 = generateArcTrajectory(rate, end_pos, end_vel);
-  trajectory.states.insert(trajectory.states.end(), trajectory_2.states.begin(), trajectory_2.states.end());
+std::vector<Trajectory> ManeuverLibrary::AppendSegment(std::vector<Trajectory> &first_segment,
+                                                       const std::vector<Eigen::Vector3d> &rates, const double horizon) {
+  // Append second segment for each primitive
+  std::vector<Trajectory> second_segment;
+  for (auto trajectory : first_segment) {
+    for (auto rate : rates) {
+      Eigen::Vector3d end_pos = trajectory.states.back().position;
+      Eigen::Vector3d end_vel = trajectory.states.back().velocity;
+      Trajectory new_segment = generateArcTrajectory(rate, horizon, end_pos, end_vel);
+      Trajectory trajectory_2 = trajectory;
+      trajectory_2.states.insert(trajectory_2.states.end(), new_segment.states.begin(), new_segment.states.end());
+      second_segment.push_back(trajectory_2);
+    }
+  }
+  return second_segment;
 }
 
-Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, Eigen::Vector3d current_pos,
-                                                  Eigen::Vector3d current_vel) {
+Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const double horizon,
+                                                  Eigen::Vector3d current_pos, Eigen::Vector3d current_vel) {
   Trajectory trajectory;
   trajectory.states.clear();
 
@@ -149,7 +139,7 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, Eigen::V
   const double current_yaw = std::atan2(-1.0 * current_vel(1), current_vel(0));
   const double climb_rate = rate(1);
 
-  for (int i = 0; i < std::max(1.0, planning_horizon_ / dt_); i++) {
+  for (int i = 0; i < std::max(1.0, horizon / dt_); i++) {
     if (std::abs(rate(2)) < 0.0001) {
       rate(2) > 0.0 ? rate(2) = 0.0001 : rate(2) = -0.0001;
     }

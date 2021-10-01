@@ -54,7 +54,8 @@ class ManeuverLibrary {
   std::vector<Trajectory>& getValidPrimitives() { return valid_primitives_; }
   Trajectory& getBestPrimitive();
   Trajectory& getRandomPrimitive();
-  Trajectory generateArcTrajectory(Eigen::Vector3d rates, Eigen::Vector3d current_pos, Eigen::Vector3d current_vel);
+  Trajectory generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
+                                   Eigen::Vector3d current_vel);
   double getPlanningHorizon() { return planning_horizon_; };
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
   void setTerrainMap(const std::string& map_path) {
@@ -67,8 +68,8 @@ class ManeuverLibrary {
 
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
-  void AppendSegment(Trajectory& trajectory, const Eigen::Vector3d& rate, const Eigen::Vector3d& end_pos,
-                     const Eigen::Vector3d& end_vel);
+  std::vector<Trajectory> AppendSegment(std::vector<Trajectory>& first_segment,
+                                        const std::vector<Eigen::Vector3d>& rate, const double horizon);
   std::vector<Trajectory> checkCollisions();
   bool checkTrajectoryCollision(Trajectory& trajectory);
 
