@@ -46,12 +46,16 @@
 ManeuverLibrary::ManeuverLibrary() {
   terrain_map_ = std::make_shared<TerrainMap>();
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.0));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.0, -0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.15));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.3));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.3));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.0, -0.3));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.15));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -3.0, -0.15));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.0));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -3.0, -0.0));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.0, -0.15));
 }
 
 ManeuverLibrary::~ManeuverLibrary() {}
@@ -72,7 +76,7 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
   std::vector<Trajectory> third_segment = AppendSegment(second_segment, primitive_rates_, planning_horizon_);
 
   std::vector<Eigen::Vector3d> emergency_rates;
-  emergency_rates.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
+  emergency_rates.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
   double horizon = 2 * M_PI / emergency_rates[0](2);
   std::vector<Trajectory> fourth_segment = AppendSegment(third_segment, emergency_rates, horizon);
 

@@ -68,7 +68,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   std::string map_path;
   nh_private.param<std::string>("terrain_path", map_path, "resources/cadastre.tif");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
-  maneuver_library_->setPlanningHorizon(10.0);
+  maneuver_library_->setPlanningHorizon(5.0);
   maneuver_library_->setTerrainMap(map_path);
   planner_profiler_ = std::make_shared<Profiler>("planner");
 
