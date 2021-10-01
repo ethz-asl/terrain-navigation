@@ -170,8 +170,11 @@ void TerrainPlanner::publishCandidateManeuvers(const std::vector<Trajectory> &ca
 
   std::vector<visualization_msgs::Marker> maneuver_library_vector;
   int i = 0;
+  bool visualize_invalid_trajectories = false;
   for (auto maneuver : candidate_maneuvers) {
-    maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));
+    if (maneuver.valid() || visualize_invalid_trajectories) {
+      maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));
+    }
     i++;
   }
   msg.markers = maneuver_library_vector;

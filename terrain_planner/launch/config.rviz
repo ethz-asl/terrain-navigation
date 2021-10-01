@@ -154,7 +154,7 @@ Visualization Manager:
       Marker Topic: /visualization_marker
       Name: MarkerArray
       Namespaces:
-        {}
+        normals: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -162,7 +162,7 @@ Visualization Manager:
       Marker Topic: /position_target
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -170,13 +170,13 @@ Visualization Manager:
       Marker Topic: /vehicle_pose_marker
       Name: Marker
       Namespaces:
-        {}
+        my_namespace: true
       Queue Size: 100
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
-      Color: 200; 200; 200
+      Color: 85; 170; 255
       Color Layer: elevation
       Color Transformer: FlatColor
       Enabled: true
@@ -222,7 +222,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2999.242431640625
+      Distance: 2322.61328125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -237,10 +237,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.2547971308231354
+      Pitch: 0.3547970950603485
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.2750439941883087
+      Yaw: 5.823227405548096
     Saved: ~
 Window Geometry:
   Displays:

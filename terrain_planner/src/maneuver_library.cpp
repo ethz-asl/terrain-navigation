@@ -46,8 +46,6 @@
 ManeuverLibrary::ManeuverLibrary() {
   terrain_map_ = std::make_shared<TerrainMap>();
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.314));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.314));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.15));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.15));
@@ -63,7 +61,6 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
   motion_primitives_.clear();
 
   /// TODO: Reformulate as recursive
-  /// TODO: Introduce segments
   std::vector<Trajectory> first_segment;
   for (auto rate : primitive_rates_) {
     Trajectory trajectory = generateArcTrajectory(rate, planning_horizon_, current_pos, current_vel);
@@ -74,7 +71,12 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
   std::vector<Trajectory> second_segment = AppendSegment(first_segment, primitive_rates_, planning_horizon_);
   std::vector<Trajectory> third_segment = AppendSegment(second_segment, primitive_rates_, planning_horizon_);
 
-  motion_primitives_ = third_segment;
+  std::vector<Eigen::Vector3d> emergency_rates;
+  emergency_rates.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
+  double horizon = 2 * M_PI / emergency_rates[0](2);
+  std::vector<Trajectory> fourth_segment = AppendSegment(third_segment, emergency_rates, horizon);
+
+  motion_primitives_ = fourth_segment;
   return motion_primitives_;
 }
 
@@ -106,7 +108,8 @@ bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory) {
   /// TODO: Reference gridmap terrain
   for (auto position : trajectory.position()) {
     // TODO: Make max terrain optional
-    if (terrain_map_->isInCollision("elevation", position) || !terrain_map_->isInCollision("max_elevation", position)) {
+    if (terrain_map_->isInCollision("distance_surface", position) ||
+        !terrain_map_->isInCollision("max_elevation", position)) {
       return false;
     }
   }
@@ -114,7 +117,8 @@ bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory) {
 }
 
 std::vector<Trajectory> ManeuverLibrary::AppendSegment(std::vector<Trajectory> &first_segment,
-                                                       const std::vector<Eigen::Vector3d> &rates, const double horizon) {
+                                                       const std::vector<Eigen::Vector3d> &rates,
+                                                       const double horizon) {
   // Append second segment for each primitive
   std::vector<Trajectory> second_segment;
   for (auto trajectory : first_segment) {
