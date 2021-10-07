@@ -72,7 +72,8 @@ class ManeuverLibrary {
   std::vector<Trajectory> AppendSegment(std::vector<Trajectory>& first_segment,
                                         const std::vector<Eigen::Vector3d>& rates, const double horizon);
   std::vector<Trajectory> checkCollisions();
-  bool checkTrajectoryCollision(Trajectory& trajectory);
+  std::vector<Trajectory> checkRelaxedCollisions();
+  bool checkTrajectoryCollision(Trajectory& trajectory, const std::string& layer, bool is_above = true);
 
   std::shared_ptr<TerrainMap> terrain_map_;
 

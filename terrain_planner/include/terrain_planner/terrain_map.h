@@ -52,7 +52,7 @@ class TerrainMap {
   bool initializeFromGeotiff(const std::string& path);
   bool AddLayerDistanceTransform(const std::string& string);
   grid_map::GridMap& getGridMap() { return grid_map_; }
-  bool isInCollision(const std::string& layer, const Eigen::Vector3d& position);
+  bool isInCollision(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
 
  private:
   grid_map::GridMap grid_map_;

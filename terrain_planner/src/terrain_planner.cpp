@@ -142,9 +142,11 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
   bool result = maneuver_library_->Solve();
-
-  // reference_primitive_ = maneuver_library_->getRandomPrimitive();
-  reference_primitive_ = maneuver_library_->getBestPrimitive();
+  if (result) {
+    reference_primitive_ = maneuver_library_->getBestPrimitive();
+  } else {
+    reference_primitive_ = maneuver_library_->getRandomPrimitive();
+  }
   // planner_profiler_->toc();
   publishCandidateManeuvers(maneuver_library_->getMotionPrimitives());
   publishTrajectory(reference_primitive_.position());

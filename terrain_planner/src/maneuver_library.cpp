@@ -86,8 +86,13 @@ std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::
 
 bool ManeuverLibrary::Solve() {
   valid_primitives_ = checkCollisions();  // TODO: Define minimum distance?
+
   if (valid_primitives_.size() < 1) {
-    return false;  // No valid motion primitive
+    // Try to see if relaxing max altitude fixes the problem
+    valid_primitives_ = checkRelaxedCollisions();  // TODO: Define minimum distance?
+    if (valid_primitives_.size() < 1) {
+      return false;  // No valid motion primitive
+    }
   }
   /// TODO: Rank primitives
   return true;
@@ -97,8 +102,9 @@ std::vector<Trajectory> ManeuverLibrary::checkCollisions() {
   // Return only the reference of trajectories
   std::vector<Trajectory> valid_primitives;
   for (auto &trajectory : motion_primitives_) {
-    bool no_collision = checkTrajectoryCollision(trajectory);
-    if (no_collision) {
+    bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface", true);
+    bool max_altitude_collision = checkTrajectoryCollision(trajectory, "max_elevation", false);
+    if (no_terrain_collision && max_altitude_collision) {
       trajectory.validity = true;
       valid_primitives.push_back(trajectory);
     } else {
@@ -108,12 +114,27 @@ std::vector<Trajectory> ManeuverLibrary::checkCollisions() {
   return valid_primitives;
 }
 
-bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory) {
+std::vector<Trajectory> ManeuverLibrary::checkRelaxedCollisions() {
+  // Return only the reference of trajectories
+  std::vector<Trajectory> valid_primitives;
+  for (auto &trajectory : motion_primitives_) {
+    bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface");
+
+    if (no_terrain_collision) {
+      trajectory.validity = true;
+      valid_primitives.push_back(trajectory);
+    } else {
+      trajectory.validity = false;
+    }
+  }
+  return valid_primitives;
+}
+
+bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory, const std::string &layer, bool is_above) {
   /// TODO: Reference gridmap terrain
   for (auto position : trajectory.position()) {
     // TODO: Make max terrain optional
-    if (terrain_map_->isInCollision("distance_surface", position) ||
-        !terrain_map_->isInCollision("max_elevation", position)) {
+    if (terrain_map_->isInCollision(layer, position, is_above)) {
       return false;
     }
   }
