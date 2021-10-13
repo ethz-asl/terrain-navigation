@@ -69,7 +69,7 @@ class TerrainPlanner {
   void MapPublishOnce();
   void publishPoseHistory();
   void publishCandidateManeuvers(const std::vector<Trajectory> &candidate_maneuvers);
-  void publishPositionSetpoints(const Eigen::Vector3d &position);
+  void publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   ros::NodeHandle nh_;

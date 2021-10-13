@@ -178,9 +178,9 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
         cruise_speed_ / rate(2) *
             Eigen::Vector3d(std::sin(yaw) - std::sin(current_yaw), std::cos(yaw) - std::cos(current_yaw), 0) +
         Eigen::Vector3d(0, 0, climb_rate * time) + current_pos;
-    Eigen::Vector3d vel = cruise_speed_ * Eigen::Vector3d(std::cos(yaw), -std::sin(yaw), climb_rate);
+    Eigen::Vector3d vel = Eigen::Vector3d(cruise_speed_ * std::cos(yaw), -cruise_speed_ * std::sin(yaw), -climb_rate);
     const double roll = std::atan(rate(2) * cruise_speed_ / 9.81);
-    const double pitch = std::atan(climb_rate / cruise_speed_);  /// TODO: link pitch to climbrate
+    const double pitch = std::atan(climb_rate / cruise_speed_);
     Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);    // TODO: why the hell do you need to reverse signs?
     State state_vector;
     state_vector.position = pos;

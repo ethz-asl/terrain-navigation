@@ -120,14 +120,13 @@ TerrainPlanner::~TerrainPlanner() {
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
   // TODO: Get position setpoint based on time
   double time_since_start = (ros::Time::now() - plan_time_).toSec();
-  std::vector<Eigen::Vector3d> trajectory = reference_primitive_.position();
-  int i = 1;
-  for (auto position : trajectory) {
+  std::vector<Eigen::Vector3d> trajectory_position = reference_primitive_.position();
+  std::vector<Eigen::Vector3d> trajectory_velocity = reference_primitive_.velocity();
+
+  for (int i = 1; i < trajectory_position.size(); i++) {
     if (time_since_start < 0.1 * i) {
-      publishPositionSetpoints(position);
+      publishPositionSetpoints(trajectory_position[i], trajectory_velocity[i]);
       break;
-    } else {
-      i++;
     }
   }
   publishVehiclePose(vehicle_position_, vehicle_attitude_);
@@ -225,7 +224,7 @@ void TerrainPlanner::publishCandidateManeuvers(const std::vector<Trajectory> &ca
   candidate_manuever_pub_.publish(msg);
 }
 
-void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position) {
+void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity) {
   using namespace mavros_msgs;
   // Publishes position setpoints sequentially as trajectory setpoints
   mavros_msgs::PositionTarget msg;
@@ -235,6 +234,10 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position) {
   msg.position.x = position(0);
   msg.position.y = position(1);
   msg.position.z = position(2);
+  msg.velocity.x = velocity(0);
+  msg.velocity.y = velocity(1);
+  msg.velocity.z = velocity(2);
+
   position_setpoint_pub_.publish(msg);
 
   visualization_msgs::Marker marker;
