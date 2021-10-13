@@ -195,7 +195,7 @@ Trajectory &ManeuverLibrary::getBestPrimitive() {
   // Calculate utilities of each primitives
   for (auto &trajectory : valid_primitives_) {
     Eigen::Vector3d end_pos = trajectory.states.back().position;
-    Eigen::Vector3d distance_vector = end_pos - goal_pos_;
+    Eigen::Vector2d distance_vector = Eigen::Vector2d(end_pos(0), end_pos(1)) - Eigen::Vector2d(goal_pos_(0), goal_pos_(1));
     trajectory.utility = 1 / distance_vector.norm();
   }
 
