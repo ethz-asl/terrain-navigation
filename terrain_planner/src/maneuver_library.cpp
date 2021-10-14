@@ -181,7 +181,7 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
     Eigen::Vector3d vel = Eigen::Vector3d(cruise_speed_ * std::cos(yaw), -cruise_speed_ * std::sin(yaw), -climb_rate);
     const double roll = std::atan(rate(2) * cruise_speed_ / 9.81);
     const double pitch = std::atan(climb_rate / cruise_speed_);
-    Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);    // TODO: why the hell do you need to reverse signs?
+    Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);  // TODO: why the hell do you need to reverse signs?
     State state_vector;
     state_vector.position = pos;
     state_vector.velocity = vel;
@@ -195,7 +195,8 @@ Trajectory &ManeuverLibrary::getBestPrimitive() {
   // Calculate utilities of each primitives
   for (auto &trajectory : valid_primitives_) {
     Eigen::Vector3d end_pos = trajectory.states.back().position;
-    Eigen::Vector2d distance_vector = Eigen::Vector2d(end_pos(0), end_pos(1)) - Eigen::Vector2d(goal_pos_(0), goal_pos_(1));
+    Eigen::Vector2d distance_vector =
+        Eigen::Vector2d(end_pos(0), end_pos(1)) - Eigen::Vector2d(goal_pos_(0), goal_pos_(1));
     trajectory.utility = 1 / distance_vector.norm();
   }
 
