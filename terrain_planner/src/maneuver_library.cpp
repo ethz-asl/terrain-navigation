@@ -60,25 +60,27 @@ ManeuverLibrary::ManeuverLibrary() {
 
 ManeuverLibrary::~ManeuverLibrary() {}
 
-std::vector<Trajectory> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
-                                                                   const Eigen::Vector3d current_vel) {
+std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
+                                                                           const Eigen::Vector3d current_vel) {
   motion_primitives_.clear();
 
   /// TODO: Reformulate as recursive
-  std::vector<Trajectory> first_segment;
+  std::vector<TrajectorySegments> first_segment;
   for (auto rate : primitive_rates_) {
     Trajectory trajectory = generateArcTrajectory(rate, planning_horizon_, current_pos, current_vel);
-    first_segment.push_back(trajectory);
+    TrajectorySegments trajectory_segments;
+    trajectory_segments.appendSegment(trajectory);
+    first_segment.push_back(trajectory_segments);
   }
 
   // Append second segment for each primitive
-  std::vector<Trajectory> second_segment = AppendSegment(first_segment, primitive_rates_, planning_horizon_);
-  std::vector<Trajectory> third_segment = AppendSegment(second_segment, primitive_rates_, planning_horizon_);
+  std::vector<TrajectorySegments> second_segment = AppendSegment(first_segment, primitive_rates_, planning_horizon_);
+  std::vector<TrajectorySegments> third_segment = AppendSegment(second_segment, primitive_rates_, planning_horizon_);
 
   std::vector<Eigen::Vector3d> emergency_rates;
   emergency_rates.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
   double horizon = 2 * M_PI / emergency_rates[0](2);
-  std::vector<Trajectory> fourth_segment = AppendSegment(third_segment, emergency_rates, horizon);
+  std::vector<TrajectorySegments> fourth_segment = AppendSegment(third_segment, emergency_rates, horizon);
 
   motion_primitives_ = fourth_segment;
   return motion_primitives_;
@@ -141,18 +143,18 @@ bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory, const std
   return true;
 }
 
-std::vector<Trajectory> ManeuverLibrary::AppendSegment(std::vector<Trajectory> &first_segment,
-                                                       const std::vector<Eigen::Vector3d> &rates,
-                                                       const double horizon) {
+std::vector<TrajectorySegments> ManeuverLibrary::AppendSegment(std::vector<TrajectorySegments> &first_segment,
+                                                               const std::vector<Eigen::Vector3d> &rates,
+                                                               const double horizon) {
   // Append second segment for each primitive
-  std::vector<Trajectory> second_segment;
-  for (auto trajectory : first_segment) {
+  std::vector<TrajectorySegments> second_segment;
+  for (auto trajectory_segments : first_segment) {
     for (auto rate : rates) {
-      Eigen::Vector3d end_pos = trajectory.states.back().position;
-      Eigen::Vector3d end_vel = trajectory.states.back().velocity;
+      Eigen::Vector3d end_pos = trajectory_segments.lastSegment().states.back().position;
+      Eigen::Vector3d end_vel = trajectory_segments.lastSegment().states.back().velocity;
       Trajectory new_segment = generateArcTrajectory(rate, horizon, end_pos, end_vel);
-      Trajectory trajectory_2 = trajectory;
-      trajectory_2.states.insert(trajectory_2.states.end(), new_segment.states.begin(), new_segment.states.end());
+      TrajectorySegments trajectory_2 = trajectory_segments;
+      trajectory_2.appendSegment(new_segment);
       second_segment.push_back(trajectory_2);
     }
   }

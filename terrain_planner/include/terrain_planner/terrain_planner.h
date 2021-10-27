@@ -55,6 +55,8 @@
 
 #include <Eigen/Dense>
 
+enum class SETPOINT_MODE { STATE, PATH };
+
 class TerrainPlanner {
  public:
   TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
@@ -70,6 +72,7 @@ class TerrainPlanner {
   void publishPoseHistory();
   void publishCandidateManeuvers(const std::vector<Trajectory> &candidate_maneuvers);
   void publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
+  void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   ros::NodeHandle nh_;
@@ -81,6 +84,7 @@ class TerrainPlanner {
   ros::Publisher candidate_manuever_pub_;
   ros::Publisher position_setpoint_pub_;
   ros::Publisher position_target_pub_;
+  ros::Publisher path_target_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Timer cmdloop_timer_, statusloop_timer_;
@@ -88,6 +92,8 @@ class TerrainPlanner {
   interactive_markers::InteractiveMarkerServer marker_server_;
   visualization_msgs::InteractiveMarker set_goal_marker_;
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
+
+  SETPOINT_MODE setpoint_mode_{SETPOINT_MODE::STATE};
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
   std::shared_ptr<Profiler> planner_profiler_;

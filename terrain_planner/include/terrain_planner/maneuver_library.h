@@ -69,8 +69,8 @@ class ManeuverLibrary {
 
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
-  std::vector<Trajectory> AppendSegment(std::vector<Trajectory>& first_segment,
-                                        const std::vector<Eigen::Vector3d>& rates, const double horizon);
+  std::vector<TrajectorySegments> AppendSegment(std::vector<TrajectorySegments>& first_segment,
+                                                const std::vector<Eigen::Vector3d>& rates, const double horizon);
   std::vector<Trajectory> checkCollisions();
   std::vector<Trajectory> checkRelaxedCollisions();
   bool checkTrajectoryCollision(Trajectory& trajectory, const std::string& layer, bool is_above = true);

@@ -70,4 +70,36 @@ class Trajectory {
  private:
 };
 
+class TrajectorySegments {
+ public:
+  TrajectorySegments(){};
+  virtual ~TrajectorySegments(){};
+  std::vector<Eigen::Vector3d> position() {
+    std::vector<Eigen::Vector3d> pos_vector;
+    for (auto segment : segments) {
+      std::vector<Eigen::Vector3d> segment_pos = segment.position();
+      pos_vector.insert(pos_vector.end(), segment_pos.begin(), segment_pos.end());
+    }
+    return pos_vector;
+  }
+  std::vector<Eigen::Vector3d> velocity() {
+    std::vector<Eigen::Vector3d> vel_vector;
+    for (auto segment : segments) {
+      std::vector<Eigen::Vector3d> segment_vel = segment.velocity();
+      vel_vector.insert(vel_vector.end(), segment_vel.begin(), segment_vel.end());
+    }
+    return vel_vector;
+  }
+  void resetSegments() { segments.clear(); };
+  void appendSegment(const Trajectory &trajectory) { segments.push_back(trajectory); };
+  Trajectory lastSegment() { return segments.back(); }
+  bool valid() { return validity; }
+  std::vector<State> states;
+  double utility{0.0};
+  bool validity{false};
+  std::vector<Trajectory> segments;
+
+ private:
+};
+
 #endif
