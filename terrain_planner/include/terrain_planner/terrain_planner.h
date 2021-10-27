@@ -70,7 +70,7 @@ class TerrainPlanner {
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
   void MapPublishOnce();
   void publishPoseHistory();
-  void publishCandidateManeuvers(const std::vector<Trajectory> &candidate_maneuvers);
+  void publishCandidateManeuvers(const std::vector<TrajectorySegments> &candidate_maneuvers);
   void publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
@@ -97,7 +97,7 @@ class TerrainPlanner {
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
   std::shared_ptr<Profiler> planner_profiler_;
-  Trajectory reference_primitive_;
+  TrajectorySegments reference_primitive_;
 
   std::vector<Eigen::Vector3d> vehicle_position_history_;
   std::vector<geometry_msgs::PoseStamped> posehistory_vector_;

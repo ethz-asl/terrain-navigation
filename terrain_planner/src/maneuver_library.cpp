@@ -100,9 +100,9 @@ bool ManeuverLibrary::Solve() {
   return true;
 }
 
-std::vector<Trajectory> ManeuverLibrary::checkCollisions() {
+std::vector<TrajectorySegments> ManeuverLibrary::checkCollisions() {
   // Return only the reference of trajectories
-  std::vector<Trajectory> valid_primitives;
+  std::vector<TrajectorySegments> valid_primitives;
   for (auto &trajectory : motion_primitives_) {
     bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface", true);
     bool max_altitude_collision = checkTrajectoryCollision(trajectory, "max_elevation", false);
@@ -116,9 +116,9 @@ std::vector<Trajectory> ManeuverLibrary::checkCollisions() {
   return valid_primitives;
 }
 
-std::vector<Trajectory> ManeuverLibrary::checkRelaxedCollisions() {
+std::vector<TrajectorySegments> ManeuverLibrary::checkRelaxedCollisions() {
   // Return only the reference of trajectories
-  std::vector<Trajectory> valid_primitives;
+  std::vector<TrajectorySegments> valid_primitives;
   for (auto &trajectory : motion_primitives_) {
     bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface");
 
@@ -132,7 +132,8 @@ std::vector<Trajectory> ManeuverLibrary::checkRelaxedCollisions() {
   return valid_primitives;
 }
 
-bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory, const std::string &layer, bool is_above) {
+bool ManeuverLibrary::checkTrajectoryCollision(TrajectorySegments &trajectory, const std::string &layer,
+                                               bool is_above) {
   /// TODO: Reference gridmap terrain
   for (auto position : trajectory.position()) {
     // TODO: Make max terrain optional
@@ -193,10 +194,10 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
   return trajectory;
 }
 
-Trajectory &ManeuverLibrary::getBestPrimitive() {
+TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
   // Calculate utilities of each primitives
   for (auto &trajectory : valid_primitives_) {
-    Eigen::Vector3d end_pos = trajectory.states.back().position;
+    Eigen::Vector3d end_pos = trajectory.lastSegment().states.back().position;
     Eigen::Vector2d distance_vector =
         Eigen::Vector2d(end_pos(0), end_pos(1)) - Eigen::Vector2d(goal_pos_(0), goal_pos_(1));
     trajectory.utility = 1 / distance_vector.norm();
@@ -217,7 +218,7 @@ Trajectory &ManeuverLibrary::getBestPrimitive() {
   }
 }
 
-Trajectory &ManeuverLibrary::getRandomPrimitive() {
+TrajectorySegments &ManeuverLibrary::getRandomPrimitive() {
   int i = 0;
   if (valid_primitives_.size() > 0) {
     i = std::rand() % valid_primitives_.size();

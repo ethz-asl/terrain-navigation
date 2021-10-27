@@ -62,10 +62,7 @@ class Trajectory {
     }
     return vel_vector;
   }
-  bool valid() { return validity; }
   std::vector<State> states;
-  double utility{0.0};
-  bool validity{false};
 
  private:
 };

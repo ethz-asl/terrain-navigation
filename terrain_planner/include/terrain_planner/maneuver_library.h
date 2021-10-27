@@ -48,12 +48,12 @@ class ManeuverLibrary {
  public:
   ManeuverLibrary();
   virtual ~ManeuverLibrary();
-  std::vector<Trajectory>& generateMotionPrimitives(const Eigen::Vector3d current_pos,
-                                                    const Eigen::Vector3d current_vel);
-  std::vector<Trajectory>& getMotionPrimitives() { return motion_primitives_; }
-  std::vector<Trajectory>& getValidPrimitives() { return valid_primitives_; }
-  Trajectory& getBestPrimitive();
-  Trajectory& getRandomPrimitive();
+  std::vector<TrajectorySegments>& generateMotionPrimitives(const Eigen::Vector3d current_pos,
+                                                            const Eigen::Vector3d current_vel);
+  std::vector<TrajectorySegments>& getMotionPrimitives() { return motion_primitives_; }
+  std::vector<TrajectorySegments>& getValidPrimitives() { return valid_primitives_; }
+  TrajectorySegments& getBestPrimitive();
+  TrajectorySegments& getRandomPrimitive();
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
                                    Eigen::Vector3d current_vel);
   double getPlanningHorizon() { return planning_horizon_; };
@@ -71,15 +71,15 @@ class ManeuverLibrary {
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
   std::vector<TrajectorySegments> AppendSegment(std::vector<TrajectorySegments>& first_segment,
                                                 const std::vector<Eigen::Vector3d>& rates, const double horizon);
-  std::vector<Trajectory> checkCollisions();
-  std::vector<Trajectory> checkRelaxedCollisions();
-  bool checkTrajectoryCollision(Trajectory& trajectory, const std::string& layer, bool is_above = true);
+  std::vector<TrajectorySegments> checkCollisions();
+  std::vector<TrajectorySegments> checkRelaxedCollisions();
+  bool checkTrajectoryCollision(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
 
   std::shared_ptr<TerrainMap> terrain_map_;
 
   // Planner configurations
-  std::vector<Trajectory> motion_primitives_;
-  std::vector<Trajectory> valid_primitives_;
+  std::vector<TrajectorySegments> motion_primitives_;
+  std::vector<TrajectorySegments> valid_primitives_;
   std::vector<Eigen::Vector3d> primitive_rates_;
   int num_segments{3};
   Eigen::Vector3d goal_pos_;

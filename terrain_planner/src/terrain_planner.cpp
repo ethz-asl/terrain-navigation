@@ -210,7 +210,7 @@ void TerrainPlanner::publishPoseHistory() {
   posehistory_pub_.publish(msg);
 }
 
-void TerrainPlanner::publishCandidateManeuvers(const std::vector<Trajectory> &candidate_maneuvers) {
+void TerrainPlanner::publishCandidateManeuvers(const std::vector<TrajectorySegments> &candidate_maneuvers) {
   visualization_msgs::MarkerArray msg;
 
   std::vector<visualization_msgs::Marker> marker;

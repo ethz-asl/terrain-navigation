@@ -151,7 +151,7 @@ visualization_msgs::Marker normals2ArrowsMsg(const Eigen::Vector3d &position, co
   return marker;
 }
 
-visualization_msgs::Marker trajectory2MarkerMsg(Trajectory &trajectory, const int id) {
+visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, const int id) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
