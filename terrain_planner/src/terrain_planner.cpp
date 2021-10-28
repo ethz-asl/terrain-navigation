@@ -122,20 +122,19 @@ TerrainPlanner::~TerrainPlanner() {
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
   // TODO: Get position setpoint based on time
   double time_since_start = (ros::Time::now() - plan_time_).toSec();
-  std::vector<Eigen::Vector3d> trajectory_position = reference_primitive_.position();
-  std::vector<Eigen::Vector3d> trajectory_velocity = reference_primitive_.velocity();
   switch (setpoint_mode_) {
-    case SETPOINT_MODE::STATE:
-      for (int i = 1; i < trajectory_position.size(); i++) {
-        if (time_since_start < 0.1 * i) {
-          publishPositionSetpoints(trajectory_position[i], trajectory_velocity[i]);
-          break;
-        }
-      }
+    case SETPOINT_MODE::STATE: {
+      /// TODO: Find closest point on the segment
+      Eigen::Vector3d reference_position;
+      Eigen::Vector3d reference_tangent;
+      reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent);
+      publishPositionSetpoints(reference_position, reference_tangent);
       break;
-    case SETPOINT_MODE::PATH:
-      publishPathSetpoints(trajectory_position[0], trajectory_velocity[0]);
+    }
+    case SETPOINT_MODE::PATH: {
+      // publishPathSetpoints(trajectory_position[0], trajectory_velocity[0]);
       break;
+    }
   }
 
   publishVehiclePose(vehicle_position_, vehicle_attitude_);
@@ -269,6 +268,7 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   marker.pose.position.x = position(0);
   marker.pose.position.y = position(1);
   marker.pose.position.z = position(2);
+  ///TODO: Visualize tangent
   marker.pose.orientation.w = 1.0;
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;

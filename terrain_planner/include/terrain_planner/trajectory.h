@@ -35,6 +35,7 @@
 #define TRAJECTORY_H
 
 #include <Eigen/Dense>
+#include <iostream>
 #include <vector>
 
 struct State {
@@ -63,6 +64,8 @@ class Trajectory {
     return vel_vector;
   }
   std::vector<State> states;
+  double curvature{0.0};
+  double climb_rate{0.0};
 
  private:
 };
@@ -90,8 +93,96 @@ class TrajectorySegments {
   void resetSegments() { segments.clear(); };
   void appendSegment(const Trajectory &trajectory) { segments.push_back(trajectory); };
   Trajectory lastSegment() { return segments.back(); }
+
+  double getLineProgress(const Eigen::Vector3d position, const Eigen::Vector3d &segment_start,
+                         const Eigen::Vector3d &segment_end) {
+    Eigen::Vector3d progress_vector = (segment_end - segment_start).normalized();
+    double segment_length = (segment_end - segment_start).norm();
+    Eigen::Vector3d error_vector = position - segment_start;
+    // Get Path Progress
+    double theta = error_vector.dot(progress_vector) / segment_length;
+    return theta;
+  }
+
+  static Eigen::Vector2d getArcCenter(const Eigen::Vector2d &segment_start, const Eigen::Vector2d &segment_end,
+                                      double curvature) {
+    double segment_distance = (segment_end - segment_start).norm();
+    double center_distance = std::sqrt(std::pow(1 / curvature, 2) - std::pow(0.5 * segment_distance, 2));
+    Eigen::Vector3d rotational_vector(0.0, 0.0, curvature / std::abs(curvature));
+
+    Eigen::Vector2d midpoint_2d = 0.5 * (segment_start + segment_end);
+    Eigen::Vector2d distance_vector_2d = (segment_end - segment_start).normalized();
+    Eigen::Vector3d distance_vector = Eigen::Vector3d(distance_vector_2d(0), distance_vector_2d(1), 0.0);
+    Eigen::Vector3d normal_vector = distance_vector.cross(rotational_vector);
+    Eigen::Vector2d normal_vector_2d(normal_vector(0), normal_vector(1));
+
+    Eigen::Vector2d arc_center = midpoint_2d + normal_vector_2d * center_distance;
+    return arc_center;
+  }
+
+  static double getArcProgress(Eigen::Vector2d &arc_center_2d, const Eigen::Vector2d position_2d,
+                               const Eigen::Vector2d &segment_start_2d, const Eigen::Vector2d &segment_end_2d,
+                               const double curvature) {
+    arc_center_2d = getArcCenter(segment_start_2d, segment_end_2d, curvature);
+
+    Eigen::Vector2d pos_vector = (position_2d - arc_center_2d).normalized();
+    Eigen::Vector2d start_vector = (segment_start_2d - arc_center_2d).normalized();
+    Eigen::Vector2d end_vector = (segment_end_2d - arc_center_2d).normalized();
+
+    double psi = std::atan2(end_vector(1), end_vector(0)) - std::atan2(start_vector(1), start_vector(0));
+    double angle_pos = std::atan2(pos_vector(1), pos_vector(0)) - std::atan2(start_vector(1), start_vector(0));
+    while (std::abs(psi) > M_PI) {
+      if (psi > 0)
+        psi = psi - 2 * M_PI;
+      else
+        psi = psi + 2 * M_PI;
+    }
+    while (std::abs(angle_pos) > M_PI) {
+      if (angle_pos > 0)
+        angle_pos = angle_pos - 2 * M_PI;
+      else
+        angle_pos = angle_pos + 2 * M_PI;
+    }
+
+    double theta = angle_pos / psi;
+    return theta;
+  }
+
+  void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent) {
+    double theta{-10.0};
+    Eigen::Vector2d arc_center;
+    for (auto segment : segments) {
+      Eigen::Vector3d segment_start = segment.states.front().position;
+      Eigen::Vector3d segment_end = segment.states.back().position;
+      if (std::abs(segment.curvature) < 0.0001) {
+        // Compute closest point on a line segment
+        // Get Path Progress
+        theta = getLineProgress(position, segment_start, segment_end);
+        tangent = (segment_end - segment_start).normalized();
+        closest_point = theta * (segment_end - segment_start) + segment_start;
+      } else {
+        // Compute closest point on a Arc segment
+        Eigen::Vector2d position_2d(position(0), position(1));
+        Eigen::Vector2d segment_start_2d(segment_start(0), segment_start(1));
+        Eigen::Vector2d segment_end_2d(segment_end(0), segment_end(1));
+        theta = getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
+        Eigen::Vector2d error_vector = (position_2d - arc_center).normalized();
+        Eigen::Vector2d closest_point_2d =
+            std::abs(1 / segment.curvature) * (position_2d - arc_center).normalized() + arc_center;
+        closest_point = Eigen::Vector3d(closest_point_2d(0), closest_point_2d(1),
+                                        theta * segment_end(2) + (1 - theta) * segment_start(2));
+        tangent = Eigen::Vector3d((segment.curvature / std::abs(segment.curvature)) * error_vector(1),
+                                  (segment.curvature / std::abs(segment.curvature)) * error_vector(0), 0.0);
+      }
+      if (theta < 0.0) {
+        closest_point = segment_start;
+        return;
+      } else if ((theta < 1.0)) {
+        return;
+      }
+    }
+  }
   bool valid() { return validity; }
-  std::vector<State> states;
   double utility{0.0};
   bool validity{false};
   std::vector<Trajectory> segments;

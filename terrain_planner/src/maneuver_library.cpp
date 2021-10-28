@@ -170,6 +170,8 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
   double time = 0.0;
   const double current_yaw = std::atan2(-1.0 * current_vel(1), current_vel(0));
   const double climb_rate = rate(1);
+  trajectory.climb_rate = climb_rate;
+  trajectory.curvature = rate(2) / cruise_speed_;
 
   for (int i = 0; i < std::max(1.0, horizon / dt_); i++) {
     if (std::abs(rate(2)) < 0.0001) {
@@ -177,6 +179,7 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
     }
     time = time + dt_;
     double yaw = rate(2) * time + current_yaw;
+
     Eigen::Vector3d pos =
         cruise_speed_ / rate(2) *
             Eigen::Vector3d(std::sin(yaw) - std::sin(current_yaw), std::cos(yaw) - std::cos(current_yaw), 0) +

@@ -71,12 +71,13 @@ target_link_libraries(test_distance_surface ${PROJECT_NAME} ${catkin_LIBRARIES} 
 if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
-                                          test/test_example.cpp)
+                                          test/test_example.cpp
+                                          test/test_maneuver_library.cpp)
 
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
-                                                 ${YAML_CPP_LIBRARIES})
+                                                 ${YAML_CPP_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
     endif()
 
 endif()
