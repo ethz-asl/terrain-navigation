@@ -172,7 +172,7 @@ class TrajectorySegments {
         closest_point = Eigen::Vector3d(closest_point_2d(0), closest_point_2d(1),
                                         theta * segment_end(2) + (1 - theta) * segment_start(2));
         tangent = Eigen::Vector3d((segment.curvature / std::abs(segment.curvature)) * error_vector(1),
-                                  (segment.curvature / std::abs(segment.curvature)) * error_vector(0), 0.0);
+                                  (segment.curvature / std::abs(segment.curvature)) * -error_vector(0), 0.0);
       }
       if (theta < 0.0) {
         closest_point = segment_start;
