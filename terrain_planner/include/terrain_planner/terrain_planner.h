@@ -71,7 +71,8 @@ class TerrainPlanner {
   void MapPublishOnce();
   void publishPoseHistory();
   void publishCandidateManeuvers(const std::vector<TrajectorySegments> &candidate_maneuvers);
-  void publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
+  void publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
+                                const double curvature);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);

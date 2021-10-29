@@ -127,8 +127,10 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
       /// TODO: Find closest point on the segment
       Eigen::Vector3d reference_position;
       Eigen::Vector3d reference_tangent;
-      reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent);
-      publishPositionSetpoints(reference_position, reference_tangent);
+      double reference_curvature{0.0};
+      reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
+                                           reference_curvature);
+      publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
       break;
     }
     case SETPOINT_MODE::PATH: {
@@ -232,7 +234,8 @@ void TerrainPlanner::publishCandidateManeuvers(const std::vector<TrajectorySegme
   candidate_manuever_pub_.publish(msg);
 }
 
-void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity) {
+void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
+                                              const double curvature) {
   using namespace mavros_msgs;
   // Publishes position setpoints sequentially as trajectory setpoints
   mavros_msgs::PositionTarget msg;
@@ -245,6 +248,7 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   msg.velocity.x = velocity(0);
   msg.velocity.y = velocity(1);
   msg.velocity.z = velocity(2);
+  msg.yaw_rate = curvature;
 
   position_setpoint_pub_.publish(msg);
 

@@ -148,7 +148,8 @@ class TrajectorySegments {
     return theta;
   }
 
-  void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent) {
+  void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
+                       double &curvature) {
     double theta{-10.0};
     Eigen::Vector2d arc_center;
     for (auto segment : segments) {
@@ -174,6 +175,7 @@ class TrajectorySegments {
         tangent = Eigen::Vector3d((segment.curvature / std::abs(segment.curvature)) * error_vector(1),
                                   (segment.curvature / std::abs(segment.curvature)) * -error_vector(0), 0.0);
       }
+      curvature = segment.curvature;
       if (theta < 0.0) {
         closest_point = segment_start;
         return;
