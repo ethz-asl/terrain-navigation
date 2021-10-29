@@ -50,6 +50,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
+#include <mavros_msgs/State.h>
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
 
@@ -68,6 +69,7 @@ class TerrainPlanner {
   void publishTrajectory(std::vector<Eigen::Vector3d> trajectory);
   void mavposeCallback(const geometry_msgs::PoseStamped &msg);
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
+  void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
   void MapPublishOnce();
   void publishPoseHistory();
   void publishCandidateManeuvers(const std::vector<TrajectorySegments> &candidate_maneuvers);
@@ -88,6 +90,7 @@ class TerrainPlanner {
   ros::Publisher path_target_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
+  ros::Subscriber mavstate_sub_;
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;
   interactive_markers::InteractiveMarkerServer marker_server_;
@@ -99,6 +102,7 @@ class TerrainPlanner {
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
   std::shared_ptr<Profiler> planner_profiler_;
   TrajectorySegments reference_primitive_;
+  mavros_msgs::State current_state_;
 
   std::vector<Eigen::Vector3d> vehicle_position_history_;
   std::vector<geometry_msgs::PoseStamped> posehistory_vector_;

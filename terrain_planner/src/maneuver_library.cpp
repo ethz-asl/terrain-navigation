@@ -47,28 +47,42 @@ ManeuverLibrary::ManeuverLibrary() {
   terrain_map_ = std::make_shared<TerrainMap>();
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.0));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.0, -0.0));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.15));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.3));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.3));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.0, -0.3));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.3));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.15));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.0, -0.15));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.15));
 }
 
 ManeuverLibrary::~ManeuverLibrary() {}
 
 std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
-                                                                           const Eigen::Vector3d current_vel) {
+                                                                           const Eigen::Vector3d current_vel,
+                                                                           TrajectorySegments &current_path) {
   motion_primitives_.clear();
 
   /// TODO: Reformulate as recursive
   std::vector<TrajectorySegments> first_segment;
+
+  Trajectory current_segment;
+  if (!current_path.segments.empty()) {
+    current_segment = current_path.getCurrentSegment(current_pos);
+  }
+
   for (auto rate : primitive_rates_) {
-    Trajectory trajectory = generateArcTrajectory(rate, planning_horizon_, current_pos, current_vel);
     TrajectorySegments trajectory_segments;
+    Trajectory trajectory;
+    if (!current_path.segments.empty()) {
+      trajectory_segments.appendSegment(current_segment);
+      trajectory = generateArcTrajectory(rate, planning_horizon_, current_segment.states.back().position,
+                                         current_segment.states.back().velocity);
+    } else {
+      trajectory = generateArcTrajectory(rate, planning_horizon_, current_pos, current_vel);
+    }
     trajectory_segments.appendSegment(trajectory);
     first_segment.push_back(trajectory_segments);
   }
@@ -83,6 +97,8 @@ std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const
   std::vector<TrajectorySegments> fourth_segment = AppendSegment(third_segment, emergency_rates, horizon);
 
   motion_primitives_ = fourth_segment;
+
+  /// TODO: Append to current trajectory segment
   return motion_primitives_;
 }
 

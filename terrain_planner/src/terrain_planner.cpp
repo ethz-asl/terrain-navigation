@@ -51,7 +51,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
   cmdloop_timer_ = nh_.createTimer(ros::Duration(0.1), &TerrainPlanner::cmdloopCallback,
                                    this);  // Define timer for constant loop rate
-  statusloop_timer_ = nh_.createTimer(ros::Duration(10.0), &TerrainPlanner::statusloopCallback,
+  statusloop_timer_ = nh_.createTimer(ros::Duration(2.0), &TerrainPlanner::statusloopCallback,
                                       this);  // Define timer for constant loop rate
 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
@@ -59,6 +59,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
   candidate_manuever_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
   position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
+  mavstate_sub_ =
+      nh_.subscribe("mavros/state", 1, &TerrainPlanner::mavstateCallback, this, ros::TransportHints().tcpNoDelay());
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
   path_target_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 1);
   vehicle_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_pose_marker", 1, true);
@@ -146,14 +148,20 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // planner_profiler_->tic();
   /// TODO: Plan from next segment
-  Eigen::Vector3d start_position = vehicle_position_ + vehicle_velocity_ * 0.4;
-  maneuver_library_->generateMotionPrimitives(start_position, vehicle_velocity_);
+  // Plan from the end of the current segment
+  if (current_state_.mode != "OFFBOARD") {
+    reference_primitive_.segments.clear();
+  }
+  // Only run planner in offboard mode
+  maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, reference_primitive_);
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
   bool result = maneuver_library_->Solve();
+
   if (result) {
     reference_primitive_ = maneuver_library_->getBestPrimitive();
   } else {
+    /// TODO: Take failsafe action when no valid primitive is found
     reference_primitive_ = maneuver_library_->getRandomPrimitive();
   }
   // planner_profiler_->toc();
@@ -280,6 +288,8 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
 
   position_target_pub_.publish(marker);
 }
+
+void TerrainPlanner::mavstateCallback(const mavros_msgs::State::ConstPtr &msg) { current_state_ = *msg; }
 
 void TerrainPlanner::publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity) {
   using namespace mavros_msgs;

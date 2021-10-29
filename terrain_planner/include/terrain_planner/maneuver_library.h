@@ -49,7 +49,8 @@ class ManeuverLibrary {
   ManeuverLibrary();
   virtual ~ManeuverLibrary();
   std::vector<TrajectorySegments>& generateMotionPrimitives(const Eigen::Vector3d current_pos,
-                                                            const Eigen::Vector3d current_vel);
+                                                            const Eigen::Vector3d current_vel,
+                                                            TrajectorySegments& current_path);
   std::vector<TrajectorySegments>& getMotionPrimitives() { return motion_primitives_; }
   std::vector<TrajectorySegments>& getValidPrimitives() { return valid_primitives_; }
   TrajectorySegments& getBestPrimitive();
