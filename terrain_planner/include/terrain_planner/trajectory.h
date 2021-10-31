@@ -79,8 +79,8 @@ class Trajectory {
     return arc_center;
   }
 
-  double getLineProgress(const Eigen::Vector3d position, const Eigen::Vector3d &segment_start,
-                         const Eigen::Vector3d &segment_end) {
+  static double getLineProgress(const Eigen::Vector3d position, const Eigen::Vector3d &segment_start,
+                                const Eigen::Vector3d &segment_end) {
     Eigen::Vector3d progress_vector = (segment_end - segment_start).normalized();
     double segment_length = (segment_end - segment_start).norm();
     Eigen::Vector3d error_vector = position - segment_start;
