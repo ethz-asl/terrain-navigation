@@ -57,6 +57,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
 
   posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
+  referencehistory_pub_ = nh_.advertise<nav_msgs::Path>("reference/path", 10);
   candidate_manuever_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
   position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
   mavstate_sub_ =
@@ -133,6 +134,8 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
       reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
                                            reference_curvature);
       publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
+      if (current_state_.mode == "OFFBOARD")
+        publishPositionHistory(referencehistory_pub_, reference_position, referencehistory_vector_);
       break;
     }
     case SETPOINT_MODE::PATH: {
@@ -142,7 +145,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
   }
 
   publishVehiclePose(vehicle_position_, vehicle_attitude_);
-  publishPoseHistory();
+  publishPositionHistory(posehistory_pub_, vehicle_position_, posehistory_vector_);
 }
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
@@ -203,20 +206,21 @@ void TerrainPlanner::MapPublishOnce() {
   grid_map_pub_.publish(message);
 }
 
-void TerrainPlanner::publishPoseHistory() {
+void TerrainPlanner::publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
+                                            std::vector<geometry_msgs::PoseStamped> &history_vector) {
   int posehistory_window_ = 20000;
   Eigen::Vector4d vehicle_attitude(1.0, 0.0, 0.0, 0.0);
-  posehistory_vector_.insert(posehistory_vector_.begin(), vector3d2PoseStampedMsg(vehicle_position_, vehicle_attitude));
-  if (posehistory_vector_.size() > posehistory_window_) {
-    posehistory_vector_.pop_back();
+  history_vector.insert(history_vector.begin(), vector3d2PoseStampedMsg(position, vehicle_attitude));
+  if (history_vector.size() > posehistory_window_) {
+    history_vector.pop_back();
   }
 
   nav_msgs::Path msg;
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "map";
-  msg.poses = posehistory_vector_;
+  msg.poses = history_vector;
 
-  posehistory_pub_.publish(msg);
+  pub.publish(msg);
 }
 
 void TerrainPlanner::publishCandidateManeuvers(const std::vector<TrajectorySegments> &candidate_maneuvers) {

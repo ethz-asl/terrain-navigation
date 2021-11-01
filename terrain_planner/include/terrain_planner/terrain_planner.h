@@ -71,7 +71,8 @@ class TerrainPlanner {
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
   void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
   void MapPublishOnce();
-  void publishPoseHistory();
+  void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
+                              std::vector<geometry_msgs::PoseStamped> &history_vector);
   void publishCandidateManeuvers(const std::vector<TrajectorySegments> &candidate_maneuvers);
   void publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
                                 const double curvature);
@@ -84,6 +85,7 @@ class TerrainPlanner {
   ros::Publisher grid_map_pub_;
   ros::Publisher vehicle_pose_pub_;
   ros::Publisher posehistory_pub_;
+  ros::Publisher referencehistory_pub_;
   ros::Publisher candidate_manuever_pub_;
   ros::Publisher position_setpoint_pub_;
   ros::Publisher position_target_pub_;
@@ -106,6 +108,7 @@ class TerrainPlanner {
 
   std::vector<Eigen::Vector3d> vehicle_position_history_;
   std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
+  std::vector<geometry_msgs::PoseStamped> referencehistory_vector_;
   Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
