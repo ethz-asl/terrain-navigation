@@ -214,6 +214,7 @@ class TrajectorySegments {
         return segment;
       }
     }
+    return segments.back();
   }
 
   bool valid() { return validity; }

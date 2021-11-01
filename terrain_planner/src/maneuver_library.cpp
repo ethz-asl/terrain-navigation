@@ -117,10 +117,13 @@ bool ManeuverLibrary::Solve() {
 }
 
 std::vector<TrajectorySegments> ManeuverLibrary::checkCollisions() {
-  // Return only the reference of trajectories
+  // Iterate through all motion primtiives and only return collision free primitives
+  // The returned primitives are all collision free
   std::vector<TrajectorySegments> valid_primitives;
   for (auto &trajectory : motion_primitives_) {
+    // Check collision with terrain
     bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface", true);
+    // Check collision with maximum terrain altitude
     bool max_altitude_collision = checkTrajectoryCollision(trajectory, "max_elevation", false);
     if (no_terrain_collision && max_altitude_collision) {
       trajectory.validity = true;
@@ -133,17 +136,16 @@ std::vector<TrajectorySegments> ManeuverLibrary::checkCollisions() {
 }
 
 std::vector<TrajectorySegments> ManeuverLibrary::checkRelaxedCollisions() {
-  // Return only the reference of trajectories
+  // Iterate through all motion primtiives and only return collision free primitives
+  // This is assuming that there are no collision free primitives, therefore the violation of the constraint is measured
+
   std::vector<TrajectorySegments> valid_primitives;
   for (auto &trajectory : motion_primitives_) {
-    bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface");
-
-    if (no_terrain_collision) {
-      trajectory.validity = true;
-      valid_primitives.push_back(trajectory);
-    } else {
-      trajectory.validity = false;
-    }
+    double distance_surface_violation = getTrajectoryCollisionCost(trajectory, "distance_surface");
+    double max_elevation_violation = getTrajectoryCollisionCost(trajectory, "max_elevation", false);
+    trajectory.validity = !(max_elevation_violation > 0.0 || distance_surface_violation > 0.0);
+    trajectory.utility = (-1.0) * (max_elevation_violation + distance_surface_violation) / 1000.0;
+    valid_primitives.push_back(trajectory);
   }
   return valid_primitives;
 }
@@ -158,6 +160,16 @@ bool ManeuverLibrary::checkTrajectoryCollision(TrajectorySegments &trajectory, c
     }
   }
   return true;
+}
+
+double ManeuverLibrary::getTrajectoryCollisionCost(TrajectorySegments &trajectory, const std::string &layer,
+                                                   bool is_above) {
+  double cost{0.0};
+  /// Iterate through whole trajectory to calculate collision depth
+  for (auto position : trajectory.position()) {
+    cost += terrain_map_->getCollisionDepth(layer, position, is_above);
+  }
+  return cost;
 }
 
 std::vector<TrajectorySegments> ManeuverLibrary::AppendSegment(std::vector<TrajectorySegments> &first_segment,
@@ -219,11 +231,11 @@ TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
     Eigen::Vector3d end_pos = trajectory.lastSegment().states.back().position;
     Eigen::Vector2d distance_vector =
         Eigen::Vector2d(end_pos(0), end_pos(1)) - Eigen::Vector2d(goal_pos_(0), goal_pos_(1));
-    trajectory.utility = 1 / distance_vector.norm();
+    trajectory.utility += 1 / distance_vector.norm();
   }
 
-  double best_utility = 0.0;
-  int best_index = 0;
+  double best_utility{-std::numeric_limits<double>::infinity()};
+  int best_index{0};
   if (valid_primitives_.size() > 0) {
     for (int k = 0; k < valid_primitives_.size(); k++) {
       if (valid_primitives_[k].utility > best_utility) {

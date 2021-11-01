@@ -67,6 +67,23 @@ bool TerrainMap::isInCollision(const std::string &layer, const Eigen::Vector3d &
   }
 }
 
+double TerrainMap::getCollisionDepth(const std::string &layer, const Eigen::Vector3d &position, bool is_above) {
+  double collision_depth{0.0};
+  Eigen::Vector2d position_2d(position(0), position(1));
+  if (!grid_map_.isInside(position_2d)) return true;  // Do not allow vehicle to go outside the map
+  double elevation = grid_map_.atPosition(layer, position_2d);
+  if (is_above) {
+    if (elevation > position(2)) {
+      collision_depth = elevation - position(2);
+    }
+  } else {
+    if (elevation < position(2)) {
+      collision_depth = position(2) - elevation;
+    }
+  }
+  return collision_depth;
+}
+
 bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   GDALAllRegister();
   GDALDataset *dataset = (GDALDataset *)GDALOpen(path.c_str(), GA_ReadOnly);
