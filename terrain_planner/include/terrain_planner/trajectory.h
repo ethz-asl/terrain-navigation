@@ -174,6 +174,7 @@ class TrajectorySegments {
         tangent = Eigen::Vector3d((segment.curvature / std::abs(segment.curvature)) * error_vector(1),
                                   (segment.curvature / std::abs(segment.curvature)) * -error_vector(0), 0.0);
       }
+      tangent(2) = (position(2) - closest_point(2)) - segment.climb_rate;
       curvature = segment.curvature;
       if (theta < 0.0) {
         closest_point = segment_start;
