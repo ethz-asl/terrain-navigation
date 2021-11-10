@@ -260,7 +260,7 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   msg.velocity.x = velocity(0);
   msg.velocity.y = velocity(1);
   msg.velocity.z = velocity(2);
-  msg.yaw_rate = curvature;
+  msg.yaw_rate = -curvature;
 
   position_setpoint_pub_.publish(msg);
 
