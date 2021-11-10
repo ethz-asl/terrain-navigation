@@ -1,0 +1,11 @@
+[Unit]
+Description=Launch terrain navigation node as a service
+After=network.target systemd-udevd.service
+
+[Service]
+EnvironmentFile=/home/believer/catkin_ws/src/terrain-navigation/systemd/environment.conf
+ExecStart=/bin/bash /home/believer/catkin_ws/src/terrain-navigation/Tools/run_controller.sh
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
