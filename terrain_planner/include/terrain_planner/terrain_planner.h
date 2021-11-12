@@ -90,6 +90,7 @@ class TerrainPlanner {
   ros::Publisher position_setpoint_pub_;
   ros::Publisher position_target_pub_;
   ros::Publisher path_target_pub_;
+  ros::Publisher planner_status_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;

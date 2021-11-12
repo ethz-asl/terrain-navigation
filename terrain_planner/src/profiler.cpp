@@ -45,10 +45,10 @@ Profiler::~Profiler() {}
 
 void Profiler::tic() { start_time = std::chrono::high_resolution_clock::now(); }
 
-void Profiler::toc() {
+double Profiler::toc() {
   end_time = std::chrono::high_resolution_clock::now();
 
   /* Getting number of milliseconds as an integer. */
   auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-  std::cout << "[" << name_ << "] Measured Time: " << ms_int.count() / 1000.0 << " seconds " << std::endl;
+  return ms_int.count() / 1000.0;
 }

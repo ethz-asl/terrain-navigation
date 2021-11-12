@@ -43,6 +43,7 @@
 #include <grid_map_msgs/GridMap.h>
 #include <mavros_msgs/PositionTarget.h>
 #include <mavros_msgs/Trajectory.h>
+#include <planner_msgs/NavigationStatus.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
@@ -65,6 +66,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
   path_target_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 1);
   vehicle_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_pose_marker", 1, true);
+  planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status", 1, true);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
                                ros::TransportHints().tcpNoDelay());
@@ -149,7 +151,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 }
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
-  // planner_profiler_->tic();
+  planner_profiler_->tic();
   /// TODO: Plan from next segment
   // Plan from the end of the current segment
   if (current_state_.mode != "OFFBOARD") {
@@ -167,10 +169,15 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     /// TODO: Take failsafe action when no valid primitive is found
     reference_primitive_ = maneuver_library_->getRandomPrimitive();
   }
-  // planner_profiler_->toc();
+  double planner_time = planner_profiler_->toc();
   publishCandidateManeuvers(maneuver_library_->getMotionPrimitives());
   publishTrajectory(reference_primitive_.position());
   MapPublishOnce();
+
+  planner_msgs::NavigationStatus msg;
+  msg.header.stamp = ros::Time::now();
+  msg.planner_time.data = planner_time;
+  planner_status_pub_.publish(msg);
 }
 
 void TerrainPlanner::publishTrajectory(std::vector<Eigen::Vector3d> trajectory) {

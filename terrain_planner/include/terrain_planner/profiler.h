@@ -48,7 +48,7 @@ class Profiler {
   Profiler(std::string name);
   virtual ~Profiler();
   void tic();
-  void toc();
+  double toc();
   double getDuration();
 
  private:
