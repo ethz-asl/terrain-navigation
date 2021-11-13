@@ -383,4 +383,5 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   double lat, lon, alt;
   earth.Reverse(X, Y, Z, lat, lon, alt);
   maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector2d(lon, lat));
+  maneuver_library_->getTerrainMap()->setAltitudeOrigin(alt);
 }

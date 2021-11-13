@@ -57,6 +57,7 @@ class TerrainMap {
   bool isInCollision(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
   double getCollisionDepth(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
   void setGlobalOrigin(ESPG src_coord, const Eigen::Vector2d origin);
+  void setAltitudeOrigin(const double altitude) { localorigin_altitude_ = altitude; };
   static Eigen::Vector2d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
                                               const Eigen::Vector2d source_coordinates) {
     OGRSpatialReference source, target;
@@ -77,5 +78,6 @@ class TerrainMap {
   grid_map::GridMap grid_map_;
   double localorigin_e_{789823.93};  // duerrboden berghaus
   double localorigin_n_{177416.56};
+  double localorigin_altitude_{0.0};
 };
 #endif

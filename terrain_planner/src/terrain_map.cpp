@@ -108,7 +108,8 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   const char *pszProjection = dataset->GetProjectionRef();
   std::cout << std::endl << "Wkt ProjectionRef: " << pszProjection << std::endl;
 
-  double center_altitude = 2010.0;  /// TODO: Get center altitude as minimum altitude
+  /// TODO: Align coordinates vertically
+  double center_altitude = localorigin_altitude_;
 
   // Get image metadata
   unsigned width = dataset->GetRasterXSize();
