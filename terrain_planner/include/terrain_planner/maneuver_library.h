@@ -66,6 +66,7 @@ class ManeuverLibrary {
   void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
+  std::shared_ptr<TerrainMap>& getTerrainMap() { return terrain_map_; };
   double getTimeStep() { return dt_; }
 
  private:

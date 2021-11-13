@@ -47,6 +47,8 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
+#include <GeographicLib/Geocentric.hpp>
+
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private), marker_server_("goal") {
   vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
@@ -72,11 +74,18 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
                                ros::TransportHints().tcpNoDelay());
   mavtwist_sub_ = nh_.subscribe("mavros/local_position/velocity_local", 1, &TerrainPlanner::mavtwistCallback, this,
                                 ros::TransportHints().tcpNoDelay());
+  global_origin_sub_ = nh_.subscribe("mavros/global_position/gp_origin", 1, &TerrainPlanner::mavGlobalOriginCallback,
+                                     this, ros::TransportHints().tcpNoDelay());
   std::string map_path;
   nh_private.param<std::string>("terrain_path", map_path, "resources/cadastre.tif");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(5.0);
   maneuver_library_->setTerrainMap(map_path);
+
+  /// TODO: Get global origin of local coordinates
+  /// TODO: Get map center from tif
+  /// TODO: Publish tf between map and vehicle origin
+
   planner_profiler_ = std::make_shared<Profiler>("planner");
 
   set_goal_marker_.header.frame_id = "map";
@@ -361,4 +370,14 @@ void TerrainPlanner::processSetPoseFeedback(const visualization_msgs::Interactiv
     maneuver_library_->setGoalPosition(goal_pos_);
   }
   marker_server_.applyChanges();
+}
+
+void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg) {
+  double X = static_cast<double>(msg->position.latitude);
+  double Y = static_cast<double>(msg->position.longitude);
+  double Z = static_cast<double>(msg->position.altitude);
+  GeographicLib::Geocentric earth(GeographicLib::Constants::WGS84_a(), GeographicLib::Constants::WGS84_f());
+  double lat, lon, alt;
+  earth.Reverse(X, Y, Z, lat, lon, alt);
+  maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector2d(lon, lat));
 }

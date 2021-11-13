@@ -47,6 +47,7 @@
 
 #include <ros/ros.h>
 
+#include <geographic_msgs/GeoPointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
@@ -67,9 +68,12 @@ class TerrainPlanner {
   void cmdloopCallback(const ros::TimerEvent &event);
   void statusloopCallback(const ros::TimerEvent &event);
   void publishTrajectory(std::vector<Eigen::Vector3d> trajectory);
+  // States from vehicle
   void mavposeCallback(const geometry_msgs::PoseStamped &msg);
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
   void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
+  void mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
+
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
                               std::vector<geometry_msgs::PoseStamped> &history_vector);
@@ -94,6 +98,7 @@ class TerrainPlanner {
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;
+  ros::Subscriber global_origin_sub_;
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;
   interactive_markers::InteractiveMarkerServer marker_server_;

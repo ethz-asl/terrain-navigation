@@ -94,7 +94,6 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   std::cout << std::endl << "Loading GeoTIFF file for gridmap" << std::endl;
 
   double originX, originY, pixelSizeX, pixelSizeY;
-
   double geoTransform[6];
   if (dataset->GetGeoTransform(geoTransform) == CE_None) {
     originX = geoTransform[0];
@@ -108,20 +107,8 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
 
   const char *pszProjection = dataset->GetProjectionRef();
   std::cout << std::endl << "Wkt ProjectionRef: " << pszProjection << std::endl;
-  /// TODO: Get proper projection references using gDal
-  // double center_latitude = 46.7240653;
-  // double center_longitude = 9.912185;
-  double mapcenter_e = 789738.500;
-  double mapcenter_n = 177105.500;
 
   double center_altitude = 2010.0;  /// TODO: Get center altitude as minimum altitude
-
-  // duerrboden berghaus
-  double localorigin_e = 789823.93;
-  double localorigin_n = 177416.56;
-
-  double map_position_x = mapcenter_e - localorigin_e;
-  double map_position_y = mapcenter_n - localorigin_n;
 
   // Get image metadata
   unsigned width = dataset->GetRasterXSize();
@@ -134,9 +121,16 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   const double lengthX = resolution * width;
   const double lengthY = resolution * height;
   grid_map::Length length(lengthX, lengthY);
+
+  /// TODO: Get center of the map and not the upper left corner
+  double mapcenter_e = originX + pixelSizeX * width * 0.5;
+  double mapcenter_n = originY + pixelSizeY * height * 0.5;
+  double map_position_x = mapcenter_e - localorigin_e_;
+  double map_position_y = mapcenter_n - localorigin_n_;
+
+  /// TODO: Transform map only if global origin is initialized
   Eigen::Vector2d position = Eigen::Vector2d(map_position_x, map_position_y);
   std::cout << "map position: " << position.transpose() << std::endl;
-  // Eigen::Vector2d position = Eigen::Vector2d::Zero();
   grid_map_.setGeometry(length, resolution, position);
   grid_map_.setFrameId("world");
   grid_map_.add("elevation");
@@ -190,4 +184,11 @@ bool TerrainMap::AddLayerDistanceTransform(const std::string &string) {
         grid_map_.at("distance_surface", MapIndex) - grid_map_.at("offset_surface", MapIndex);  // elevation
   }
   return true;
+}
+
+void TerrainMap::setGlobalOrigin(ESPG src_coord, const Eigen::Vector2d origin) {
+  // Transform global origin into CH1903 / LV03 coordinates
+  Eigen::Vector2d origin_lv03 = transformCoordinates(src_coord, ESPG::CH1903_LV03, origin);
+  localorigin_e_ = origin_lv03(0);
+  localorigin_n_ = origin_lv03(1);
 }

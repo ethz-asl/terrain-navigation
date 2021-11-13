@@ -34,6 +34,8 @@
 #ifndef TERRAIN_MAP_H
 #define TERRAIN_MAP_H
 
+enum class ESPG { ECEF = 4978, WGS84 = 4326, CH1903_LV03 = 21781 };
+
 // #include <grid_map_msgs/GridMap.h>
 #include <grid_map_core/GridMap.hpp>
 #include <grid_map_core/iterators/GridMapIterator.hpp>
@@ -41,8 +43,8 @@
 #include <gdal/cpl_string.h>
 #include <gdal/gdal.h>
 #include <gdal/gdal_priv.h>
+#include <gdal/ogr_p.h>
 #include <gdal/ogr_spatialref.h>
-
 #include <iostream>
 
 class TerrainMap {
@@ -54,8 +56,25 @@ class TerrainMap {
   grid_map::GridMap& getGridMap() { return grid_map_; }
   bool isInCollision(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
   double getCollisionDepth(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
+  void setGlobalOrigin(ESPG src_coord, const Eigen::Vector2d origin);
+  static Eigen::Vector2d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
+                                                  const Eigen::Vector2d source_coordinates) {
+    OGRSpatialReference source, target;
+    source.importFromEPSG(static_cast<int>(src_coord));
+    target.importFromEPSG(static_cast<int>(tgt_coord));
 
+    OGRPoint p;
+    p.setX(source_coordinates(0));
+    p.setY(source_coordinates(1));
+    p.assignSpatialReference(&source);
+
+    p.transformTo(&target);
+    Eigen::Vector2d target_coordinates(p.getX(), p.getY());
+    return target_coordinates;
+  }
  private:
   grid_map::GridMap grid_map_;
+  double localorigin_e_{789823.93};  // duerrboden berghaus
+  double localorigin_n_{177416.56};
 };
 #endif

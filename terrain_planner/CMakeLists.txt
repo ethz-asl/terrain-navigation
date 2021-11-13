@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 2.8.12)
 project(terrain_planner)
 
 add_definitions(-std=c++11)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(GDAL)
 find_package(OpenCV REQUIRED)
+find_package(GeographicLib REQUIRED)
+include(CheckGeographicLibDatasets)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -22,6 +25,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES terrain_planner
   CATKIN_DEPENDS roscpp rospy
+  DEPENDS GeographicLib
 )
 
 #############
@@ -32,6 +36,7 @@ include_directories(
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
+  ${GeographicLib_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME}
@@ -41,7 +46,7 @@ add_library(${PROJECT_NAME}
   src/terrain_map.cpp
 )
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES})
 
 ############
 # BINARIES #
@@ -72,6 +77,7 @@ if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_example.cpp
+                                          test/test_terrain_map.cpp
                                           test/test_maneuver_library.cpp)
 
     if(TARGET ${PROJECT_NAME}-test)
