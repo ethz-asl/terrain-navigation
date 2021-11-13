@@ -58,7 +58,7 @@ class TerrainMap {
   double getCollisionDepth(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
   void setGlobalOrigin(ESPG src_coord, const Eigen::Vector2d origin);
   static Eigen::Vector2d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
-                                                  const Eigen::Vector2d source_coordinates) {
+                                              const Eigen::Vector2d source_coordinates) {
     OGRSpatialReference source, target;
     source.importFromEPSG(static_cast<int>(src_coord));
     target.importFromEPSG(static_cast<int>(tgt_coord));
@@ -72,6 +72,7 @@ class TerrainMap {
     Eigen::Vector2d target_coordinates(p.getX(), p.getY());
     return target_coordinates;
   }
+
  private:
   grid_map::GridMap grid_map_;
   double localorigin_e_{789823.93};  // duerrboden berghaus

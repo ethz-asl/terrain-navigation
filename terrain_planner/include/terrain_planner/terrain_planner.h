@@ -118,6 +118,10 @@ class TerrainPlanner {
   Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
+
+  std::string map_path_{};
+  bool local_origin_received_{false};
+  bool map_initialized_{false};
 };
 
 #endif

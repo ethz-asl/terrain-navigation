@@ -76,15 +76,9 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
                                 ros::TransportHints().tcpNoDelay());
   global_origin_sub_ = nh_.subscribe("mavros/global_position/gp_origin", 1, &TerrainPlanner::mavGlobalOriginCallback,
                                      this, ros::TransportHints().tcpNoDelay());
-  std::string map_path;
-  nh_private.param<std::string>("terrain_path", map_path, "resources/cadastre.tif");
+  nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(5.0);
-  maneuver_library_->setTerrainMap(map_path);
-
-  /// TODO: Get global origin of local coordinates
-  /// TODO: Get map center from tif
-  /// TODO: Publish tf between map and vehicle origin
 
   planner_profiler_ = std::make_shared<Profiler>("planner");
 
@@ -134,6 +128,8 @@ TerrainPlanner::~TerrainPlanner() {
 }
 
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
+  if (!map_initialized_) return;
+
   // TODO: Get position setpoint based on time
   double time_since_start = (ros::Time::now() - plan_time_).toSec();
   switch (setpoint_mode_) {
@@ -160,6 +156,11 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 }
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
+  if (local_origin_received_ && !map_initialized_) {
+    maneuver_library_->setTerrainMap(map_path_);
+    map_initialized_ = true;
+    return;
+  }
   planner_profiler_->tic();
   /// TODO: Plan from next segment
   // Plan from the end of the current segment
@@ -373,6 +374,8 @@ void TerrainPlanner::processSetPoseFeedback(const visualization_msgs::Interactiv
 }
 
 void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg) {
+  local_origin_received_ = true;
+
   double X = static_cast<double>(msg->position.latitude);
   double Y = static_cast<double>(msg->position.longitude);
   double Z = static_cast<double>(msg->position.altitude);

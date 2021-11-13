@@ -122,15 +122,12 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   const double lengthY = resolution * height;
   grid_map::Length length(lengthX, lengthY);
 
-  /// TODO: Get center of the map and not the upper left corner
   double mapcenter_e = originX + pixelSizeX * width * 0.5;
   double mapcenter_n = originY + pixelSizeY * height * 0.5;
   double map_position_x = mapcenter_e - localorigin_e_;
   double map_position_y = mapcenter_n - localorigin_n_;
 
-  /// TODO: Transform map only if global origin is initialized
   Eigen::Vector2d position = Eigen::Vector2d(map_position_x, map_position_y);
-  std::cout << "map position: " << position.transpose() << std::endl;
   grid_map_.setGeometry(length, resolution, position);
   grid_map_.setFrameId("world");
   grid_map_.add("elevation");
