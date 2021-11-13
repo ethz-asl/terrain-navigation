@@ -97,27 +97,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   control.orientation.x = 0;
   control.orientation.y = kSqrt2Over2;
   control.orientation.z = 0;
-  control.name = "rotate_yaw";
-  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
-  set_goal_marker_.controls.push_back(control);
-  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-  control.name = "move z";
-  set_goal_marker_.controls.push_back(control);
-
-  control.orientation.w = kSqrt2Over2;
-  control.orientation.x = kSqrt2Over2;
-  control.orientation.y = 0;
-  control.orientation.z = 0;
-  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-  control.name = "move x";
-  set_goal_marker_.controls.push_back(control);
-
-  control.orientation.w = kSqrt2Over2;
-  control.orientation.x = 0;
-  control.orientation.y = 0;
-  control.orientation.z = kSqrt2Over2;
-  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-  control.name = "move y";
+  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
+  control.name = "move plane";
   set_goal_marker_.controls.push_back(control);
 
   marker_server_.insert(set_goal_marker_);
@@ -366,7 +347,14 @@ void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const E
 
 void TerrainPlanner::processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
   // TODO: Set goal position from menu
-  if (feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP) {
+  if (feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE) {
+    set_goal_marker_.pose = feedback->pose;
+    Eigen::Vector2d marker_position_2d(set_goal_marker_.pose.position.x, set_goal_marker_.pose.position.y);
+    if (maneuver_library_->getGridMap().isInside(marker_position_2d)) {
+      double elevation = maneuver_library_->getGridMap().atPosition("elevation", marker_position_2d);
+      set_goal_marker_.pose.position.z = elevation + 200.0;
+      marker_server_.setPose(set_goal_marker_.name, set_goal_marker_.pose);
+    }
     goal_pos_ = toEigen(feedback->pose);
     maneuver_library_->setGoalPosition(goal_pos_);
   }
