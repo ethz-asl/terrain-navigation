@@ -382,6 +382,11 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   GeographicLib::Geocentric earth(GeographicLib::Constants::WGS84_a(), GeographicLib::Constants::WGS84_f());
   double lat, lon, alt;
   earth.Reverse(X, Y, Z, lat, lon, alt);
+  // Depending on Gdal versions, lon lat order are reversed
+#if GDAL_VERSION_MAJOR > 2
+  maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector2d(lat, lon));
+#else
   maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector2d(lon, lat));
+#endif
   maneuver_library_->getTerrainMap()->setAltitudeOrigin(alt);
 }
