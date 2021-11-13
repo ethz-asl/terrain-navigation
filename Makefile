@@ -7,3 +7,9 @@ format:
 build:
 	catkin build ${package}
 
+build-test:
+	catkin build terrain_planner --no-deps -v -i --catkin-make-args tests
+
+test: build-test
+	Tools/run_tests.sh .
+
