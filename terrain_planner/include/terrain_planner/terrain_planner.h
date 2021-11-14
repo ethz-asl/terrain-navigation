@@ -50,11 +50,9 @@
 #include <geographic_msgs/GeoPointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <interactive_markers/interactive_marker_server.h>
 #include <mavros_msgs/State.h>
 #include <nav_msgs/Path.h>
 #include <planner_msgs/SetString.h>
-#include <visualization_msgs/InteractiveMarkerFeedback.h>
 
 #include <Eigen/Dense>
 
@@ -84,7 +82,6 @@ class TerrainPlanner {
                                 const double curvature);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
-  void processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;
@@ -106,8 +103,6 @@ class TerrainPlanner {
 
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;
-  interactive_markers::InteractiveMarkerServer marker_server_;
-  visualization_msgs::InteractiveMarker set_goal_marker_;
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
 
   SETPOINT_MODE setpoint_mode_{SETPOINT_MODE::STATE};

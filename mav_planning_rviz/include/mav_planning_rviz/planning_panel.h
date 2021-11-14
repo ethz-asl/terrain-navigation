@@ -6,6 +6,7 @@
 #include <ros/ros.h>
 #include <rviz/panel.h>
 #include "mav_planning_rviz/edit_button.h"
+#include "mav_planning_rviz/goal_marker.h"
 #include "mav_planning_rviz/planning_interactive_markers.h"
 #include "mav_planning_rviz/pose_widget.h"
 #endif
@@ -68,6 +69,8 @@ class PlanningPanel : public rviz::Panel {
   ros::Publisher waypoint_pub_;
   ros::Publisher controller_pub_;
   ros::Subscriber odometry_sub_;
+
+  std::shared_ptr<GoalMarker> goal_marker_;
 
   // QT stuff:
   QLineEdit* namespace_editor_;

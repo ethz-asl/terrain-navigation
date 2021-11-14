@@ -50,7 +50,7 @@
 #include <GeographicLib/Geocentric.hpp>
 
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
-    : nh_(nh), nh_private_(nh_private), marker_server_("goal") {
+    : nh_(nh), nh_private_(nh_private) {
   vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
   cmdloop_timer_ = nh_.createTimer(ros::Duration(0.1), &TerrainPlanner::cmdloopCallback,
                                    this);  // Define timer for constant loop rate
@@ -88,28 +88,6 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   maneuver_library_->setPlanningHorizon(5.0);
 
   planner_profiler_ = std::make_shared<Profiler>("planner");
-
-  set_goal_marker_.header.frame_id = "map";
-  set_goal_marker_.name = "set_pose";
-  set_goal_marker_.scale = 100.0;
-  set_goal_marker_.controls.clear();
-
-  constexpr double kSqrt2Over2 = sqrt(2.0) / 2.0;
-
-  // Set up controls: x, y, z, and yaw.
-  visualization_msgs::InteractiveMarkerControl control;
-  set_goal_marker_.controls.clear();
-  control.orientation.w = kSqrt2Over2;
-  control.orientation.x = 0;
-  control.orientation.y = kSqrt2Over2;
-  control.orientation.z = 0;
-  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
-  control.name = "move plane";
-  set_goal_marker_.controls.push_back(control);
-
-  marker_server_.insert(set_goal_marker_);
-  marker_server_.setCallback(set_goal_marker_.name, boost::bind(&TerrainPlanner::processSetPoseFeedback, this, _1));
-  marker_server_.applyChanges();
 }
 TerrainPlanner::~TerrainPlanner() {
   // Destructor
@@ -349,22 +327,6 @@ void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const E
   marker.color.b = 0.5;
   marker.pose = vehicle_pose;
   vehicle_pose_pub_.publish(marker);
-}
-
-void TerrainPlanner::processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
-  // TODO: Set goal position from menu
-  if (feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE) {
-    set_goal_marker_.pose = feedback->pose;
-    Eigen::Vector2d marker_position_2d(set_goal_marker_.pose.position.x, set_goal_marker_.pose.position.y);
-    if (maneuver_library_->getGridMap().isInside(marker_position_2d)) {
-      double elevation = maneuver_library_->getGridMap().atPosition("elevation", marker_position_2d);
-      set_goal_marker_.pose.position.z = elevation + 200.0;
-      marker_server_.setPose(set_goal_marker_.name, set_goal_marker_.pose);
-    }
-    goal_pos_ = toEigen(feedback->pose);
-    maneuver_library_->setGoalPosition(goal_pos_);
-  }
-  marker_server_.applyChanges();
 }
 
 void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg) {

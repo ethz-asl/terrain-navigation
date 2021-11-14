@@ -21,6 +21,7 @@
 #include <planner_msgs/SetString.h>
 
 #include "mav_planning_rviz/edit_button.h"
+#include "mav_planning_rviz/goal_marker.h"
 #include "mav_planning_rviz/planning_panel.h"
 #include "mav_planning_rviz/pose_widget.h"
 
@@ -28,6 +29,7 @@ namespace mav_planning_rviz {
 
 PlanningPanel::PlanningPanel(QWidget* parent) : rviz::Panel(parent), nh_(ros::NodeHandle()), interactive_markers_(nh_) {
   createLayout();
+  goal_marker_ = std::make_shared<GoalMarker>(nh_);
 }
 
 void PlanningPanel::onInitialize() {
@@ -50,7 +52,7 @@ void PlanningPanel::createLayout() {
   topic_layout->addWidget(new QLabel("Terrain Location:"), 1, 0);
   planner_name_editor_ = new QLineEdit;
   topic_layout->addWidget(planner_name_editor_, 1, 1);
-  odometry_checkbox_ = new QCheckBox("Set start to odom");
+  odometry_checkbox_ = new QCheckBox("Disable Maximum Altitude Constraint");
   topic_layout->addWidget(odometry_checkbox_, 3, 0, 1, 2);
 
   // Start and goal poses.
