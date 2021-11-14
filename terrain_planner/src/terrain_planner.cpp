@@ -76,7 +76,12 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
                                 ros::TransportHints().tcpNoDelay());
   global_origin_sub_ = nh_.subscribe("mavros/global_position/gp_origin", 1, &TerrainPlanner::mavGlobalOriginCallback,
                                      this, ros::TransportHints().tcpNoDelay());
+
+  setlocation_serviceserver_ =
+      nh_.advertiseService("/terrain_planner/set_location", &TerrainPlanner::setLocationCallback, this);
+
   nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
+  nh_private.param<std::string>("resource_path", resource_path_, "resources");
   nh_private.param<std::string>("meshresource_path", mesh_resource_path_, "resources/believer.dae");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(5.0);
@@ -377,4 +382,16 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector2d(lon, lat));
 #endif
   maneuver_library_->getTerrainMap()->setAltitudeOrigin(alt);
+}
+
+bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
+                                         planner_msgs::SetString::Response &res) {
+  std::string set_location = req.string;
+  std::cout << "[TerrainPlanner] Set Location: " << set_location << std::endl;
+  /// TODO: Add location from the new set location service
+  map_path_ = resource_path_ + "/" + set_location + ".tif";
+  maneuver_library_->setTerrainMap(map_path_);
+
+  res.success = true;
+  return true;
 }

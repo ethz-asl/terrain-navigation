@@ -47,15 +47,9 @@ void PlanningPanel::onInitialize() {
 void PlanningPanel::createLayout() {
   QGridLayout* topic_layout = new QGridLayout;
   // Input the namespace.
-  topic_layout->addWidget(new QLabel("Namespace:"), 0, 0);
-  namespace_editor_ = new QLineEdit;
-  topic_layout->addWidget(namespace_editor_, 0, 1);
-  topic_layout->addWidget(new QLabel("Planner name:"), 1, 0);
+  topic_layout->addWidget(new QLabel("Terrain Location:"), 1, 0);
   planner_name_editor_ = new QLineEdit;
   topic_layout->addWidget(planner_name_editor_, 1, 1);
-  topic_layout->addWidget(new QLabel("Odometry topic:"), 2, 0);
-  odometry_topic_editor_ = new QLineEdit;
-  topic_layout->addWidget(odometry_topic_editor_, 2, 1);
   odometry_checkbox_ = new QCheckBox("Set start to odom");
   topic_layout->addWidget(odometry_checkbox_, 3, 0, 1, 2);
 
@@ -107,9 +101,7 @@ void PlanningPanel::createLayout() {
   setLayout(layout);
 
   // Hook up connections.
-  connect(namespace_editor_, SIGNAL(editingFinished()), this, SLOT(updateNamespace()));
   connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
-  connect(odometry_topic_editor_, SIGNAL(editingFinished()), this, SLOT(updateOdometryTopic()));
   connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
   connect(publish_path_button_, SIGNAL(released()), this, SLOT(callPublishPath()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
@@ -124,8 +116,6 @@ void PlanningPanel::trackOdometryStateChanged(int state) {
     track_odometry_ = 1;
   }
 }
-
-void PlanningPanel::updateNamespace() { setNamespace(namespace_editor_->text()); }
 
 // Set the topic name we are publishing to.
 void PlanningPanel::setNamespace(const QString& new_namespace) {
@@ -173,7 +163,7 @@ void PlanningPanel::setPlannerName(const QString& new_planner_name) {
   }
 }
 
-void PlanningPanel::updateOdometryTopic() { setOdometryTopic(odometry_topic_editor_->text()); }
+// void PlanningPanel::updateOdometryTopic() { setOdometryTopic(odometry_topic_editor_->text()); }
 
 // Set the topic name we are publishing to.
 void PlanningPanel::setOdometryTopic(const QString& new_odometry_topic) {
@@ -254,16 +244,8 @@ void PlanningPanel::load(const rviz::Config& config) {
   rviz::Panel::load(config);
   QString topic;
   QString ns;
-  if (config.mapGetString("namespace", &ns)) {
-    namespace_editor_->setText(ns);
-    updateNamespace();
-  }
   if (config.mapGetString("planner_name", &planner_name_)) {
     planner_name_editor_->setText(planner_name_);
-  }
-  if (config.mapGetString("odometry_topic", &topic)) {
-    odometry_topic_editor_->setText(topic);
-    updateOdometryTopic();
   }
 }
 

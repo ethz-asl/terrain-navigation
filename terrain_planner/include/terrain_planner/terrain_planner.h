@@ -53,6 +53,7 @@
 #include <interactive_markers/interactive_marker_server.h>
 #include <mavros_msgs/State.h>
 #include <nav_msgs/Path.h>
+#include <planner_msgs/SetString.h>
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
 
 #include <Eigen/Dense>
@@ -73,6 +74,7 @@ class TerrainPlanner {
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
   void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
   void mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
+  bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
 
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
@@ -99,6 +101,9 @@ class TerrainPlanner {
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;
   ros::Subscriber global_origin_sub_;
+
+  ros::ServiceServer setlocation_serviceserver_;
+
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;
   interactive_markers::InteractiveMarkerServer marker_server_;
@@ -121,6 +126,7 @@ class TerrainPlanner {
 
   std::string map_path_{};
   std::string mesh_resource_path_{};
+  std::string resource_path_{};
   bool local_origin_received_{false};
   bool map_initialized_{false};
 };

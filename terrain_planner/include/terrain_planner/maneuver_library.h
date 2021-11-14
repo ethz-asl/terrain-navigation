@@ -59,9 +59,11 @@ class ManeuverLibrary {
                                    Eigen::Vector3d current_vel);
   double getPlanningHorizon() { return planning_horizon_; };
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
-  void setTerrainMap(const std::string& map_path) {
-    terrain_map_->initializeFromGeotiff(map_path);
+  bool setTerrainMap(const std::string& map_path) {
+    bool loaded = terrain_map_->initializeFromGeotiff(map_path);
+    if (!loaded) return false;
     terrain_map_->AddLayerDistanceTransform("distance_surface");
+    return true;
   };
   void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
   bool Solve();

@@ -46,9 +46,7 @@ class PlanningPanel : public rviz::Panel {
 
   // Next come a couple of public Qt slots.
  public Q_SLOTS:
-  void updateNamespace();
   void updatePlannerName();
-  void updateOdometryTopic();
   void startEditing(const std::string& id);
   void finishEditing(const std::string& id);
   void widgetPoseUpdated(const std::string& id, mav_msgs::EigenTrajectoryPoint& pose);
