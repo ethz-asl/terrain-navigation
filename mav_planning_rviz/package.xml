@@ -21,6 +21,7 @@
   <depend>tf</depend>
   <depend>visualization_msgs</depend>
   <depend>mavros_msgs</depend>
+  <depend>planner_msgs</depend>
   <depend>rviz</depend>
 
   <export>

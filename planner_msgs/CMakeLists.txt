@@ -11,6 +11,11 @@ add_message_files(
   NavigationStatus.msg
 )
 
+add_service_files(
+  FILES
+  SetString.srv
+)
+
 generate_messages(DEPENDENCIES geometry_msgs std_msgs)
 
 catkin_package(

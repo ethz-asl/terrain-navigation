@@ -18,6 +18,7 @@
 #include <std_srvs/Empty.h>
 
 #include <mavros_msgs/SetMode.h>
+#include <planner_msgs/SetString.h>
 
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/planning_panel.h"
@@ -148,7 +149,24 @@ void PlanningPanel::updatePlannerName() { setPlannerName(planner_name_editor_->t
 
 // Set the topic name we are publishing to.
 void PlanningPanel::setPlannerName(const QString& new_planner_name) {
-  // Only take action if the name has changed.
+  // Load new environment using a service
+  std::string service_name = "/terrain_planner/set_location";
+  std::cout << "New planner name: " << new_planner_name.toStdString() << std::endl;
+  std::thread t([service_name, new_planner_name] {
+    planner_msgs::SetString req;
+    req.request.string = new_planner_name.toStdString();
+
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+
   if (new_planner_name != planner_name_) {
     planner_name_ = new_planner_name;
     Q_EMIT configChanged();
