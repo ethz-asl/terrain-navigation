@@ -51,8 +51,7 @@ class PlanningPanel : public rviz::Panel {
   void updateOdometryTopic();
   void startEditing(const std::string& id);
   void finishEditing(const std::string& id);
-  void widgetPoseUpdated(const std::string& id,
-                         mav_msgs::EigenTrajectoryPoint& pose);
+  void widgetPoseUpdated(const std::string& id, mav_msgs::EigenTrajectoryPoint& pose);
   void callPlannerService();
   void callPublishPath();
   void publishWaypoint();

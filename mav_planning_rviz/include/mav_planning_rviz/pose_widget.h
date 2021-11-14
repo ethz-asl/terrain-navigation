@@ -49,8 +49,7 @@ class PoseWidget : public QWidget {
 
 class DoubleTableDelegate : public QItemDelegate {
  public:
-  QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option,
-                        const QModelIndex& index) const;
+  QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const;
 };
 
 }  // end namespace mav_planning_rviz

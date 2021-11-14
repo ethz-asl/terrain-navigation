@@ -12,8 +12,7 @@ namespace mav_planning_rviz {
 
 class PlanningInteractiveMarkers {
  public:
-  typedef std::function<void(const mav_msgs::EigenTrajectoryPoint& pose)>
-      PoseUpdatedFunctionType;
+  typedef std::function<void(const mav_msgs::EigenTrajectoryPoint& pose)> PoseUpdatedFunctionType;
 
   PlanningInteractiveMarkers(const ros::NodeHandle& nh);
   ~PlanningInteractiveMarkers() {}
@@ -21,9 +20,7 @@ class PlanningInteractiveMarkers {
   void setFrameId(const std::string& frame_id);
   // Bind callback for whenever pose updates.
 
-  void setPoseUpdatedCallback(const PoseUpdatedFunctionType& function) {
-    pose_updated_function_ = function;
-  }
+  void setPoseUpdatedCallback(const PoseUpdatedFunctionType& function) { pose_updated_function_ = function; }
 
   void initialize();
 
@@ -33,14 +30,11 @@ class PlanningInteractiveMarkers {
   void setPose(const mav_msgs::EigenTrajectoryPoint& pose);
 
   // Functions to interact with markers from the marker map (no controls):
-  void enableMarker(const std::string& id,
-                    const mav_msgs::EigenTrajectoryPoint& pose);
-  void updateMarkerPose(const std::string& id,
-                        const mav_msgs::EigenTrajectoryPoint& pose);
+  void enableMarker(const std::string& id, const mav_msgs::EigenTrajectoryPoint& pose);
+  void updateMarkerPose(const std::string& id, const mav_msgs::EigenTrajectoryPoint& pose);
   void disableMarker(const std::string& id);
 
-  void processSetPoseFeedback(
-      const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
  private:
   // Creates markers without adding them to the marker server.

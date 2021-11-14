@@ -17,22 +17,22 @@
 #include <rviz/visualization_manager.h>
 #include <std_srvs/Empty.h>
 
+#include <mavros_msgs/SetMode.h>
+
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/planning_panel.h"
 #include "mav_planning_rviz/pose_widget.h"
 
 namespace mav_planning_rviz {
 
-PlanningPanel::PlanningPanel(QWidget* parent)
-    : rviz::Panel(parent), nh_(ros::NodeHandle()), interactive_markers_(nh_) {
+PlanningPanel::PlanningPanel(QWidget* parent) : rviz::Panel(parent), nh_(ros::NodeHandle()), interactive_markers_(nh_) {
   createLayout();
 }
 
 void PlanningPanel::onInitialize() {
   interactive_markers_.initialize();
   interactive_markers_.setPoseUpdatedCallback(
-      std::bind(&PlanningPanel::updateInteractiveMarkerPose, this,
-                std::placeholders::_1));
+      std::bind(&PlanningPanel::updateInteractiveMarkerPose, this, std::placeholders::_1));
 
   interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
   // Initialize all the markers.
@@ -89,14 +89,14 @@ void PlanningPanel::createLayout() {
 
   // Planner services and publications.
   QGridLayout* service_layout = new QGridLayout;
-  planner_service_button_ = new QPushButton("Planner Service");
+  planner_service_button_ = new QPushButton("Engage Planner");
   publish_path_button_ = new QPushButton("Publish Path");
-  waypoint_button_ = new QPushButton("Send Waypoint");
+  waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
   service_layout->addWidget(planner_service_button_, 0, 0);
-  service_layout->addWidget(publish_path_button_, 0, 1);
+  // service_layout->addWidget(publish_path_button_, 0, 1);
   service_layout->addWidget(waypoint_button_, 1, 0);
-  service_layout->addWidget(controller_button_, 1, 1);
+  // service_layout->addWidget(controller_button_, 1, 1);
 
   // First the names, then the start/goal, then service buttons.
   QVBoxLayout* layout = new QVBoxLayout;
@@ -106,21 +106,14 @@ void PlanningPanel::createLayout() {
   setLayout(layout);
 
   // Hook up connections.
-  connect(namespace_editor_, SIGNAL(editingFinished()), this,
-          SLOT(updateNamespace()));
-  connect(planner_name_editor_, SIGNAL(editingFinished()), this,
-          SLOT(updatePlannerName()));
-  connect(odometry_topic_editor_, SIGNAL(editingFinished()), this,
-          SLOT(updateOdometryTopic()));
-  connect(planner_service_button_, SIGNAL(released()), this,
-          SLOT(callPlannerService()));
-  connect(publish_path_button_, SIGNAL(released()), this,
-          SLOT(callPublishPath()));
+  connect(namespace_editor_, SIGNAL(editingFinished()), this, SLOT(updateNamespace()));
+  connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
+  connect(odometry_topic_editor_, SIGNAL(editingFinished()), this, SLOT(updateOdometryTopic()));
+  connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
+  connect(publish_path_button_, SIGNAL(released()), this, SLOT(callPublishPath()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
-  connect(controller_button_, SIGNAL(released()), this,
-          SLOT(publishToController()));
-  connect(odometry_checkbox_, SIGNAL(stateChanged(int)), this,
-          SLOT(trackOdometryStateChanged(int)));
+  connect(controller_button_, SIGNAL(released()), this, SLOT(publishToController()));
+  connect(odometry_checkbox_, SIGNAL(stateChanged(int)), this, SLOT(trackOdometryStateChanged(int)));
 }
 
 void PlanningPanel::trackOdometryStateChanged(int state) {
@@ -131,15 +124,11 @@ void PlanningPanel::trackOdometryStateChanged(int state) {
   }
 }
 
-void PlanningPanel::updateNamespace() {
-  setNamespace(namespace_editor_->text());
-}
+void PlanningPanel::updateNamespace() { setNamespace(namespace_editor_->text()); }
 
 // Set the topic name we are publishing to.
 void PlanningPanel::setNamespace(const QString& new_namespace) {
-  ROS_DEBUG_STREAM("Setting namespace from: " << namespace_.toStdString()
-                                              << " to "
-                                              << new_namespace.toStdString());
+  ROS_DEBUG_STREAM("Setting namespace from: " << namespace_.toStdString() << " to " << new_namespace.toStdString());
   // Only take action if the name has changed.
   if (new_namespace != namespace_) {
     namespace_ = new_namespace;
@@ -147,20 +136,15 @@ void PlanningPanel::setNamespace(const QString& new_namespace) {
 
     std::string error;
     if (ros::names::validate(namespace_.toStdString(), error)) {
-      waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
-          namespace_.toStdString() + "/waypoint", 1, false);
-      controller_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
-          namespace_.toStdString() + "/command/pose", 1, false);
-      odometry_sub_ = nh_.subscribe(
-          namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
-          &PlanningPanel::odometryCallback, this);
+      waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(namespace_.toStdString() + "/waypoint", 1, false);
+      controller_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(namespace_.toStdString() + "/command/pose", 1, false);
+      odometry_sub_ = nh_.subscribe(namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
+                                    &PlanningPanel::odometryCallback, this);
     }
   }
 }
 
-void PlanningPanel::updatePlannerName() {
-  setPlannerName(planner_name_editor_->text());
-}
+void PlanningPanel::updatePlannerName() { setPlannerName(planner_name_editor_->text()); }
 
 // Set the topic name we are publishing to.
 void PlanningPanel::setPlannerName(const QString& new_planner_name) {
@@ -171,9 +155,7 @@ void PlanningPanel::setPlannerName(const QString& new_planner_name) {
   }
 }
 
-void PlanningPanel::updateOdometryTopic() {
-  setOdometryTopic(odometry_topic_editor_->text());
-}
+void PlanningPanel::updateOdometryTopic() { setOdometryTopic(odometry_topic_editor_->text()); }
 
 // Set the topic name we are publishing to.
 void PlanningPanel::setOdometryTopic(const QString& new_odometry_topic) {
@@ -184,9 +166,8 @@ void PlanningPanel::setOdometryTopic(const QString& new_odometry_topic) {
 
     std::string error;
     if (ros::names::validate(namespace_.toStdString(), error)) {
-      odometry_sub_ = nh_.subscribe(
-          namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
-          &PlanningPanel::odometryCallback, this);
+      odometry_sub_ = nh_.subscribe(namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
+                                    &PlanningPanel::odometryCallback, this);
     }
   }
 }
@@ -230,18 +211,14 @@ void PlanningPanel::finishEditing(const std::string& id) {
 
 void PlanningPanel::registerPoseWidget(PoseWidget* widget) {
   pose_widget_map_[widget->id()] = widget;
-  connect(widget, SIGNAL(poseUpdated(const std::string&,
-                                     mav_msgs::EigenTrajectoryPoint&)),
-          this, SLOT(widgetPoseUpdated(const std::string&,
-                                       mav_msgs::EigenTrajectoryPoint&)));
+  connect(widget, SIGNAL(poseUpdated(const std::string&, mav_msgs::EigenTrajectoryPoint&)), this,
+          SLOT(widgetPoseUpdated(const std::string&, mav_msgs::EigenTrajectoryPoint&)));
 }
 
 void PlanningPanel::registerEditButton(EditButton* button) {
   edit_button_map_[button->id()] = button;
-  connect(button, SIGNAL(startedEditing(const std::string&)), this,
-          SLOT(startEditing(const std::string&)));
-  connect(button, SIGNAL(finishedEditing(const std::string&)), this,
-          SLOT(finishEditing(const std::string&)));
+  connect(button, SIGNAL(startedEditing(const std::string&)), this, SLOT(startEditing(const std::string&)));
+  connect(button, SIGNAL(finishedEditing(const std::string&)), this, SLOT(finishEditing(const std::string&)));
 }
 
 // Save all configuration data from this panel to the given
@@ -272,8 +249,7 @@ void PlanningPanel::load(const rviz::Config& config) {
   }
 }
 
-void PlanningPanel::updateInteractiveMarkerPose(
-    const mav_msgs::EigenTrajectoryPoint& pose) {
+void PlanningPanel::updateInteractiveMarkerPose(const mav_msgs::EigenTrajectoryPoint& pose) {
   if (currently_editing_.empty()) {
     return;
   }
@@ -284,8 +260,7 @@ void PlanningPanel::updateInteractiveMarkerPose(
   search->second->setPose(pose);
 }
 
-void PlanningPanel::widgetPoseUpdated(const std::string& id,
-                                      mav_msgs::EigenTrajectoryPoint& pose) {
+void PlanningPanel::widgetPoseUpdated(const std::string& id, mav_msgs::EigenTrajectoryPoint& pose) {
   if (currently_editing_ == id) {
     interactive_markers_.setPose(pose);
   }
@@ -293,36 +268,27 @@ void PlanningPanel::widgetPoseUpdated(const std::string& id,
 }
 
 void PlanningPanel::callPlannerService() {
-  std::string service_name =
-      namespace_.toStdString() + "/" + planner_name_.toStdString() + "/plan";
-  mav_msgs::EigenTrajectoryPoint start_point, goal_point;
+  std::string service_name = "/mavros/set_mode";
+  std::cout << "Planner Service" << std::endl;
+  std::thread t([service_name] {
+    mavros_msgs::SetMode req;
+    req.request.custom_mode = "OFFBOARD";
 
-  start_pose_widget_->getPose(&start_point);
-  goal_pose_widget_->getPose(&goal_point);
-
-  // std::thread t([service_name, start_point, goal_point] {
-  //   mav_planning_msgs::PlannerService req;
-  //   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(start_point,
-  //                                                    &req.request.start_pose);
-  //   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(goal_point,
-  //                                                    &req.request.goal_pose);
-
-  //   try {
-  //     ROS_DEBUG_STREAM("Service name: " << service_name);
-  //     if (!ros::service::call(service_name, req)) {
-  //       ROS_WARN_STREAM("Couldn't call service: " << service_name);
-  //     }
-  //   } catch (const std::exception& e) {
-  //     ROS_ERROR_STREAM("Service Exception: " << e.what());
-  //   }
-  // });
-  // t.detach();
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
 }
 
 void PlanningPanel::callPublishPath() {
   std_srvs::Empty req;
-  std::string service_name = namespace_.toStdString() + "/" +
-                             planner_name_.toStdString() + "/publish_path";
+  std::string service_name = namespace_.toStdString() + "/" + planner_name_.toStdString() + "/publish_path";
   try {
     if (!ros::service::call(service_name, req)) {
       ROS_WARN_STREAM("Couldn't call service: " << service_name);
@@ -333,18 +299,22 @@ void PlanningPanel::callPublishPath() {
 }
 
 void PlanningPanel::publishWaypoint() {
-  mav_msgs::EigenTrajectoryPoint goal_point;
-  goal_pose_widget_->getPose(&goal_point);
+  std::string service_name = "/mavros/set_mode";
+  std::cout << "Planner Service" << std::endl;
+  std::thread t([service_name] {
+    mavros_msgs::SetMode req;
+    req.request.custom_mode = "AUTO.RTL";
 
-  geometry_msgs::PoseStamped pose;
-  pose.header.frame_id = vis_manager_->getFixedFrame().toStdString();
-  mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(goal_point, &pose);
-
-  ROS_DEBUG_STREAM("Publishing waypoint on "
-                   << waypoint_pub_.getTopic()
-                   << " subscribers: " << waypoint_pub_.getNumSubscribers());
-
-  waypoint_pub_.publish(pose);
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
 }
 
 void PlanningPanel::publishToController() {
@@ -355,9 +325,8 @@ void PlanningPanel::publishToController() {
   pose.header.frame_id = vis_manager_->getFixedFrame().toStdString();
   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(goal_point, &pose);
 
-  ROS_DEBUG_STREAM("Publishing controller goal on "
-                   << controller_pub_.getTopic()
-                   << " subscribers: " << controller_pub_.getNumSubscribers());
+  ROS_DEBUG_STREAM("Publishing controller goal on " << controller_pub_.getTopic()
+                                                    << " subscribers: " << controller_pub_.getNumSubscribers());
 
   controller_pub_.publish(pose);
 }

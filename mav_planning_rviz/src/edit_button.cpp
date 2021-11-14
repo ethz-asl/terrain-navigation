@@ -8,8 +8,7 @@
 
 namespace mav_planning_rviz {
 
-EditButton::EditButton(const std::string& id, QWidget* parent)
-    : QWidget(parent), id_(id), editing_(false) {
+EditButton::EditButton(const std::string& id, QWidget* parent) : QWidget(parent), id_(id), editing_(false) {
   createButton();
 }
 
@@ -46,7 +45,6 @@ void EditButton::finishEditing() {
       "background-color: rgb(255, 255, 204); color: rgb(0, 0, 0); outline: "
       "none;");
   Q_EMIT finishedEditing(id_);
-
 }
 
 }  // namespace mav_planning_rviz

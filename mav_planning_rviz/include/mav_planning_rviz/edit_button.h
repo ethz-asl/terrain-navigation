@@ -18,9 +18,7 @@ class EditButton : public QWidget {
   std::string id() const { return id_; }
   void setId(const std::string& id) { id_ = id; }
 
-  virtual QSize sizeHint() const {
-    return edit_button_->sizeHint();
-  }
+  virtual QSize sizeHint() const { return edit_button_->sizeHint(); }
 
  public Q_SLOTS:
   void startEditing();

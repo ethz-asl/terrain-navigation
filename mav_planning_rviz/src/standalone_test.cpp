@@ -1,10 +1,10 @@
 #include <QApplication>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QtGui>
 
-#include "mav_planning_rviz/pose_widget.h"
 #include "mav_planning_rviz/edit_button.h"
+#include "mav_planning_rviz/pose_widget.h"
 
 using namespace mav_planning_rviz;
 
@@ -13,8 +13,7 @@ int main(int argc, char* argv[]) {
   QWidget window;
   window.resize(300, 200);
   window.show();
-  window.setWindowTitle(
-      QApplication::translate("toplevel", "Top-level widget"));
+  window.setWindowTitle(QApplication::translate("toplevel", "Top-level widget"));
 
   QVBoxLayout* layout = new QVBoxLayout;
   PoseWidget* pose_widget = new PoseWidget("a", &window);

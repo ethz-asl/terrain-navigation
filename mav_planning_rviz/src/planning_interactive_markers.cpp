@@ -2,12 +2,8 @@
 
 namespace mav_planning_rviz {
 
-PlanningInteractiveMarkers::PlanningInteractiveMarkers(
-    const ros::NodeHandle& nh)
-    : nh_(nh),
-      marker_server_("planning_markers"),
-      frame_id_("odom"),
-      initialized_(false) {}
+PlanningInteractiveMarkers::PlanningInteractiveMarkers(const ros::NodeHandle& nh)
+    : nh_(nh), marker_server_("planning_markers"), frame_id_("odom"), initialized_(false) {}
 
 void PlanningInteractiveMarkers::setFrameId(const std::string& frame_id) {
   frame_id_ = frame_id;
@@ -21,12 +17,6 @@ void PlanningInteractiveMarkers::initialize() {
 }
 
 void PlanningInteractiveMarkers::createMarkers() {
-  // First we set up the set point marker.
-  set_pose_marker_.header.frame_id = frame_id_;
-  set_pose_marker_.name = "set_pose";
-  set_pose_marker_.scale = 1.0;
-  set_pose_marker_.controls.clear();
-
   constexpr double kSqrt2Over2 = sqrt(2.0) / 2.0;
 
   // Set up controls: x, y, z, and yaw.
@@ -36,49 +26,8 @@ void PlanningInteractiveMarkers::createMarkers() {
   control.orientation.x = 0;
   control.orientation.y = kSqrt2Over2;
   control.orientation.z = 0;
-  control.name = "rotate_yaw";
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
-  set_pose_marker_.controls.push_back(control);
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-  control.name = "move z";
-  set_pose_marker_.controls.push_back(control);
-
-  control.orientation.w = kSqrt2Over2;
-  control.orientation.x = kSqrt2Over2;
-  control.orientation.y = 0;
-  control.orientation.z = 0;
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-  control.name = "move x";
-  set_pose_marker_.controls.push_back(control);
-
-  control.orientation.w = kSqrt2Over2;
-  control.orientation.x = 0;
-  control.orientation.y = 0;
-  control.orientation.z = kSqrt2Over2;
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-  control.name = "move y";
-  set_pose_marker_.controls.push_back(control);
-
-  control.orientation.w = 0.9239;
-  control.orientation.x = 0;
-  control.orientation.y = 0;
-  control.orientation.z = 0.3827;
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-  control.name = "move x_y";
-  set_pose_marker_.controls.push_back(control);
-
-  control.orientation.w = 0.3827;
-  control.orientation.x = 0;
-  control.orientation.y = 0;
-  control.orientation.z = 0.9239;
-  control.interaction_mode =
-      visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-  control.name = "move y_x";
+  control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
+  control.name = "move plane";
   set_pose_marker_.controls.push_back(control);
 
   // Create a marker prototype, as the default style for all markers in the
@@ -105,17 +54,14 @@ void PlanningInteractiveMarkers::createMarkers() {
   marker_prototype_.controls.push_back(control);
 }
 
-void PlanningInteractiveMarkers::enableSetPoseMarker(
-    const mav_msgs::EigenTrajectoryPoint& pose) {
+void PlanningInteractiveMarkers::enableSetPoseMarker(const mav_msgs::EigenTrajectoryPoint& pose) {
   geometry_msgs::PoseStamped pose_stamped;
   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(pose, &pose_stamped);
   set_pose_marker_.pose = pose_stamped.pose;
 
   marker_server_.insert(set_pose_marker_);
-  marker_server_.setCallback(
-      set_pose_marker_.name,
-      boost::bind(&PlanningInteractiveMarkers::processSetPoseFeedback, this,
-                  _1));
+  marker_server_.setCallback(set_pose_marker_.name,
+                             boost::bind(&PlanningInteractiveMarkers::processSetPoseFeedback, this, _1));
   marker_server_.applyChanges();
 }
 
@@ -124,8 +70,7 @@ void PlanningInteractiveMarkers::disableSetPoseMarker() {
   marker_server_.applyChanges();
 }
 
-void PlanningInteractiveMarkers::setPose(
-    const mav_msgs::EigenTrajectoryPoint& pose) {
+void PlanningInteractiveMarkers::setPose(const mav_msgs::EigenTrajectoryPoint& pose) {
   geometry_msgs::PoseStamped pose_stamped;
   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(pose, &pose_stamped);
   set_pose_marker_.pose = pose_stamped.pose;
@@ -135,8 +80,7 @@ void PlanningInteractiveMarkers::setPose(
 
 void PlanningInteractiveMarkers::processSetPoseFeedback(
     const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
-  if (feedback->event_type ==
-      visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE) {
+  if (feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE) {
     if (pose_updated_function_) {
       mav_msgs::EigenTrajectoryPoint pose;
       mav_msgs::eigenTrajectoryPointFromPoseMsg(feedback->pose, &pose);
@@ -147,8 +91,7 @@ void PlanningInteractiveMarkers::processSetPoseFeedback(
   marker_server_.applyChanges();
 }
 
-void PlanningInteractiveMarkers::enableMarker(
-    const std::string& id, const mav_msgs::EigenTrajectoryPoint& pose) {
+void PlanningInteractiveMarkers::enableMarker(const std::string& id, const mav_msgs::EigenTrajectoryPoint& pose) {
   geometry_msgs::PoseStamped pose_stamped;
   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(pose, &pose_stamped);
 
@@ -170,8 +113,7 @@ void PlanningInteractiveMarkers::enableMarker(
   marker_server_.applyChanges();
 }
 
-void PlanningInteractiveMarkers::updateMarkerPose(
-    const std::string& id, const mav_msgs::EigenTrajectoryPoint& pose) {
+void PlanningInteractiveMarkers::updateMarkerPose(const std::string& id, const mav_msgs::EigenTrajectoryPoint& pose) {
   auto search = marker_map_.find(id);
   if (search == marker_map_.end()) {
     return;

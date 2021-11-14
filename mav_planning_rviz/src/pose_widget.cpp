@@ -11,10 +11,7 @@ namespace mav_planning_rviz {
 constexpr double kDegToRad = M_PI / 180.0;
 constexpr double kRadToDeg = 180.0 / M_PI;
 
-PoseWidget::PoseWidget(const std::string& id, QWidget* parent)
-    : QWidget(parent), id_(id) {
-  createTable();
-}
+PoseWidget::PoseWidget(const std::string& id, QWidget* parent) : QWidget(parent), id_(id) { createTable(); }
 
 void PoseWidget::createTable() {
   table_widget_ = new QTableWidget(this);
@@ -35,17 +32,14 @@ void PoseWidget::createTable() {
   // From:
   // https://stackoverflow.com/questions/8766633/how-to-determine-the-correct-size-of-a-qtablewidget
   table_widget_->setFixedSize(table_widget_->horizontalHeader()->length(),
-                              table_widget_->verticalHeader()->length() +
-                                  table_widget_->horizontalHeader()->height());
+                              table_widget_->verticalHeader()->length() + table_widget_->horizontalHeader()->height());
 
   for (int i = 0; i < 4; i++) {
     table_widget_->setItem(0, i, new QTableWidgetItem("0.00"));
-    table_widget_->item(0, i)->setTextAlignment(Qt::AlignRight |
-                                                Qt::AlignVCenter);
+    table_widget_->item(0, i)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
   }
 
-  connect(table_widget_, SIGNAL(itemChanged(QTableWidgetItem*)), this,
-          SLOT(itemChanged(QTableWidgetItem*)));
+  connect(table_widget_, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(itemChanged(QTableWidgetItem*)));
 }
 
 void PoseWidget::getPose(mav_msgs::EigenTrajectoryPoint* point) const {
@@ -57,14 +51,10 @@ void PoseWidget::getPose(mav_msgs::EigenTrajectoryPoint* point) const {
 
 void PoseWidget::setPose(const mav_msgs::EigenTrajectoryPoint& point) {
   table_widget_->blockSignals(true);
-  table_widget_->item(0, 0)->setText(
-      QString::number(point.position_W.x(), 'f', 2));
-  table_widget_->item(0, 1)->setText(
-      QString::number(point.position_W.y(), 'f', 2));
-  table_widget_->item(0, 2)->setText(
-      QString::number(point.position_W.z(), 'f', 2));
-  table_widget_->item(0, 3)->setText(
-      QString::number(point.getYaw() * kRadToDeg, 'f', 2));
+  table_widget_->item(0, 0)->setText(QString::number(point.position_W.x(), 'f', 2));
+  table_widget_->item(0, 1)->setText(QString::number(point.position_W.y(), 'f', 2));
+  table_widget_->item(0, 2)->setText(QString::number(point.position_W.z(), 'f', 2));
+  table_widget_->item(0, 3)->setText(QString::number(point.getYaw() * kRadToDeg, 'f', 2));
   table_widget_->blockSignals(false);
 }
 
@@ -74,8 +64,7 @@ void PoseWidget::itemChanged(QTableWidgetItem* item) {
   Q_EMIT poseUpdated(id_, point);
 }
 
-QWidget* DoubleTableDelegate::createEditor(QWidget* parent,
-                                           const QStyleOptionViewItem& option,
+QWidget* DoubleTableDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& option,
                                            const QModelIndex& index) const {
   // From:
   // https://stackoverflow.com/questions/22708623/qtablewidget-only-numbers-permitted
