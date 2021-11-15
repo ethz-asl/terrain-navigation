@@ -10,7 +10,7 @@
     <arg name="fcu_protocol" default="v2.0" />
     <arg name="respawn_mavros" default="false" />
     <arg name="visualization" default="true"/>
-    <arg name="location" default="test_dischma"/>
+    <arg name="location" default="hinwil"/>
     <arg name="gui" default="false"/>
 
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
