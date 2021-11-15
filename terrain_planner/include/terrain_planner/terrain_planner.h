@@ -125,6 +125,7 @@ class TerrainPlanner {
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
 
   std::string map_path_{};
+  std::string map_color_path_{};
   std::string mesh_resource_path_{};
   std::string resource_path_{};
   bool local_origin_received_{false};
