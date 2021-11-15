@@ -61,6 +61,8 @@ class ManeuverLibrary {
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
   bool setTerrainMap(const std::string& map_path) {
     bool loaded = terrain_map_->initializeFromGeotiff(map_path);
+    std::string color_map_path = "/home/jaeyoung/catkin_ws/src/terrain-navigation/resources/test_dischma_color.tif";
+    bool color_loaded = terrain_map_->addColorFromGeotiff(color_map_path);
     if (!loaded) return false;
     terrain_map_->AddLayerDistanceTransform("distance_surface");
     return true;
