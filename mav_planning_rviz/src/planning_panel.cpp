@@ -19,6 +19,7 @@
 
 #include <mavros_msgs/SetMode.h>
 #include <planner_msgs/SetString.h>
+#include <planner_msgs/SetVector3.h>
 
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/goal_marker.h"
@@ -87,12 +88,12 @@ void PlanningPanel::createLayout() {
   // Planner services and publications.
   QGridLayout* service_layout = new QGridLayout;
   planner_service_button_ = new QPushButton("Engage Planner");
-  publish_path_button_ = new QPushButton("Publish Path");
+  publish_path_button_ = new QPushButton("Update Goal");
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
-  service_layout->addWidget(planner_service_button_, 0, 0);
-  // service_layout->addWidget(publish_path_button_, 0, 1);
-  service_layout->addWidget(waypoint_button_, 1, 0);
+  service_layout->addWidget(planner_service_button_, 1, 0);
+  service_layout->addWidget(publish_path_button_, 0, 0);
+  service_layout->addWidget(waypoint_button_, 2, 0);
   // service_layout->addWidget(controller_button_, 1, 1);
 
   // First the names, then the start/goal, then service buttons.
@@ -105,7 +106,7 @@ void PlanningPanel::createLayout() {
   // Hook up connections.
   connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
   connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
-  connect(publish_path_button_, SIGNAL(released()), this, SLOT(callPublishPath()));
+  connect(publish_path_button_, SIGNAL(released()), this, SLOT(setGoalService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
   connect(controller_button_, SIGNAL(released()), this, SLOT(publishToController()));
   connect(odometry_checkbox_, SIGNAL(stateChanged(int)), this, SLOT(trackOdometryStateChanged(int)));
@@ -306,6 +307,27 @@ void PlanningPanel::publishWaypoint() {
   std::thread t([service_name] {
     mavros_msgs::SetMode req;
     req.request.custom_mode = "AUTO.RTL";
+
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::setGoalService() {
+  std::string service_name = "/terrain_planner/set_goal";
+  Eigen::Vector3d goal_pos = goal_marker_->getGoalPosition();
+  std::thread t([service_name, goal_pos] {
+    planner_msgs::SetVector3 req;
+    req.request.vector.x = goal_pos(0);
+    req.request.vector.y = goal_pos(1);
+    req.request.vector.z = goal_pos(2);
 
     try {
       ROS_DEBUG_STREAM("Service name: " << service_name);

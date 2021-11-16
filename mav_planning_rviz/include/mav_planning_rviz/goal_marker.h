@@ -14,6 +14,7 @@ class GoalMarker {
  public:
   GoalMarker(const ros::NodeHandle &nh);
   virtual ~GoalMarker();
+  Eigen::Vector3d getGoalPosition() { return goal_pos_; };
 
  private:
   Eigen::Vector3d toEigen(const geometry_msgs::Pose &p) {
@@ -25,6 +26,7 @@ class GoalMarker {
 
   ros::NodeHandle nh_;
   ros::Subscriber grid_map_sub_;
+  ros::ServiceClient goal_serviceclient_;
   interactive_markers::InteractiveMarkerServer marker_server_;
   visualization_msgs::InteractiveMarker set_goal_marker_;
 

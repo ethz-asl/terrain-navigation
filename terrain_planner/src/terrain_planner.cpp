@@ -80,6 +80,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   setlocation_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_location", &TerrainPlanner::setLocationCallback, this);
+  setgoal_serviceserver_ = nh_.advertiseService("/terrain_planner/set_goal", &TerrainPlanner::setGoalCallback, this);
 
   nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
   nh_private.param<std::string>("terrain_color_path", map_color_path_, "");
@@ -387,6 +388,14 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
   maneuver_library_->setTerrainMap(map_path_);
+
+  res.success = true;
+  return true;
+}
+
+bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
+  Eigen::Vector3d new_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
+  maneuver_library_->setGoalPosition(new_goal);
 
   res.success = true;
   return true;

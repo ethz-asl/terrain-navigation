@@ -53,6 +53,7 @@
 #include <mavros_msgs/State.h>
 #include <nav_msgs/Path.h>
 #include <planner_msgs/SetString.h>
+#include <planner_msgs/SetVector3.h>
 
 #include <Eigen/Dense>
 
@@ -73,6 +74,7 @@ class TerrainPlanner {
   void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
   void mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
   bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
+  bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
 
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
@@ -102,6 +104,7 @@ class TerrainPlanner {
   ros::Subscriber global_origin_sub_;
 
   ros::ServiceServer setlocation_serviceserver_;
+  ros::ServiceServer setgoal_serviceserver_;
 
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;

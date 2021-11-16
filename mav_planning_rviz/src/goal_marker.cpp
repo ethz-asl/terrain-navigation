@@ -36,9 +36,9 @@ void GoalMarker::processSetPoseFeedback(const visualization_msgs::InteractiveMar
       double elevation = map_.atPosition("elevation", marker_position_2d);
       set_goal_marker_.pose.position.z = elevation + 200.0;
       marker_server_.setPose(set_goal_marker_.name, set_goal_marker_.pose);
+      goal_pos_ = toEigen(feedback->pose);
+      goal_pos_(2) = elevation + 100.0;
     }
-    goal_pos_ = toEigen(feedback->pose);
-    // maneuver_library_->setGoalPosition(goal_pos_);
   }
   marker_server_.applyChanges();
 }

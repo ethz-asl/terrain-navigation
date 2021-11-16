@@ -53,6 +53,7 @@ class PlanningPanel : public rviz::Panel {
   void widgetPoseUpdated(const std::string& id, mav_msgs::EigenTrajectoryPoint& pose);
   void callPlannerService();
   void callPublishPath();
+  void setGoalService();
   void publishWaypoint();
   void publishToController();
   void trackOdometryStateChanged(int state);
