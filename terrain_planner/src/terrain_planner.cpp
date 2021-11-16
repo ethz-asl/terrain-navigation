@@ -63,6 +63,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   referencehistory_pub_ = nh_.advertise<nav_msgs::Path>("reference/path", 10);
   candidate_manuever_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
   position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
+  goal_pub_ = nh_.advertise<visualization_msgs::Marker>("goal_marker", 1, true);
   mavstate_sub_ =
       nh_.subscribe("mavros/state", 1, &TerrainPlanner::mavstateCallback, this, ros::TransportHints().tcpNoDelay());
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
@@ -143,12 +144,14 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     reference_primitive_ = maneuver_library_->getBestPrimitive();
   } else {
     /// TODO: Take failsafe action when no valid primitive is found
+    std::cout << "[TerrainPlanner] Unable to found a valid motion primitive: using a random primitive" << std::endl;
     reference_primitive_ = maneuver_library_->getRandomPrimitive();
   }
   double planner_time = planner_profiler_->toc();
   publishCandidateManeuvers(maneuver_library_->getMotionPrimitives());
   publishTrajectory(reference_primitive_.position());
   MapPublishOnce();
+  publishGoal(maneuver_library_->getGoalPosition());
 
   planner_msgs::NavigationStatus msg;
   msg.header.stamp = ros::Time::now();
@@ -274,6 +277,35 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   marker.pose.orientation.z = std::sin(0.5 * yaw);
 
   position_target_pub_.publish(marker);
+}
+
+void TerrainPlanner::publishGoal(const Eigen::Vector3d &position) {
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.header.frame_id = "map";
+  marker.id = 1;
+  marker.action = visualization_msgs::Marker::DELETEALL;
+  goal_pub_.publish(marker);
+
+  marker.header.stamp = ros::Time::now();
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = 20.0;
+  marker.scale.y = 20.0;
+  marker.scale.z = 20.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.r = 1.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+  marker.pose.position.x = position(0);
+  marker.pose.position.y = position(1);
+  marker.pose.position.z = position(2);
+  marker.pose.orientation.w = 1.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+
+  goal_pub_.publish(marker);
 }
 
 void TerrainPlanner::mavstateCallback(const mavros_msgs::State::ConstPtr &msg) { current_state_ = *msg; }

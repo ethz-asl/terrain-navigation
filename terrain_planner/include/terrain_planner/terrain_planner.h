@@ -82,6 +82,7 @@ class TerrainPlanner {
                                 const double curvature);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
+  void publishGoal(const Eigen::Vector3d &position);
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;
@@ -94,6 +95,7 @@ class TerrainPlanner {
   ros::Publisher position_target_pub_;
   ros::Publisher path_target_pub_;
   ros::Publisher planner_status_pub_;
+  ros::Publisher goal_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;
