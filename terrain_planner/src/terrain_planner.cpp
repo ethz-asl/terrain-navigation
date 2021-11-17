@@ -375,7 +375,7 @@ void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const E
 }
 
 void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg) {
-  std::cout << "Receiveing Global Origin!" << std::endl;
+  std::cout << "[TerrainPlanner] Received Global Origin from FMU" << std::endl;
 
   local_origin_received_ = true;
 
@@ -385,6 +385,10 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   GeographicLib::Geocentric earth(GeographicLib::Constants::WGS84_a(), GeographicLib::Constants::WGS84_f());
   double lat, lon, alt;
   earth.Reverse(X, Y, Z, lat, lon, alt);
+  double origin_wgs84_lat_ = lat;
+  double origin_wgs84_lon_ = lon;
+  double origin_wgs84_alt_ = alt;
+
   // Depending on Gdal versions, lon lat order are reversed
 #if GDAL_VERSION_MAJOR > 2
   maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector3d(lat, lon, alt));

@@ -1,5 +1,5 @@
 benchmark?=output/benchmark.csv
-package?=terrain_nav
+package?=terrain_navigation
 
 format:
 	Tools/fix_code_style.sh .

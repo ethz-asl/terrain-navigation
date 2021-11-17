@@ -126,6 +126,13 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
 
   double mapcenter_e = originX + pixelSizeX * width * 0.5;
   double mapcenter_n = originY + pixelSizeY * height * 0.5;
+
+  Eigen::Vector3d origin_lv03 =
+      transformCoordinates(ESPG::WGS84, std::string(pszProjection), localorigin_wgs84_.position);
+  localorigin_e_ = origin_lv03(0);
+  localorigin_n_ = origin_lv03(1);
+  localorigin_altitude_ = origin_lv03(2);
+
   double map_position_x = mapcenter_e - localorigin_e_;
   double map_position_y = mapcenter_n - localorigin_n_;
 
@@ -248,8 +255,6 @@ bool TerrainMap::AddLayerDistanceTransform(const std::string &string) {
 
 void TerrainMap::setGlobalOrigin(ESPG src_coord, const Eigen::Vector3d origin) {
   // Transform global origin into CH1903 / LV03 coordinates
-  Eigen::Vector3d origin_lv03 = transformCoordinates(src_coord, ESPG::CH1903_LV03, origin);
-  localorigin_e_ = origin_lv03(0);
-  localorigin_n_ = origin_lv03(1);
-  localorigin_altitude_ = origin_lv03(2);
+  localorigin_wgs84_.espg = src_coord;
+  localorigin_wgs84_.position = origin;
 }

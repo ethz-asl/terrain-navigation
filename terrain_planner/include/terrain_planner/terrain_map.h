@@ -46,6 +46,10 @@ enum class ESPG { ECEF = 4978, WGS84 = 4326, CH1903_LV03 = 21781 };
 #include <gdal/ogr_p.h>
 #include <gdal/ogr_spatialref.h>
 #include <iostream>
+struct Location {
+  ESPG espg{ESPG::WGS84};
+  Eigen::Vector3d position{Eigen::Vector3d::Zero()};
+};
 
 class TerrainMap {
  public:
@@ -75,11 +79,29 @@ class TerrainMap {
     Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
     return target_coordinates;
   }
+  static Eigen::Vector3d transformCoordinates(ESPG src_coord, const std::string wkt,
+                                              const Eigen::Vector3d source_coordinates) {
+    OGRSpatialReference source, target;
+    char* wkt_string = const_cast<char*>(wkt.c_str());
+    source.importFromEPSG(static_cast<int>(src_coord));
+    target.importFromWkt(&wkt_string);
+
+    OGRPoint p;
+    p.setX(source_coordinates(0));
+    p.setY(source_coordinates(1));
+    p.setZ(source_coordinates(2));
+    p.assignSpatialReference(&source);
+
+    p.transformTo(&target);
+    Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
+    return target_coordinates;
+  }
 
  private:
   grid_map::GridMap grid_map_;
   double localorigin_e_{789823.93};  // duerrboden berghaus
   double localorigin_n_{177416.56};
   double localorigin_altitude_{0.0};
+  Location localorigin_wgs84_;
 };
 #endif
