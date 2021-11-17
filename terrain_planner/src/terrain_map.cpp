@@ -246,9 +246,10 @@ bool TerrainMap::AddLayerDistanceTransform(const std::string &string) {
   return true;
 }
 
-void TerrainMap::setGlobalOrigin(ESPG src_coord, const Eigen::Vector2d origin) {
+void TerrainMap::setGlobalOrigin(ESPG src_coord, const Eigen::Vector3d origin) {
   // Transform global origin into CH1903 / LV03 coordinates
-  Eigen::Vector2d origin_lv03 = transformCoordinates(src_coord, ESPG::CH1903_LV03, origin);
+  Eigen::Vector3d origin_lv03 = transformCoordinates(src_coord, ESPG::CH1903_LV03, origin);
   localorigin_e_ = origin_lv03(0);
   localorigin_n_ = origin_lv03(1);
+  localorigin_altitude_ = origin_lv03(2);
 }

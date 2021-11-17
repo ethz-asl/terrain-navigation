@@ -57,10 +57,10 @@ class TerrainMap {
   grid_map::GridMap& getGridMap() { return grid_map_; }
   bool isInCollision(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
   double getCollisionDepth(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
-  void setGlobalOrigin(ESPG src_coord, const Eigen::Vector2d origin);
+  void setGlobalOrigin(ESPG src_coord, const Eigen::Vector3d origin);
   void setAltitudeOrigin(const double altitude) { localorigin_altitude_ = altitude; };
-  static Eigen::Vector2d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
-                                              const Eigen::Vector2d source_coordinates) {
+  static Eigen::Vector3d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
+                                              const Eigen::Vector3d source_coordinates) {
     OGRSpatialReference source, target;
     source.importFromEPSG(static_cast<int>(src_coord));
     target.importFromEPSG(static_cast<int>(tgt_coord));
@@ -68,10 +68,11 @@ class TerrainMap {
     OGRPoint p;
     p.setX(source_coordinates(0));
     p.setY(source_coordinates(1));
+    p.setZ(source_coordinates(2));
     p.assignSpatialReference(&source);
 
     p.transformTo(&target);
-    Eigen::Vector2d target_coordinates(p.getX(), p.getY());
+    Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
     return target_coordinates;
   }
 
