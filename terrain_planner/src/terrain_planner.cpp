@@ -87,7 +87,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
   nh_private.param<std::string>("terrain_color_path", map_color_path_, "");
   nh_private.param<std::string>("resource_path", resource_path_, "resources");
-  nh_private.param<std::string>("meshresource_path", mesh_resource_path_, "resources/believer.dae");
+  nh_private.param<std::string>("meshresource_path", mesh_resource_path_, "../resources/believer.dae");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(5.0);
 
@@ -362,7 +362,7 @@ void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const E
   marker.header.frame_id = "map";
   marker.type = visualization_msgs::Marker::MESH_RESOURCE;
   marker.ns = "my_namespace";
-  marker.mesh_resource = "file://" + mesh_resource_path_;
+  marker.mesh_resource = "package://terrain_planner/" + mesh_resource_path_;
   marker.scale.x = 10.0;
   marker.scale.y = 10.0;
   marker.scale.z = 10.0;

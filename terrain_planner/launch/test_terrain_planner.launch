@@ -37,7 +37,6 @@
         <param name="terrain_path" value="$(find terrain_planner)/../resources/$(arg location).tif"/>
         <param name="terrain_color_path" value="$(find terrain_planner)/../resources/$(arg location)_color.tif"/>
         <param name="resource_path" value="$(find terrain_planner)/../resources"/>
-        <param name="meshresource_path" value="$(find terrain_planner)/../resources/$(arg mav_name).dae"/>
     </node>
     <group if="$(arg visualization)">
         <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config.rviz" output="screen"/>
