@@ -157,6 +157,16 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
     layer_elevation(x, y) = data[gridMapIndex(0) + width * gridMapIndex(1)] - center_altitude;
     layer_max_elevation(x, y) = layer_elevation(x, y) + 150.0;
   }
+
+  /// TODO: This is a workaround with the problem of gdal 3 not translating altitude correctly.
+  /// This section just levels the current position to the ground
+  Eigen::Translation3d meshlab_translation(
+      0.0, 0.0, -grid_map_.atPosition("elevation", Eigen::Vector2d(position(0), position(1))));
+  Eigen::AngleAxisd meshlab_rotation(Eigen::AngleAxisd::Identity());
+  Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
+  grid_map_ = grid_map_.getTransformedMap(transform, "elevation", grid_map_.getFrameId(), true);
+  grid_map_ = grid_map_.getTransformedMap(transform, "max_elevation", grid_map_.getFrameId(), true);
+
   return true;
 }
 
