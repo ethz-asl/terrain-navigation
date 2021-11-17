@@ -4,6 +4,9 @@ package?=terrain_navigation
 format:
 	Tools/fix_code_style.sh .
 
+config:
+	catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
+
 build:
 	catkin build ${package}
 
