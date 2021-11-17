@@ -41,6 +41,7 @@
 #include "terrain_planner/terrain_planner.h"
 
 #include <grid_map_msgs/GridMap.h>
+#include <mavros_msgs/CommandLong.h>
 #include <mavros_msgs/PositionTarget.h>
 #include <mavros_msgs/Trajectory.h>
 #include <planner_msgs/NavigationStatus.h>
@@ -81,6 +82,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   setlocation_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_location", &TerrainPlanner::setLocationCallback, this);
   setgoal_serviceserver_ = nh_.advertiseService("/terrain_planner/set_goal", &TerrainPlanner::setGoalCallback, this);
+  msginterval_serviceclient_ = nh_.serviceClient<mavros_msgs::CommandLong>("mavros/cmd/command");
 
   nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
   nh_private.param<std::string>("terrain_color_path", map_color_path_, "");
@@ -125,10 +127,20 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   if (local_origin_received_ && !map_initialized_) {
+    std::cout << "Local origin received, loading map" << std::endl;
     maneuver_library_->setTerrainMap(map_path_, map_color_path_);
     map_initialized_ = true;
     return;
   }
+  if (!local_origin_received_) {
+    std::cout << "Requesting global origin messages" << std::endl;
+    mavros_msgs::CommandLong request_global_origin_msg;
+    request_global_origin_msg.request.command = 512;
+    request_global_origin_msg.request.param1 = 49;
+    msginterval_serviceclient_.call(request_global_origin_msg);
+    return;
+  }
+
   planner_profiler_->tic();
   /// TODO: Plan from next segment
   // Plan from the end of the current segment
@@ -363,6 +375,8 @@ void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const E
 }
 
 void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg) {
+  std::cout << "Receiveing Global Origin!" << std::endl;
+
   local_origin_received_ = true;
 
   double X = static_cast<double>(msg->position.latitude);

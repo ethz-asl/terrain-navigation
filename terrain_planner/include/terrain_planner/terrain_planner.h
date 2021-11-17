@@ -105,6 +105,7 @@ class TerrainPlanner {
 
   ros::ServiceServer setlocation_serviceserver_;
   ros::ServiceServer setgoal_serviceserver_;
+  ros::ServiceClient msginterval_serviceclient_;
 
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;
