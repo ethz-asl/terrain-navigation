@@ -48,14 +48,14 @@ ManeuverLibrary::ManeuverLibrary() {
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.0));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.15));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.3));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.3));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.3));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.15));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.15));
+  // primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
+  // primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.15));
+  // primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.15));
+  // primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.15));
 }
 
 ManeuverLibrary::~ManeuverLibrary() {}
