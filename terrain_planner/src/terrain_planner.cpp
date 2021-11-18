@@ -89,7 +89,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   nh_private.param<std::string>("resource_path", resource_path_, "resources");
   nh_private.param<std::string>("meshresource_path", mesh_resource_path_, "../resources/believer.dae");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
-  maneuver_library_->setPlanningHorizon(5.0);
+  maneuver_library_->setPlanningHorizon(4.0);
 
   planner_profiler_ = std::make_shared<Profiler>("planner");
 }
