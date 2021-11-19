@@ -15,6 +15,7 @@ PACKAGE_PATH=/home/believer/catkin_ws/src/terrain-navigation
 echo "Copy systemd service"
 cp -vf $PACKAGE_PATH/systemd/terrain-planner.service /etc/systemd/system/
 cp -vf $PACKAGE_PATH/systemd/mavlink-router.service /etc/systemd/system/
+cp -vf $PACKAGE_PATH/systemd/rosbag-record.service /etc/systemd/system/
 
 systemctl enable terrain-planner.service
 systemctl enable mavlink-router.service
