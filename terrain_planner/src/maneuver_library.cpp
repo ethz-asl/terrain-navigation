@@ -229,8 +229,10 @@ TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
   // Calculate utilities of each primitives
   for (auto &trajectory : valid_primitives_) {
     Eigen::Vector3d end_pos = trajectory.lastSegment().states.back().position;
-    Eigen::Vector2d distance_vector =
-        Eigen::Vector2d(end_pos(0), end_pos(1)) - Eigen::Vector2d(goal_pos_(0), goal_pos_(1));
+    double terrain_altitude =
+        end_pos(3) - terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(end_pos(0), end_pos(1)));
+    end_pos(3) = terrain_altitude;
+    Eigen::Vector3d distance_vector = end_pos - Eigen::Vector3d(goal_pos_(0), goal_pos_(1), 150.0);
     trajectory.utility += 1 / distance_vector.norm();
   }
 
