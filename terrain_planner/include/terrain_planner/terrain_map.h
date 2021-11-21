@@ -55,7 +55,7 @@ class TerrainMap {
  public:
   TerrainMap();
   virtual ~TerrainMap();
-  bool initializeFromGeotiff(const std::string& path);
+  bool initializeFromGeotiff(const std::string& path, bool align_terrain = true);
   bool addColorFromGeotiff(const std::string& path);
   bool AddLayerDistanceTransform(const std::string& string);
   grid_map::GridMap& getGridMap() { return grid_map_; }

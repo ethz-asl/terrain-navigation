@@ -85,7 +85,7 @@ double TerrainMap::getCollisionDepth(const std::string &layer, const Eigen::Vect
   return collision_depth;
 }
 
-bool TerrainMap::initializeFromGeotiff(const std::string &path) {
+bool TerrainMap::initializeFromGeotiff(const std::string &path, bool align_terrain) {
   GDALAllRegister();
   GDALDataset *dataset = (GDALDataset *)GDALOpen(path.c_str(), GA_ReadOnly);
   if (!dataset) {
@@ -133,10 +133,12 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   localorigin_n_ = origin_lv03(1);
   localorigin_altitude_ = origin_lv03(2);
 
-  double map_position_x = mapcenter_e - localorigin_e_;
-  double map_position_y = mapcenter_n - localorigin_n_;
-
-  Eigen::Vector2d position = Eigen::Vector2d(map_position_x, map_position_y);
+  Eigen::Vector2d position{Eigen::Vector2d::Zero()};
+  if(align_terrain) {
+    double map_position_x = mapcenter_e - localorigin_e_;
+    double map_position_y = mapcenter_n - localorigin_n_;
+    Eigen::Vector2d position = Eigen::Vector2d(map_position_x, map_position_y);
+  }
   grid_map_.setGeometry(length, resolution, position);
   grid_map_.setFrameId("world");
   grid_map_.add("elevation");
