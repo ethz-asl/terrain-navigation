@@ -48,6 +48,7 @@ class PlanningPanel : public rviz::Panel {
   // Next come a couple of public Qt slots.
  public Q_SLOTS:
   void updatePlannerName();
+  void updateGoalAltitude();
   void startEditing(const std::string& id);
   void finishEditing(const std::string& id);
   void widgetPoseUpdated(const std::string& id, mav_msgs::EigenTrajectoryPoint& pose);
@@ -64,6 +65,7 @@ class PlanningPanel : public rviz::Panel {
   void setNamespace(const QString& new_namespace);
   void setPlannerName(const QString& new_planner_name);
   void setOdometryTopic(const QString& new_odometry_topic);
+  void setGoalAltitude(const QString& new_goal_altitude);
 
   // ROS Stuff:
   ros::NodeHandle nh_;
@@ -95,6 +97,7 @@ class PlanningPanel : public rviz::Panel {
   // QT state:
   QString namespace_;
   QString planner_name_;
+  QString goal_altitude_value_{"150.0"};
   QString odometry_topic_;
   bool track_odometry_;
 

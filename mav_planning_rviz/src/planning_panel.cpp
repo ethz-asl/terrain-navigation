@@ -69,15 +69,14 @@ void PlanningPanel::createLayout() {
   QGridLayout* service_layout = new QGridLayout;
   planner_service_button_ = new QPushButton("Engage Planner");
   goal_altitude_editor_ = new QLineEdit;
-  topic_layout->addWidget(goal_altitude_editor_, 1, 1);
   publish_path_button_ = new QPushButton("Update Goal");
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
-  service_layout->addWidget(planner_service_button_, 2, 0);
-  service_layout->addWidget(publish_path_button_, 1, 0);
   service_layout->addWidget(new QLabel("Goal Altitude:"), 0, 0);
   service_layout->addWidget(goal_altitude_editor_, 0, 1);
-  service_layout->addWidget(waypoint_button_, 3, 0);
+  service_layout->addWidget(publish_path_button_, 1, 0, 1, 2);
+  service_layout->addWidget(planner_service_button_, 2, 0, 2, 2);
+  service_layout->addWidget(waypoint_button_, 2, 0, 3, 2);
   // service_layout->addWidget(controller_button_, 1, 1);
 
   // First the names, then the start/goal, then service buttons.
@@ -88,7 +87,7 @@ void PlanningPanel::createLayout() {
 
   // Hook up connections.
   connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
-  connect(goal_altitude_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
+  connect(goal_altitude_editor_, SIGNAL(editingFinished()), this, SLOT(updateGoalAltitude()));
   connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
   connect(publish_path_button_, SIGNAL(released()), this, SLOT(setGoalService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
@@ -146,6 +145,15 @@ void PlanningPanel::setPlannerName(const QString& new_planner_name) {
 
   if (new_planner_name != planner_name_) {
     planner_name_ = new_planner_name;
+    Q_EMIT configChanged();
+  }
+}
+
+void PlanningPanel::updateGoalAltitude() { setGoalAltitude(goal_altitude_editor_->text()); }
+
+void PlanningPanel::setGoalAltitude(const QString& new_goal_altitude) {
+  if (new_goal_altitude != goal_altitude_value_) {
+    goal_altitude_value_ = new_goal_altitude;
     Q_EMIT configChanged();
   }
 }
@@ -223,6 +231,7 @@ void PlanningPanel::save(rviz::Config config) const {
   rviz::Panel::save(config);
   config.mapSetValue("namespace", namespace_);
   config.mapSetValue("planner_name", planner_name_);
+  config.mapSetValue("goal_altitude", goal_altitude_value_);
   config.mapSetValue("odometry_topic", odometry_topic_);
 }
 
@@ -233,6 +242,9 @@ void PlanningPanel::load(const rviz::Config& config) {
   QString ns;
   if (config.mapGetString("planner_name", &planner_name_)) {
     planner_name_editor_->setText(planner_name_);
+  }
+  if (config.mapGetString("goal_altitude", &goal_altitude_value_)) {
+    goal_altitude_editor_->setText(goal_altitude_value_);
   }
 }
 
@@ -307,11 +319,22 @@ void PlanningPanel::publishWaypoint() {
 void PlanningPanel::setGoalService() {
   std::string service_name = "/terrain_planner/set_goal";
   Eigen::Vector3d goal_pos = goal_marker_->getGoalPosition();
-  std::thread t([service_name, goal_pos] {
+  // The altitude is set as a terrain altitude of the goal point. Therefore, passing negative terrain altitude
+  // invalidates the altitude setpoint
+  double goal_altitude{-1.0};
+
+  try {
+    goal_altitude = std::stod(goal_altitude_value_.toStdString());
+    std::cout << "[PlanningPanel] Set Goal Altitude: " << goal_altitude << std::endl;
+  } catch (const std::exception& e) {
+    std::cout << "[PlanningPanel] Invalid Goal Altitude Set: " << e.what() << std::endl;
+  }
+  std::thread t([service_name, goal_pos, goal_altitude] {
     planner_msgs::SetVector3 req;
     req.request.vector.x = goal_pos(0);
     req.request.vector.y = goal_pos(1);
-    req.request.vector.z = goal_pos(2);
+    // if ()
+    req.request.vector.z = goal_altitude;
 
     try {
       ROS_DEBUG_STREAM("Service name: " << service_name);
