@@ -56,19 +56,6 @@ void PlanningPanel::createLayout() {
   odometry_checkbox_ = new QCheckBox("Disable Maximum Altitude Constraint");
   topic_layout->addWidget(odometry_checkbox_, 3, 0, 1, 2);
 
-  // Start and goal poses.
-  QGridLayout* start_goal_layout = new QGridLayout;
-
-  // Minimums...
-  start_goal_layout->setColumnMinimumWidth(0, 50);
-  start_goal_layout->setColumnMinimumWidth(1, 245);
-  start_goal_layout->setColumnMinimumWidth(2, 80);
-  start_goal_layout->setRowMinimumHeight(0, 55);
-  start_goal_layout->setRowMinimumHeight(1, 55);
-  start_goal_layout->setColumnStretch(0, 1);
-  start_goal_layout->setColumnStretch(1, 9);
-  start_goal_layout->setColumnStretch(2, 3);
-
   start_pose_widget_ = new PoseWidget("start");
   goal_pose_widget_ = new PoseWidget("goal");
   EditButton* start_edit_button = new EditButton("start");
@@ -78,33 +65,30 @@ void PlanningPanel::createLayout() {
   registerEditButton(start_edit_button);
   registerEditButton(goal_edit_button);
 
-  start_goal_layout->addWidget(new QLabel("Start:"), 0, 0, Qt::AlignTop);
-  start_goal_layout->addWidget(start_pose_widget_, 0, 1);
-  start_goal_layout->addWidget(start_edit_button, 0, 2);
-  start_goal_layout->addWidget(new QLabel("Goal:"), 1, 0, Qt::AlignTop);
-  start_goal_layout->addWidget(goal_pose_widget_, 1, 1);
-  start_goal_layout->addWidget(goal_edit_button, 1, 2);
-
   // Planner services and publications.
   QGridLayout* service_layout = new QGridLayout;
   planner_service_button_ = new QPushButton("Engage Planner");
+  goal_altitude_editor_ = new QLineEdit;
+  topic_layout->addWidget(goal_altitude_editor_, 1, 1);
   publish_path_button_ = new QPushButton("Update Goal");
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
-  service_layout->addWidget(planner_service_button_, 1, 0);
-  service_layout->addWidget(publish_path_button_, 0, 0);
-  service_layout->addWidget(waypoint_button_, 2, 0);
+  service_layout->addWidget(planner_service_button_, 2, 0);
+  service_layout->addWidget(publish_path_button_, 1, 0);
+  service_layout->addWidget(new QLabel("Goal Altitude:"), 0, 0);
+  service_layout->addWidget(goal_altitude_editor_, 0, 1);
+  service_layout->addWidget(waypoint_button_, 3, 0);
   // service_layout->addWidget(controller_button_, 1, 1);
 
   // First the names, then the start/goal, then service buttons.
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addLayout(topic_layout);
-  layout->addLayout(start_goal_layout);
   layout->addLayout(service_layout);
   setLayout(layout);
 
   // Hook up connections.
   connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
+  connect(goal_altitude_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
   connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
   connect(publish_path_button_, SIGNAL(released()), this, SLOT(setGoalService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));

@@ -76,6 +76,7 @@ class PlanningPanel : public rviz::Panel {
   // QT stuff:
   QLineEdit* namespace_editor_;
   QLineEdit* planner_name_editor_;
+  QLineEdit* goal_altitude_editor_;
   QLineEdit* odometry_topic_editor_;
   QCheckBox* odometry_checkbox_;
   PoseWidget* start_pose_widget_;
