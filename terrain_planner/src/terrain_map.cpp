@@ -136,8 +136,7 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path) {
   double map_position_x = mapcenter_e - localorigin_e_;
   double map_position_y = mapcenter_n - localorigin_n_;
 
-  // Eigen::Vector2d position = Eigen::Vector2d(map_position_x, map_position_y);
-  Eigen::Vector2d position = Eigen::Vector2d(0.0, 0.0);
+  Eigen::Vector2d position = Eigen::Vector2d(map_position_x, map_position_y);
   grid_map_.setGeometry(length, resolution, position);
   grid_map_.setFrameId("world");
   grid_map_.add("elevation");
