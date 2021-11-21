@@ -232,7 +232,7 @@ TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
     double terrain_altitude =
         end_pos(3) - terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(end_pos(0), end_pos(1)));
     end_pos(3) = terrain_altitude;
-    Eigen::Vector3d distance_vector = end_pos - Eigen::Vector3d(goal_pos_(0), goal_pos_(1), 150.0);
+    Eigen::Vector3d distance_vector = end_pos - Eigen::Vector3d(goal_pos_(0), goal_pos_(1), goal_pos_(2));
     trajectory.utility += 1 / distance_vector.norm();
   }
 
@@ -260,6 +260,19 @@ TrajectorySegments &ManeuverLibrary::getRandomPrimitive() {
     i = std::rand() % motion_primitives_.size();
     return motion_primitives_[i];
   }
+}
+
+void ManeuverLibrary::setTerrainRelativeGoalPosition(const Eigen::Vector3d &pos) {
+  Eigen::Vector3d new_goal = pos;
+  double terrain_altitude = terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(pos(0), pos(1)));
+
+  if (pos(2) > 0.0) {  // Update if desired goal altitude is higher than zero
+    goal_terrain_altitude_ = pos(2);
+  }
+
+  new_goal(2) = terrain_altitude + goal_terrain_altitude_;
+
+  setGoalPosition(new_goal);
 }
 
 Eigen::Vector4d ManeuverLibrary::rpy2quaternion(double roll, double pitch, double yaw) {

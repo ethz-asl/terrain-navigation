@@ -413,7 +413,7 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
 
 bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
   Eigen::Vector3d new_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
-  maneuver_library_->setGoalPosition(new_goal);
+  maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
 
   res.success = true;
   return true;
