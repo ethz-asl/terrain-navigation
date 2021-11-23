@@ -126,7 +126,6 @@ std::vector<TrajectorySegments> ManeuverLibrary::checkCollisions() {
     bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface", true);
     valid_trajectory &= no_terrain_collision;
     // Check collision with maximum terrain altitude
-    bool check_max_altitude_{false};
     if (check_max_altitude_) {
       bool max_altitude_collision = checkTrajectoryCollision(trajectory, "max_elevation", false);
       valid_trajectory &= max_altitude_collision;

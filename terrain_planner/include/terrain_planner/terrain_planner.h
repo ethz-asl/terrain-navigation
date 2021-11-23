@@ -74,6 +74,7 @@ class TerrainPlanner {
   void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
   void mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
   bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
+  bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
 
   void MapPublishOnce();

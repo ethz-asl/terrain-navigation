@@ -68,6 +68,7 @@ class PlanningPanel : public rviz::Panel {
   void setNamespace(const QString& new_namespace);
   void setOdometryTopic(const QString& new_odometry_topic);
   void setGoalAltitude(const QString& new_goal_altitude);
+  void setMaxAltitudeConstrant(bool set_constraint);
 
   // ROS Stuff:
   ros::NodeHandle nh_;

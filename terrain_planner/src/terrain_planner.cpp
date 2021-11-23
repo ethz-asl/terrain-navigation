@@ -81,6 +81,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   setlocation_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_location", &TerrainPlanner::setLocationCallback, this);
+  setlocation_serviceserver_ =
+      nh_.advertiseService("/terrain_planner/set_max_altitude", &TerrainPlanner::setMaxAltitudeCallback, this);
   setgoal_serviceserver_ = nh_.advertiseService("/terrain_planner/set_goal", &TerrainPlanner::setGoalCallback, this);
   msginterval_serviceclient_ = nh_.serviceClient<mavros_msgs::CommandLong>("mavros/cmd/command");
 
@@ -411,6 +413,15 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   bool result = maneuver_library_->setTerrainMap(map_path_, align_location, map_color_path_);
 
   res.success = result;
+  return true;
+}
+
+bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &req,
+                                            planner_msgs::SetString::Response &res) {
+  bool set_max_alitude_constraint = req.align;
+  std::cout << "[TerrainPlanner] Max altitude constraint configured: " << set_max_alitude_constraint << std::endl;
+  maneuver_library_->setMaxAltitudeConstraint(set_max_alitude_constraint);
+  res.success = true;
   return true;
 }
 

@@ -321,31 +321,20 @@ void PlanningPanel::publishWaypoint() {
   t.detach();
 }
 
-void PlanningPanel::EnableMaxAltitude() {
-  std::string service_name = "/mavros/set_mode";
-  std::cout << "Planner Service" << std::endl;
-  std::thread t([service_name] {
-    mavros_msgs::SetMode req;
-    req.request.custom_mode = "AUTO.RTL";
+void PlanningPanel::EnableMaxAltitude() { setMaxAltitudeConstrant(true); }
 
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
-    }
-  });
-  t.detach();
-}
+void PlanningPanel::DisableMaxAltitude() { setMaxAltitudeConstrant(false); }
 
-void PlanningPanel::DisableMaxAltitude() {
-  std::string service_name = "/mavros/set_mode";
-  std::cout << "Planner Service" << std::endl;
-  std::thread t([service_name] {
-    mavros_msgs::SetMode req;
-    req.request.custom_mode = "AUTO.RTL";
+void PlanningPanel::setMaxAltitudeConstrant(bool set_constraint) {
+  std::cout << "[PlanningPanel] Loading new terrain:" << planner_name_.toStdString() << std::endl;
+  // Load new environment using a service
+  std::string service_name = "/terrain_planner/set_max_altitude";
+  std::string new_planner_name = "";
+  bool align_terrain = set_constraint;
+  std::thread t([service_name, new_planner_name, align_terrain] {
+    planner_msgs::SetString req;
+    req.request.string = new_planner_name;
+    req.request.align = align_terrain;
 
     try {
       ROS_DEBUG_STREAM("Service name: " << service_name);
