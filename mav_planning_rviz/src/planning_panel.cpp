@@ -48,40 +48,32 @@ void PlanningPanel::onInitialize() {
 }
 
 void PlanningPanel::createLayout() {
-  QGridLayout* topic_layout = new QGridLayout;
+  QGridLayout* loadterrain_layout = new QGridLayout;
   // Input the namespace.
-  topic_layout->addWidget(new QLabel("Terrain Location:"), 1, 0);
+  loadterrain_layout->addWidget(new QLabel("Terrain Location:"), 0, 0);
   planner_name_editor_ = new QLineEdit;
-  topic_layout->addWidget(planner_name_editor_, 1, 1);
-  odometry_checkbox_ = new QCheckBox("Disable Maximum Altitude Constraint");
-  topic_layout->addWidget(odometry_checkbox_, 3, 0, 1, 2);
-
-  start_pose_widget_ = new PoseWidget("start");
-  goal_pose_widget_ = new PoseWidget("goal");
-  EditButton* start_edit_button = new EditButton("start");
-  EditButton* goal_edit_button = new EditButton("goal");
-  registerPoseWidget(start_pose_widget_);
-  registerPoseWidget(goal_pose_widget_);
-  registerEditButton(start_edit_button);
-  registerEditButton(goal_edit_button);
+  loadterrain_layout->addWidget(planner_name_editor_, 0, 1);
+  terrain_align_checkbox_ = new QCheckBox("Disable Terrain Geolocation Alignment (Virtual Terrain)");
+  loadterrain_layout->addWidget(terrain_align_checkbox_, 1, 0, 1, 2);
+  load_terrain_button_ = new QPushButton("Load Terrain");
+  loadterrain_layout->addWidget(load_terrain_button_, 2, 0, 2, 2);
 
   // Planner services and publications.
   QGridLayout* service_layout = new QGridLayout;
   planner_service_button_ = new QPushButton("Engage Planner");
   goal_altitude_editor_ = new QLineEdit;
-  publish_path_button_ = new QPushButton("Update Goal");
+  set_goal_button_ = new QPushButton("Update Goal");
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
   service_layout->addWidget(new QLabel("Goal Altitude:"), 0, 0);
   service_layout->addWidget(goal_altitude_editor_, 0, 1);
-  service_layout->addWidget(publish_path_button_, 1, 0, 1, 2);
+  service_layout->addWidget(set_goal_button_, 1, 0, 1, 2);
   service_layout->addWidget(planner_service_button_, 2, 0, 2, 2);
-  service_layout->addWidget(waypoint_button_, 2, 0, 3, 2);
-  // service_layout->addWidget(controller_button_, 1, 1);
+  service_layout->addWidget(waypoint_button_, 3, 0, 3, 2);
 
   // First the names, then the start/goal, then service buttons.
   QVBoxLayout* layout = new QVBoxLayout;
-  layout->addLayout(topic_layout);
+  layout->addLayout(loadterrain_layout);
   layout->addLayout(service_layout);
   setLayout(layout);
 
@@ -89,17 +81,18 @@ void PlanningPanel::createLayout() {
   connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
   connect(goal_altitude_editor_, SIGNAL(editingFinished()), this, SLOT(updateGoalAltitude()));
   connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
-  connect(publish_path_button_, SIGNAL(released()), this, SLOT(setGoalService()));
+  connect(load_terrain_button_, SIGNAL(released()), this, SLOT(setPlannerName()));
+  connect(set_goal_button_, SIGNAL(released()), this, SLOT(setGoalService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
   connect(controller_button_, SIGNAL(released()), this, SLOT(publishToController()));
-  connect(odometry_checkbox_, SIGNAL(stateChanged(int)), this, SLOT(trackOdometryStateChanged(int)));
+  connect(terrain_align_checkbox_, SIGNAL(stateChanged(int)), this, SLOT(terrainAlignmentStateChanged(int)));
 }
 
-void PlanningPanel::trackOdometryStateChanged(int state) {
+void PlanningPanel::terrainAlignmentStateChanged(int state) {
   if (state == 0) {
-    track_odometry_ = 0;
+    align_terrain_on_load_ = 1;
   } else {
-    track_odometry_ = 1;
+    align_terrain_on_load_ = 0;
   }
 }
 
@@ -121,16 +114,26 @@ void PlanningPanel::setNamespace(const QString& new_namespace) {
   }
 }
 
-void PlanningPanel::updatePlannerName() { setPlannerName(planner_name_editor_->text()); }
+void PlanningPanel::updatePlannerName() {
+  QString new_planner_name = planner_name_editor_->text();
+  std::cout << "New Terrain name: " << new_planner_name.toStdString() << std::endl;
+  if (new_planner_name != planner_name_) {
+    planner_name_ = new_planner_name;
+    Q_EMIT configChanged();
+  }
+}
 
 // Set the topic name we are publishing to.
-void PlanningPanel::setPlannerName(const QString& new_planner_name) {
+void PlanningPanel::setPlannerName() {
+  std::cout << "[PlanningPanel] Loading new terrain:" << planner_name_.toStdString() << std::endl;
   // Load new environment using a service
   std::string service_name = "/terrain_planner/set_location";
-  std::cout << "New planner name: " << new_planner_name.toStdString() << std::endl;
-  std::thread t([service_name, new_planner_name] {
+  std::string new_planner_name = planner_name_.toStdString();
+  bool align_terrain = align_terrain_on_load_;
+  std::thread t([service_name, new_planner_name, align_terrain] {
     planner_msgs::SetString req;
-    req.request.string = new_planner_name.toStdString();
+    req.request.string = new_planner_name;
+    req.request.align = align_terrain;
 
     try {
       ROS_DEBUG_STREAM("Service name: " << service_name);
@@ -142,11 +145,6 @@ void PlanningPanel::setPlannerName(const QString& new_planner_name) {
     }
   });
   t.detach();
-
-  if (new_planner_name != planner_name_) {
-    planner_name_ = new_planner_name;
-    Q_EMIT configChanged();
-  }
 }
 
 void PlanningPanel::updateGoalAltitude() { setGoalAltitude(goal_altitude_editor_->text()); }
@@ -364,7 +362,7 @@ void PlanningPanel::publishToController() {
 
 void PlanningPanel::odometryCallback(const nav_msgs::Odometry& msg) {
   ROS_INFO_ONCE("Got odometry callback.");
-  if (track_odometry_) {
+  if (align_terrain_on_load_) {
     mav_msgs::EigenOdometry odometry;
     mav_msgs::eigenOdometryFromMsg(msg, &odometry);
     mav_msgs::EigenTrajectoryPoint point;

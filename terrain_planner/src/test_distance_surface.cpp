@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   std::string map_path;
   nh_private.param<std::string>("terrain_path", map_path, "resources/cadastre.tif");
   std::shared_ptr<ManeuverLibrary> maneuver_library_ = std::make_shared<ManeuverLibrary>();
-  maneuver_library_->setTerrainMap(map_path);
+  maneuver_library_->setTerrainMap(map_path, true);
 
   while (true) {
     maneuver_library_->getGridMap().setTimestamp(ros::Time::now().toNSec());

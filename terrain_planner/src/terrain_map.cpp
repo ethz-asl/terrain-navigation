@@ -134,10 +134,13 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path, bool align_terra
   localorigin_altitude_ = origin_lv03(2);
 
   Eigen::Vector2d position{Eigen::Vector2d::Zero()};
-  if(align_terrain) {
+  if (align_terrain) {
+    std::cout << "[TerrainMap] Aligning terrain!" << std::endl;
     double map_position_x = mapcenter_e - localorigin_e_;
     double map_position_y = mapcenter_n - localorigin_n_;
-    Eigen::Vector2d position = Eigen::Vector2d(map_position_x, map_position_y);
+    position = Eigen::Vector2d(map_position_x, map_position_y);
+  } else {
+    std::cout << "[TerrainMap] Not aligning terrain!" << std::endl;
   }
   grid_map_.setGeometry(length, resolution, position);
   grid_map_.setFrameId("world");

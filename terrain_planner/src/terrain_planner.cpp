@@ -128,7 +128,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   if (local_origin_received_ && !map_initialized_) {
     std::cout << "Local origin received, loading map" << std::endl;
-    maneuver_library_->setTerrainMap(map_path_, map_color_path_);
+    maneuver_library_->setTerrainMap(map_path_, true, map_color_path_);
     map_initialized_ = true;
     return;
   }
@@ -401,13 +401,16 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
 bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
                                          planner_msgs::SetString::Response &res) {
   std::string set_location = req.string;
+  bool align_location = req.align;
   std::cout << "[TerrainPlanner] Set Location: " << set_location << std::endl;
+  std::cout << "[TerrainPlanner] Set Alignment: " << align_location << std::endl;
+
   /// TODO: Add location from the new set location service
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
-  maneuver_library_->setTerrainMap(map_path_);
+  bool result = maneuver_library_->setTerrainMap(map_path_, align_location, map_color_path_);
 
-  res.success = true;
+  res.success = result;
   return true;
 }
 

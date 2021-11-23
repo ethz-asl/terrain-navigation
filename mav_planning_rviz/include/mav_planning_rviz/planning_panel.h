@@ -49,6 +49,7 @@ class PlanningPanel : public rviz::Panel {
  public Q_SLOTS:
   void updatePlannerName();
   void updateGoalAltitude();
+  void setPlannerName();
   void startEditing(const std::string& id);
   void finishEditing(const std::string& id);
   void widgetPoseUpdated(const std::string& id, mav_msgs::EigenTrajectoryPoint& pose);
@@ -57,13 +58,12 @@ class PlanningPanel : public rviz::Panel {
   void setGoalService();
   void publishWaypoint();
   void publishToController();
-  void trackOdometryStateChanged(int state);
+  void terrainAlignmentStateChanged(int state);
 
  protected:
   // Set up the layout, only called by the constructor.
   void createLayout();
   void setNamespace(const QString& new_namespace);
-  void setPlannerName(const QString& new_planner_name);
   void setOdometryTopic(const QString& new_odometry_topic);
   void setGoalAltitude(const QString& new_goal_altitude);
 
@@ -80,13 +80,14 @@ class PlanningPanel : public rviz::Panel {
   QLineEdit* planner_name_editor_;
   QLineEdit* goal_altitude_editor_;
   QLineEdit* odometry_topic_editor_;
-  QCheckBox* odometry_checkbox_;
+  QCheckBox* terrain_align_checkbox_;
   PoseWidget* start_pose_widget_;
   PoseWidget* goal_pose_widget_;
   QPushButton* planner_service_button_;
-  QPushButton* publish_path_button_;
+  QPushButton* set_goal_button_;
   QPushButton* waypoint_button_;
   QPushButton* controller_button_;
+  QPushButton* load_terrain_button_;
 
   // Keep track of all the pose <-> button widgets as they're related:
   std::map<std::string, PoseWidget*> pose_widget_map_;
@@ -99,7 +100,7 @@ class PlanningPanel : public rviz::Panel {
   QString planner_name_;
   QString goal_altitude_value_{"150.0"};
   QString odometry_topic_;
-  bool track_odometry_;
+  bool align_terrain_on_load_{true};
 
   // Other state:
   std::string currently_editing_;
