@@ -122,10 +122,16 @@ std::vector<TrajectorySegments> ManeuverLibrary::checkCollisions() {
   std::vector<TrajectorySegments> valid_primitives;
   for (auto &trajectory : motion_primitives_) {
     // Check collision with terrain
+    bool valid_trajectory{true};
     bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface", true);
+    valid_trajectory &= no_terrain_collision;
     // Check collision with maximum terrain altitude
-    bool max_altitude_collision = checkTrajectoryCollision(trajectory, "max_elevation", false);
-    if (no_terrain_collision && max_altitude_collision) {
+    bool check_max_altitude_{false};
+    if (check_max_altitude_) {
+      bool max_altitude_collision = checkTrajectoryCollision(trajectory, "max_elevation", false);
+      valid_trajectory &= max_altitude_collision;
+    }
+    if (valid_trajectory) {
       trajectory.validity = true;
       valid_primitives.push_back(trajectory);
     } else {

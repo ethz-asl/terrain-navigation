@@ -63,13 +63,18 @@ void PlanningPanel::createLayout() {
   planner_service_button_ = new QPushButton("Engage Planner");
   goal_altitude_editor_ = new QLineEdit;
   set_goal_button_ = new QPushButton("Update Goal");
+  max_altitude_button_enable_ = new QPushButton("Enable Max altitude");
+  max_altitude_button_disable_ = new QPushButton("Disable Max altitude");
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
-  service_layout->addWidget(new QLabel("Goal Altitude:"), 0, 0);
-  service_layout->addWidget(goal_altitude_editor_, 0, 1);
-  service_layout->addWidget(set_goal_button_, 1, 0, 1, 2);
-  service_layout->addWidget(planner_service_button_, 2, 0, 2, 2);
-  service_layout->addWidget(waypoint_button_, 3, 0, 3, 2);
+  service_layout->addWidget(new QLabel("Goal Altitude:"), 0, 0, 1, 1);
+  service_layout->addWidget(goal_altitude_editor_, 0, 1, 1, 2);
+  service_layout->addWidget(set_goal_button_, 1, 0, 1, 3);
+  service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 2, 0, 1, 1);
+  service_layout->addWidget(max_altitude_button_enable_, 2, 1, 1, 1);
+  service_layout->addWidget(max_altitude_button_disable_, 2, 2, 1, 1);
+  service_layout->addWidget(planner_service_button_, 3, 0, 1, 3);
+  service_layout->addWidget(waypoint_button_, 4, 0, 1, 3);
 
   // First the names, then the start/goal, then service buttons.
   QVBoxLayout* layout = new QVBoxLayout;
@@ -84,6 +89,8 @@ void PlanningPanel::createLayout() {
   connect(load_terrain_button_, SIGNAL(released()), this, SLOT(setPlannerName()));
   connect(set_goal_button_, SIGNAL(released()), this, SLOT(setGoalService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
+  connect(max_altitude_button_enable_, SIGNAL(released()), this, SLOT(EnableMaxAltitude()));
+  connect(max_altitude_button_disable_, SIGNAL(released()), this, SLOT(DisableMaxAltitude()));
   connect(controller_button_, SIGNAL(released()), this, SLOT(publishToController()));
   connect(terrain_align_checkbox_, SIGNAL(stateChanged(int)), this, SLOT(terrainAlignmentStateChanged(int)));
 }
@@ -296,6 +303,44 @@ void PlanningPanel::callPublishPath() {
 }
 
 void PlanningPanel::publishWaypoint() {
+  std::string service_name = "/mavros/set_mode";
+  std::cout << "Planner Service" << std::endl;
+  std::thread t([service_name] {
+    mavros_msgs::SetMode req;
+    req.request.custom_mode = "AUTO.RTL";
+
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::EnableMaxAltitude() {
+  std::string service_name = "/mavros/set_mode";
+  std::cout << "Planner Service" << std::endl;
+  std::thread t([service_name] {
+    mavros_msgs::SetMode req;
+    req.request.custom_mode = "AUTO.RTL";
+
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::DisableMaxAltitude() {
   std::string service_name = "/mavros/set_mode";
   std::cout << "Planner Service" << std::endl;
   std::thread t([service_name] {

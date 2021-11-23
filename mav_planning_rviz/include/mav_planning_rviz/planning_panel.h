@@ -59,6 +59,8 @@ class PlanningPanel : public rviz::Panel {
   void publishWaypoint();
   void publishToController();
   void terrainAlignmentStateChanged(int state);
+  void EnableMaxAltitude();
+  void DisableMaxAltitude();
 
  protected:
   // Set up the layout, only called by the constructor.
@@ -86,6 +88,8 @@ class PlanningPanel : public rviz::Panel {
   QPushButton* planner_service_button_;
   QPushButton* set_goal_button_;
   QPushButton* waypoint_button_;
+  QPushButton* max_altitude_button_enable_;
+  QPushButton* max_altitude_button_disable_;
   QPushButton* controller_button_;
   QPushButton* load_terrain_button_;
 
