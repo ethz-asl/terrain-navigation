@@ -93,10 +93,10 @@ class ManeuverLibrary {
   std::vector<TrajectorySegments> valid_primitives_;
   std::vector<Eigen::Vector3d> primitive_rates_;
   int num_segments{3};
-  Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 150.0)};  // Terrain relative goal position
+  Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 100.0)};  // Terrain relative goal position
   bool check_max_altitude_{true};
   double dt_{0.1};
   double planning_horizon_{10.0};
   double cruise_speed_{15.0};
-  double goal_terrain_altitude_{150.0};
+  double goal_terrain_altitude_{100.0};
 };

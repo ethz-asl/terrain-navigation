@@ -103,7 +103,7 @@ class PlanningPanel : public rviz::Panel {
   // QT state:
   QString namespace_;
   QString planner_name_;
-  QString goal_altitude_value_{"150.0"};
+  QString goal_altitude_value_{"100.0"};
   QString odometry_topic_;
   bool align_terrain_on_load_{true};
 
