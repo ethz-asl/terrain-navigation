@@ -81,7 +81,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   setlocation_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_location", &TerrainPlanner::setLocationCallback, this);
-  setlocation_serviceserver_ =
+  setmaxaltitude_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_max_altitude", &TerrainPlanner::setMaxAltitudeCallback, this);
   setgoal_serviceserver_ = nh_.advertiseService("/terrain_planner/set_goal", &TerrainPlanner::setGoalCallback, this);
   msginterval_serviceclient_ = nh_.serviceClient<mavros_msgs::CommandLong>("mavros/cmd/command");

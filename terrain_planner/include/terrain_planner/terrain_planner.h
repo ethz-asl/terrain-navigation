@@ -105,6 +105,7 @@ class TerrainPlanner {
   ros::Subscriber global_origin_sub_;
 
   ros::ServiceServer setlocation_serviceserver_;
+  ros::ServiceServer setmaxaltitude_serviceserver_;
   ros::ServiceServer setgoal_serviceserver_;
   ros::ServiceClient msginterval_serviceclient_;
 
