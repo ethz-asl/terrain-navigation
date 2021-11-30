@@ -167,7 +167,7 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path, bool align_terra
   /// This section just levels the current position to the ground
   double altitude_offset = grid_map_.atPosition("elevation", Eigen::Vector2d(position(0), position(1))) -  localorigin_altitude_;
   std::cout << "[TerrainMap] Altitude offset: " << altitude_offset;
-  Eigen::Translation3d meshlab_translation(0.0, 0.0, 0.0);
+  Eigen::Translation3d meshlab_translation(0.0, 0.0, -50.0);
   Eigen::AngleAxisd meshlab_rotation(Eigen::AngleAxisd::Identity());
   Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
   grid_map_ = grid_map_.getTransformedMap(transform, "elevation", grid_map_.getFrameId(), true);
