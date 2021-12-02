@@ -97,6 +97,6 @@ class ManeuverLibrary {
   bool check_max_altitude_{true};
   double dt_{0.1};
   double planning_horizon_{10.0};
-  double cruise_speed_{15.0};
+  double cruise_speed_{20.0};
   double goal_terrain_altitude_{100.0};
 };
