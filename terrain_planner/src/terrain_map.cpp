@@ -109,9 +109,6 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path, bool align_terra
   const char *pszProjection = dataset->GetProjectionRef();
   std::cout << std::endl << "Wkt ProjectionRef: " << pszProjection << std::endl;
 
-  /// TODO: Align coordinates vertically
-  double center_altitude = localorigin_altitude_;
-
   // Get image metadata
   unsigned width = dataset->GetRasterXSize();
   unsigned height = dataset->GetRasterYSize();
@@ -143,7 +140,7 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path, bool align_terra
     std::cout << "[TerrainMap] Not aligning terrain!" << std::endl;
   }
   grid_map_.setGeometry(length, resolution, position);
-  grid_map_.setFrameId("world");
+  grid_map_.setFrameId("map");
   grid_map_.add("elevation");
   grid_map_.add("max_elevation");
   GDALRasterBand *elevationBand = dataset->GetRasterBand(1);
@@ -159,15 +156,15 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path, bool align_terra
     int x = width - 1 - gridMapIndex(0);
     int y = gridMapIndex(1);
 
-    layer_elevation(x, y) = data[gridMapIndex(0) + width * gridMapIndex(1)] - center_altitude;
+    layer_elevation(x, y) = data[gridMapIndex(0) + width * gridMapIndex(1)];
     layer_max_elevation(x, y) = layer_elevation(x, y) + 150.0;
   }
 
   /// TODO: This is a workaround with the problem of gdal 3 not translating altitude correctly.
   /// This section just levels the current position to the ground
-  double altitude_offset = grid_map_.atPosition("elevation", Eigen::Vector2d(position(0), position(1)));
+  double altitude = grid_map_.atPosition("elevation", Eigen::Vector2d(0.0, 0.0));
 
-  Eigen::Translation3d meshlab_translation(0.0, 0.0, -altitude_offset);
+  Eigen::Translation3d meshlab_translation(0.0, 0.0, -altitude);
   Eigen::AngleAxisd meshlab_rotation(Eigen::AngleAxisd::Identity());
   Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
   grid_map_ = grid_map_.getTransformedMap(transform, "elevation", grid_map_.getFrameId(), true);
@@ -239,8 +236,8 @@ bool TerrainMap::addColorFromGeotiff(const std::string &path) {
 bool TerrainMap::AddLayerDistanceTransform(const std::string &string) {
   double surface_distance = 50.0;
   grid_map_.add("distance_surface");
-  grid_map_.add("offset_surface");
-  grid_map_.add("error_surface");
+  // grid_map_.add("offset_surface");
+  // grid_map_.add("error_surface");
 
   for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index MapIndex = *iterator;
@@ -249,7 +246,7 @@ bool TerrainMap::AddLayerDistanceTransform(const std::string &string) {
     center_pos(2) = center_pos(2) + surface_distance;
     Eigen::Vector2d center_pos_2d(center_pos(0), center_pos(1));
     grid_map_.at("distance_surface", MapIndex) = center_pos(2);  // elevation
-    grid_map_.at("offset_surface", MapIndex) = center_pos(2);    // elevation
+    // grid_map_.at("offset_surface", MapIndex) = center_pos(2);    // elevation
     for (grid_map::CircleIterator submapIterator(grid_map_, center_pos_2d, surface_distance);
          !submapIterator.isPastEnd(); ++submapIterator) {
       const grid_map::Index SubmapIndex = *submapIterator;
@@ -262,8 +259,8 @@ bool TerrainMap::AddLayerDistanceTransform(const std::string &string) {
             cell_position(2) + std::sqrt(std::pow(surface_distance, 2) - std::pow(distance_2d, 2));
       }
     }
-    grid_map_.at("error_surface", MapIndex) =
-        grid_map_.at("distance_surface", MapIndex) - grid_map_.at("offset_surface", MapIndex);  // elevation
+    // grid_map_.at("error_surface", MapIndex) =
+    //     grid_map_.at("distance_surface", MapIndex) - grid_map_.at("offset_surface", MapIndex);  // elevation
   }
   return true;
 }
