@@ -226,7 +226,7 @@ class TrajectorySegments {
   std::vector<Trajectory> segments;
 
  private:
-  double K_z_ = 1.0;
+  double K_z_ = 0.5;
   double max_climb_rate_control_{-3.5};
   double max_sink_rate_control_{2.0};
 };
