@@ -1,0 +1,20 @@
+<launch>
+<!-- Compare mesh between two meshes -->
+    <arg name="visualization" default="true"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+    <node pkg="adaptive_viewutility" type="compare_mesh_node" name="test_mesh" output="screen">
+        <param name="groundtruth_mesh_path" value="/home/jaeyoung/dev/cloudcompare/qmax_06/groundtruth_roi_meshlab.obj"/>
+        <param name="estimated_mesh_path" value="/home/jaeyoung/dev/cloudcompare/qmax_06/reconstruction_roi_meshlab.obj"/>
+        <param name="origin_x" value="600.0"/>
+        <param name="origin_y" value="1000.0"/>
+        <param name="origin_z" value="400.0"/>
+    </node>
+
+    <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">
+        <rosparam command="load" file="$(find adaptive_viewutility)/launch/visualize.yaml" />
+    </node>
+
+    <group if="$(arg visualization)">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_compare.rviz" />
+    </group>
+</launch>

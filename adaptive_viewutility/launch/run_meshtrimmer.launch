@@ -1,0 +1,8 @@
+<launch>
+    <arg name="visualization" default="true"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+    <node pkg="adaptive_viewutility" type="run_meshtrimmer_node" name="test_grid" output="screen">
+        <param name="file_path" value="$(find adaptive_viewutility)/../resources/LandscapeMap.obj"/>
+        <param name="output_file_path" value="$(find adaptive_viewutility)/../output/trimmed_mesh.obj"/>
+    </node>
+</launch>
