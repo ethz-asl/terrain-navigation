@@ -51,6 +51,7 @@
 #include <geographic_msgs/GeoPointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <mavros_msgs/CameraImageCaptured.h>
 #include <mavros_msgs/State.h>
 #include <nav_msgs/Path.h>
 #include <planner_msgs/SetString.h>
@@ -78,6 +79,7 @@ class TerrainPlanner {
   bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
+  void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
 
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
@@ -108,6 +110,7 @@ class TerrainPlanner {
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;
   ros::Subscriber global_origin_sub_;
+  ros::Subscriber image_captured_sub_;
 
   ros::ServiceServer setlocation_serviceserver_;
   ros::ServiceServer setmaxaltitude_serviceserver_;

@@ -79,6 +79,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
                                 ros::TransportHints().tcpNoDelay());
   global_origin_sub_ = nh_.subscribe("mavros/global_position/gp_origin", 1, &TerrainPlanner::mavGlobalOriginCallback,
                                      this, ros::TransportHints().tcpNoDelay());
+  image_captured_sub_ = nh_.subscribe("mavros/camera/image_captured", 1, &TerrainPlanner::mavImageCapturedCallback,
+                                      this, ros::TransportHints().tcpNoDelay());
 
   setlocation_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_location", &TerrainPlanner::setLocationCallback, this);
