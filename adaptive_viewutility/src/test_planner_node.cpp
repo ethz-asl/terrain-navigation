@@ -39,7 +39,7 @@
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "adaptive_viewutility/performance_tracker.h"
-#include "adaptive_viewutility/profiler.h"
+#include "terrain_navigation/profiler.h"
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");

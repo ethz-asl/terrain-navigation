@@ -38,7 +38,7 @@
  */
 
 #include "adaptive_viewutility/viewutility_map.h"
-#include "adaptive_viewutility/profiler.h"
+#include "terrain_navigation/profiler.h"
 
 #include "grid_map_cv/grid_map_cv.hpp"
 #include "grid_map_pcl/GridMapPclConverter.hpp"

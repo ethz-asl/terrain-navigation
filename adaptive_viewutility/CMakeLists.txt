@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_msgs
   grid_map_ros
   grid_map_pcl
+  terrain_navigation
 )
 
 catkin_package(
@@ -39,7 +40,6 @@ add_library(${PROJECT_NAME}
   src/viewutility_map.cpp
   src/viewplanner.cpp
   src/performance_tracker.cpp
-  src/profiler.cpp
   src/adaptive_viewutility.cpp
 )
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

@@ -37,7 +37,7 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner/profiler.h"
+#include "terrain_navigation/profiler.h"
 
 Profiler::Profiler(std::string name) { name_ = name; }
 

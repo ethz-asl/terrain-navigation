@@ -39,7 +39,7 @@
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "adaptive_viewutility/performance_tracker.h"
-#include "adaptive_viewutility/profiler.h"
+#include "terrain_navigation/profiler.h"
 
 void addViewpoint(Trajectory &trajectory, Eigen::Vector3d pos, Eigen::Vector3d vel, Eigen::Vector4d att) {
   State vehicle_state;

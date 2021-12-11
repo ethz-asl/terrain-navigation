@@ -38,7 +38,7 @@
  */
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
-#include "adaptive_viewutility/profiler.h"
+#include "terrain_navigation/profiler.h"
 
 // Original player_start(-374.47859375,  -723.12984375, 286.77371094)
 Eigen::Vector3d player_start(-374.47859375, -286.77371094, 723.12984375);

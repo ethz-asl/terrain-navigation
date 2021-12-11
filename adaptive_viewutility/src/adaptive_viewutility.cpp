@@ -37,7 +37,7 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 #include "adaptive_viewutility/adaptive_viewutility.h"
-#include "adaptive_viewutility/profiler.h"
+#include "terrain_navigation/profiler.h"
 
 #include <visualization_msgs/MarkerArray.h>
 

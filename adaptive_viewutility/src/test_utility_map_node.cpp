@@ -38,7 +38,7 @@
  */
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
-#include "adaptive_viewutility/profiler.h"
+#include "terrain_navigation/profiler.h"
 
 Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw) {
   double cy = std::cos(yaw * 0.5);

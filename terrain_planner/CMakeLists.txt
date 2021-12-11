@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_ros
   grid_map_pcl
   interactive_markers
+  terrain_navigation
   adaptive_viewutility
 )
 
@@ -41,7 +42,6 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-  src/profiler.cpp
   src/maneuver_library.cpp
   src/terrain_planner.cpp
   src/terrain_map.cpp

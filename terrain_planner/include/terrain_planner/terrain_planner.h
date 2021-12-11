@@ -42,9 +42,9 @@
 #define TERRAIN_PLANNER_H
 
 #include "adaptive_viewutility/viewutility_map.h"
+#include "terrain_navigation/profiler.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/maneuver_library.h"
-#include "terrain_planner/profiler.h"
 #include "terrain_planner/viewpoint.h"
 
 #include <ros/ros.h>

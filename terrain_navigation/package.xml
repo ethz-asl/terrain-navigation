@@ -14,8 +14,6 @@
 
   <!-- Dependencies which this package needs to build itself. -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>terrain_planner</build_depend>
-  <build_depend>mav_planning_rviz</build_depend>
 
   <export>
   </export>
