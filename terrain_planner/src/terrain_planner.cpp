@@ -389,28 +389,32 @@ visualization_msgs::Marker TerrainPlanner::Viewpoint2MarkerMsg(int id, ViewPoint
   marker.action = visualization_msgs::Marker::ADD;
   const Eigen::Vector3d position = viewpoint.getCenterLocal();
   std::vector<geometry_msgs::Point> points;
-  points.push_back(toPoint(position));  // Viewpoint center
-  points.push_back(toPoint(position + Eigen::Vector3d(10.0, 10.0, 10.0)));
-  points.push_back(toPoint(position));  // Viewpoint center
-  points.push_back(toPoint(position + Eigen::Vector3d(10.0, -10.0, 10.0)));
-  points.push_back(toPoint(position));  // Viewpoint center
-  points.push_back(toPoint(position + Eigen::Vector3d(-10.0, -10.0, 10.0)));
-  points.push_back(toPoint(position));  // Viewpoint center
-  points.push_back(toPoint(position + Eigen::Vector3d(-10.0, 10.0, 10.0)));
+  Eigen::Vector3d view_center = position;
+  std::vector<Eigen::Vector3d> vertex;
+  vertex.push_back(position + Eigen::Vector3d(10.0, 10.0, 10.0));
+  vertex.push_back(position + Eigen::Vector3d(10.0, -10.0, 10.0));
+  vertex.push_back(position + Eigen::Vector3d(-10.0, -10.0, 10.0));
+  vertex.push_back(position + Eigen::Vector3d(-10.0, 10.0, 10.0));
+
+  for (size_t i = 0; i < vertex.size(); i++) {
+    points.push_back(toPoint(position));  // Viewpoint center
+    points.push_back(toPoint(vertex[i]));
+    points.push_back(toPoint(vertex[i]));
+    points.push_back(toPoint(vertex[(i + 1) % vertex.size()]));
+  }
 
   marker.points = points;
-  // marker.pose.position.x = position(0);
-  // marker.pose.position.y = position(1);
-  // marker.pose.position.z = position(2);
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
   marker.pose.orientation.w = 1.0;
-  marker.scale.x = 1.0;
+  marker.scale.x = 0.5;
+  marker.scale.y = 0.5;
+  marker.scale.z = 0.5;
   marker.color.a = 0.5;  // Don't forget to set the alpha!
   marker.color.r = 0.0;
   marker.color.g = 1.0;
-  marker.color.b = 0.0;
+  marker.color.b = 1.0;
   return marker;
 }
 
