@@ -388,13 +388,14 @@ visualization_msgs::Marker TerrainPlanner::Viewpoint2MarkerMsg(int id, ViewPoint
   marker.type = visualization_msgs::Marker::LINE_LIST;
   marker.action = visualization_msgs::Marker::ADD;
   const Eigen::Vector3d position = viewpoint.getCenterLocal();
+  const Eigen::Matrix3d rotation = ViewPoint::quat2RotMatrix(viewpoint.getOrientation());
   std::vector<geometry_msgs::Point> points;
   Eigen::Vector3d view_center = position;
   std::vector<Eigen::Vector3d> vertex;
-  vertex.push_back(position + Eigen::Vector3d(10.0, 10.0, 10.0));
-  vertex.push_back(position + Eigen::Vector3d(10.0, -10.0, 10.0));
-  vertex.push_back(position + Eigen::Vector3d(-10.0, -10.0, 10.0));
-  vertex.push_back(position + Eigen::Vector3d(-10.0, 10.0, 10.0));
+  vertex.push_back(position + rotation * Eigen::Vector3d(10.0, 10.0, -10.0));
+  vertex.push_back(position + rotation * Eigen::Vector3d(10.0, -10.0, -10.0));
+  vertex.push_back(position + rotation * Eigen::Vector3d(-10.0, -10.0, -10.0));
+  vertex.push_back(position + rotation * Eigen::Vector3d(-10.0, 10.0, -10.0));
 
   for (size_t i = 0; i < vertex.size(); i++) {
     points.push_back(toPoint(position));  // Viewpoint center
@@ -466,7 +467,7 @@ void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCapt
   // Publish recorded viewpoints
   // TODO: Transform image tag into local position
   int id = viewpoints_.size();
-  ViewPoint viewpoint(id, vehicle_position_);
+  ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
   viewpoints_.push_back(viewpoint);
   publishViewpoints(viewpoints_);
 }

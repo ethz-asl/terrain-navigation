@@ -47,9 +47,10 @@
 class ViewPoint {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  ViewPoint(const int idx, const Eigen::Vector3d &local_position) {
+  ViewPoint(const int idx, const Eigen::Vector3d &local_position, const Eigen::Vector4d &orientation) {
     index_ = idx;
     center_local_ = local_position;
+    orientation_ = orientation;
     corner_ray_vectors_.push_back(RayVector(0, 0));
     corner_ray_vectors_.push_back(RayVector(0, 1080));
     corner_ray_vectors_.push_back(RayVector(720, 1080));
@@ -82,7 +83,18 @@ class ViewPoint {
   Eigen::Vector4d getOrientation() { return orientation_; };
   double getUtility() { return utility_; };
   int getIndex() { return index_; }
-  Eigen::Matrix3d quat2RotMatrix(const Eigen::Vector4d &q);
+  static Eigen::Matrix3d quat2RotMatrix(const Eigen::Vector4d &q) {
+    Eigen::Matrix3d rotmat;
+    rotmat << q(0) * q(0) + q(1) * q(1) - q(2) * q(2) - q(3) * q(3), 2 * q(1) * q(2) - 2 * q(0) * q(3),
+        2 * q(0) * q(2) + 2 * q(1) * q(3),
+
+        2 * q(0) * q(3) + 2 * q(1) * q(2), q(0) * q(0) - q(1) * q(1) + q(2) * q(2) - q(3) * q(3),
+        2 * q(2) * q(3) - 2 * q(0) * q(1),
+
+        2 * q(1) * q(3) - 2 * q(0) * q(2), 2 * q(0) * q(1) + 2 * q(2) * q(3),
+        q(0) * q(0) - q(1) * q(1) - q(2) * q(2) + q(3) * q(3);
+    return rotmat;
+  };
 
  private:
   int index_;
