@@ -82,7 +82,7 @@ struct GeometricPriorSettings {
 class ViewUtilityMap {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  ViewUtilityMap();
+  ViewUtilityMap(grid_map::GridMap &grid_map);
   virtual ~ViewUtilityMap();
   void setGridMap(grid_map::GridMap &map) { grid_map_ = map; };
   void setCellInformation(int map_size) { cell_information_.resize(map_size); };
@@ -107,7 +107,7 @@ class ViewUtilityMap {
   double CalculateViewUtility(ViewPoint &viewpoint, bool update_utility_map, std::vector<CellInfo> &cell_information,
                               grid_map::GridMap &grid_map);
   grid_map::Polygon getVisibilityPolygon(ViewPoint &viewpoint, grid_map::GridMap &grid_map);
-  grid_map::GridMap grid_map_;
+  grid_map::GridMap &grid_map_;
   std::vector<CellInfo> cell_information_;
   GeometricPriorSettings settings_;
   double max_prior_{0.6};

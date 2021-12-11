@@ -476,6 +476,7 @@ void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCapt
   // TODO: Transform image tag into local position
   int id = viewpoints_.size();
   ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
+  maneuver_library_->getViewUtilityMap()->UpdateUtility(viewpoint);
   viewpoints_.push_back(viewpoint);
   publishViewpoints(viewpoints_);
 }

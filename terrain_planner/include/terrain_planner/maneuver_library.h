@@ -36,7 +36,8 @@
  *
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
-
+#include "adaptive_viewutility/viewutility_map.h"
+#include "terrain_navigation/viewpoint.h"
 #include "terrain_planner/terrain_map.h"
 #include "terrain_planner/trajectory.h"
 
@@ -65,6 +66,7 @@ class ManeuverLibrary {
       bool color_loaded = terrain_map_->addColorFromGeotiff(color_map_path);
     }
     if (!loaded) return false;
+    viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
     terrain_map_->AddLayerDistanceTransform("distance_surface");
     return true;
   };
@@ -75,6 +77,7 @@ class ManeuverLibrary {
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
   std::shared_ptr<TerrainMap>& getTerrainMap() { return terrain_map_; };
+  std::shared_ptr<ViewUtilityMap>& getViewUtilityMap() { return viewutility_map_; };
   double getTimeStep() { return dt_; }
 
  private:
@@ -87,6 +90,7 @@ class ManeuverLibrary {
   double getTrajectoryCollisionCost(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
 
   std::shared_ptr<TerrainMap> terrain_map_;
+  std::shared_ptr<ViewUtilityMap> viewutility_map_;
 
   // Planner configurations
   std::vector<TrajectorySegments> motion_primitives_;

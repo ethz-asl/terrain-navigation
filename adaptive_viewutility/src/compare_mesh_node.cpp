@@ -77,10 +77,16 @@ int main(int argc, char **argv) {
   nh_private.param<double>("origin_y", origin_y, origin_y);
   nh_private.param<double>("origin_z", origin_z, origin_z);
 
-  std::shared_ptr<ViewUtilityMap> groundtruth_map = std::make_shared<ViewUtilityMap>();
+  grid_map::GridMap gt_map =
+      grid_map::GridMap({"roi", "elevation", "elevation_normal_x", "elevation_normal_y", "elevation_normal_z",
+                         "visibility", "geometric_prior", "normalized_prior"});
+  std::shared_ptr<ViewUtilityMap> groundtruth_map = std::make_shared<ViewUtilityMap>(gt_map);
   groundtruth_map->initializeFromMesh(gt_path, resolution);
 
-  std::shared_ptr<ViewUtilityMap> estimated_map = std::make_shared<ViewUtilityMap>();
+  grid_map::GridMap est_map =
+      grid_map::GridMap({"roi", "elevation", "elevation_normal_x", "elevation_normal_y", "elevation_normal_z",
+                         "visibility", "geometric_prior", "normalized_prior"});
+  std::shared_ptr<ViewUtilityMap> estimated_map = std::make_shared<ViewUtilityMap>(est_map);
   estimated_map->initializeFromMesh(est_path, resolution);
 
   // Known transform acquired by cloudcompare

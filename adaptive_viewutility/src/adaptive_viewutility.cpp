@@ -55,7 +55,9 @@ AdaptiveViewUtility::AdaptiveViewUtility(const ros::NodeHandle &nh, const ros::N
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   viewpoint_image_pub_ = nh_.advertise<sensor_msgs::Image>("image", 1, true);
 
-  viewutility_map_ = std::make_shared<ViewUtilityMap>();
+  grid_map_ = grid_map::GridMap({"roi", "elevation", "elevation_normal_x", "elevation_normal_y", "elevation_normal_z",
+                                 "visibility", "geometric_prior", "normalized_prior"});
+  viewutility_map_ = std::make_shared<ViewUtilityMap>(grid_map_);
   viewplanner_ = std::make_shared<ViewPlanner>();
 }
 

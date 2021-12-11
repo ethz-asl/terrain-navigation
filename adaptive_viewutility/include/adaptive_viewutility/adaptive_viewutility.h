@@ -109,6 +109,8 @@ class AdaptiveViewUtility {
   std::shared_ptr<ViewUtilityMap> viewutility_map_;
   std::shared_ptr<ViewPlanner> viewplanner_;
 
+  grid_map::GridMap grid_map_;
+
   Eigen::Vector3d vehicle_position_;
   Eigen::Vector3d vehicle_velocity_;
   std::vector<Eigen::Vector3d> vehicle_position_history_;

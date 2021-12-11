@@ -47,19 +47,13 @@
 #include <fstream>
 #include <iostream>
 
-ViewUtilityMap::ViewUtilityMap() {
-  grid_map_ = grid_map::GridMap({"roi", "elevation", "elevation_normal_x", "elevation_normal_y", "elevation_normal_z",
-                                 "visibility", "geometric_prior", "normalized_prior"});
-  // Set Gridmap properties
-  grid_map_.setFrameId("world");
-  grid_map_.setGeometry(grid_map::Length(100.0, 100.0), 10.0, grid_map::Position(0.0, 0.0));
-  printf(
-      "Created map with size %f x %f m (%i x %i cells).\n The center of the "
-      "map is located at (%f, %f) in the %s frame.",
-      grid_map_.getLength().x(), grid_map_.getLength().y(), grid_map_.getSize()(0), grid_map_.getSize()(1),
-      grid_map_.getPosition().x(), grid_map_.getPosition().y(), grid_map_.getFrameId().c_str());
-
+ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map) {
   // Initialize gridmap layers
+  grid_map_.add("visibility");
+  grid_map_.add("geometric_prior");
+  grid_map_.add("normalized_prior");
+  grid_map_.add("roi");
+
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(0);
   grid_map_["normalized_prior"].setConstant(0);
@@ -291,7 +285,7 @@ bool ViewUtilityMap::initializeFromGeotiff(GDALDataset *dataset) {
   grid_map::Length length(lengthX, lengthY);
   Eigen::Vector2d position = Eigen::Vector2d::Zero();
   grid_map_.setGeometry(length, resolution, position);
-  grid_map_.setFrameId("world");
+  grid_map_.setFrameId("map");
   grid_map_.setTimestamp(ros::Time::now().toNSec());
   grid_map_.add("elevation");
 
