@@ -42,8 +42,8 @@
 
 #include "adaptive_viewutility/common.h"
 #include "adaptive_viewutility/viewplanner.h"
-#include "adaptive_viewutility/viewpoint.h"
 #include "adaptive_viewutility/viewutility_map.h"
+#include "terrain_navigation/viewpoint.h"
 
 #include <Eigen/Dense>
 

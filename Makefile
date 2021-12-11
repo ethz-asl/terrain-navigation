@@ -10,6 +10,9 @@ config:
 build:
 	catkin build ${package}
 
+build-all:
+	catkin build terrain_planner mav_planning_rviz
+
 build-test:
 	catkin build terrain_planner --no-deps -i --catkin-make-args tests
 

@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 2.8.12)
 project(terrain_navigation)
 add_definitions(-std=c++11)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+    eigen_catkin
+)
 
 catkin_package(
   INCLUDE_DIRS include

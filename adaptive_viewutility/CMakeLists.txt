@@ -36,7 +36,6 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-  src/viewpoint.cpp
   src/viewutility_map.cpp
   src/viewplanner.cpp
   src/performance_tracker.cpp

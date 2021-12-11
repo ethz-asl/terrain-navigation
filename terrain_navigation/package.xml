@@ -14,7 +14,8 @@
 
   <!-- Dependencies which this package needs to build itself. -->
   <buildtool_depend>catkin</buildtool_depend>
-
+  <build_depend>eigen_catkin</build_depend>
+  <run_depend>eigen_catkin</run_depend>
   <export>
   </export>
 </package>

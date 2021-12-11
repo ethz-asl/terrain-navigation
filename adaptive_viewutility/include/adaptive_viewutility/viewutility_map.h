@@ -40,7 +40,7 @@
 #ifndef VIEWUTILITY_MAP_H
 #define VIEWUTILITY_MAP_H
 
-#include "adaptive_viewutility/viewpoint.h"
+#include "terrain_navigation/viewpoint.h"
 
 #include <gdal/cpl_string.h>
 #include <gdal/gdal.h>

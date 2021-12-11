@@ -387,7 +387,7 @@ void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const E
   vehicle_pose_pub_.publish(marker);
 }
 
-visualization_msgs::Marker TerrainPlanner::Viewpoint2MarkerMsg(int id, PlannerViewPoint &viewpoint) {
+visualization_msgs::Marker TerrainPlanner::Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
@@ -396,7 +396,7 @@ visualization_msgs::Marker TerrainPlanner::Viewpoint2MarkerMsg(int id, PlannerVi
   marker.type = visualization_msgs::Marker::LINE_LIST;
   marker.action = visualization_msgs::Marker::ADD;
   const Eigen::Vector3d position = viewpoint.getCenterLocal();
-  const Eigen::Matrix3d rotation = PlannerViewPoint::quat2RotMatrix(viewpoint.getOrientation());
+  const Eigen::Matrix3d rotation = ViewPoint::quat2RotMatrix(viewpoint.getOrientation());
   std::vector<geometry_msgs::Point> points;
   Eigen::Vector3d view_center = position;
   std::vector<Eigen::Vector3d> vertex;
@@ -427,7 +427,7 @@ visualization_msgs::Marker TerrainPlanner::Viewpoint2MarkerMsg(int id, PlannerVi
   return marker;
 }
 
-void TerrainPlanner::publishViewpoints(std::vector<PlannerViewPoint> &viewpoint_vector) {
+void TerrainPlanner::publishViewpoints(std::vector<ViewPoint> &viewpoint_vector) {
   visualization_msgs::MarkerArray msg;
 
   std::vector<visualization_msgs::Marker> marker;
@@ -475,7 +475,7 @@ void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCapt
   // Publish recorded viewpoints
   // TODO: Transform image tag into local position
   int id = viewpoints_.size();
-  PlannerViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
+  ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
   viewpoints_.push_back(viewpoint);
   publishViewpoints(viewpoints_);
 }

@@ -212,8 +212,8 @@ void AdaptiveViewUtility::UpdateUtility(Trajectory &trajectory) {
     Eigen::Vector3d vel = trajectory.states[i].velocity;
     Eigen::Vector4d att = trajectory.states[i].attitude;
     int view_index = viewpoint_.size();
-    ViewPoint viewpoint(view_index, pos);
-    viewpoint.setOrientation(att);
+    ViewPoint viewpoint(view_index, pos, att);
+    // viewpoint.setOrientation(att);
 
     UpdateUtility(viewpoint);
 
@@ -301,8 +301,7 @@ void AdaptiveViewUtility::estimateViewUtility() {
       Eigen::Vector3d vel = primitive.states[i].velocity;
       Eigen::Vector4d att = primitive.states[i].attitude;
       int view_index = viewpoint_.size();
-      ViewPoint viewpoint(view_index, pos);
-      viewpoint.setOrientation(att);
+      ViewPoint viewpoint(view_index, pos, att);
       primitive_viewpoint.push_back(viewpoint);
     }
     primitive.utility = viewutility_map_->CalculateViewUtility(primitive_viewpoint, false);

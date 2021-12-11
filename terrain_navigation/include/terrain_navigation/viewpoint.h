@@ -42,12 +42,17 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <vector>
+#include "opencv2/core.hpp"
 
-class PlannerViewPoint {
+class ViewPoint {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  PlannerViewPoint(const int idx, const Eigen::Vector3d &local_position, const Eigen::Vector4d &orientation) {
+  ViewPoint(const int idx, const Eigen::Vector3d &local_position, const Eigen::Vector4d &orientation) {
     index_ = idx;
     center_local_ = local_position;
     orientation_ = orientation;
@@ -55,9 +60,24 @@ class PlannerViewPoint {
     corner_ray_vectors_.push_back(RayVector(0, 1080));
     corner_ray_vectors_.push_back(RayVector(720, 1080));
     corner_ray_vectors_.push_back(RayVector(720, 0));
+
+    orientation_ = orientation;
+    Eigen::Matrix3d R_att = quat2RotMatrix(orientation);
+
+    // Transform corner ray vectors according to attitude
+    for (auto &corner_ray : corner_ray_vectors_) {
+      corner_ray = R_att * corner_ray;
+    }
   };
-  PlannerViewPoint(const int idx, const double &longitude, const double &latitude, const double &altitude){};
-  virtual ~PlannerViewPoint(){};
+  ViewPoint(const int idx, const double &longitude, const double &latitude, const double &altitude) {
+    index_ = idx;
+    center_global << longitude, latitude, altitude;
+    corner_ray_vectors_.push_back(RayVector(0, 0));
+    corner_ray_vectors_.push_back(RayVector(0, 1080));
+    corner_ray_vectors_.push_back(RayVector(720, 1080));
+    corner_ray_vectors_.push_back(RayVector(720, 0));
+  }
+  virtual ~ViewPoint(){};
   void setOrigin(const double &latitude, const double &longitude, const double &altitude) {
     origin_global_ << latitude, longitude, altitude;
   };
@@ -76,9 +96,22 @@ class PlannerViewPoint {
   Eigen::Vector3d getCenterLocal() { return center_local_; }
   double getTime() { return time_seconds_; }
   void setTime(double time_seconds) { time_seconds_ = time_seconds; }
-  void setOrientation(const Eigen::Vector4d &attitude);
+  void setOrientation(const Eigen::Vector4d &attitude) {
+    orientation_ = attitude;
+    Eigen::Matrix3d R_att = quat2RotMatrix(attitude);
+
+    // Transform corner ray vectors according to attitude
+    for (auto &corner_ray : corner_ray_vectors_) {
+      corner_ray = R_att * corner_ray;
+    }
+  }
   void setUtility(const double &utility) { utility_ = utility; };
-  void setImage(const std::string &image_path);
+  void setImage(const std::string &image_path) {
+    image_ = cv::imread(image_path, cv::IMREAD_GRAYSCALE);
+    // cv::imshow("viewpoint", image_);
+    // cv::waitKey(0.5);
+  };
+  cv::Mat getImage() { return image_; }
   std::vector<Eigen::Vector3d> getCornerRayVectors() { return corner_ray_vectors_; };
   Eigen::Vector4d getOrientation() { return orientation_; };
   double getUtility() { return utility_; };
@@ -105,6 +138,7 @@ class PlannerViewPoint {
   std::vector<Eigen::Vector3d> corner_ray_vectors_;
   double time_seconds_{0.0};
   double utility_{0.0};
+  cv::Mat image_;  // Store image of the viewpoint
 };
 
 #endif
