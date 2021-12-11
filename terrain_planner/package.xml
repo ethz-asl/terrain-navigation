@@ -25,11 +25,13 @@
   <build_depend>grid_map_pcl</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>planner_msgs</build_depend>
+  <build_depend>adaptive_viewutility</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend> grid_map_visualization</run_depend>
   <run_depend>grid_map_rviz_plugin</run_depend>
   <run_depend>planner_msgs</run_depend>
+  <run_depend>adaptive_viewutility</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

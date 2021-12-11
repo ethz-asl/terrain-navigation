@@ -37,17 +37,17 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#ifndef VIEWPOINT_H
-#define VIEWPOINT_H
+#ifndef TERRAIN_PLANNER_VIEWPOINT_H
+#define TERRAIN_PLANNER_VIEWPOINT_H
 
 #include <Eigen/Dense>
 #include <iostream>
 #include <vector>
 
-class ViewPoint {
+class PlannerViewPoint {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  ViewPoint(const int idx, const Eigen::Vector3d &local_position, const Eigen::Vector4d &orientation) {
+  PlannerViewPoint(const int idx, const Eigen::Vector3d &local_position, const Eigen::Vector4d &orientation) {
     index_ = idx;
     center_local_ = local_position;
     orientation_ = orientation;
@@ -56,8 +56,8 @@ class ViewPoint {
     corner_ray_vectors_.push_back(RayVector(720, 1080));
     corner_ray_vectors_.push_back(RayVector(720, 0));
   };
-  ViewPoint(const int idx, const double &longitude, const double &latitude, const double &altitude){};
-  virtual ~ViewPoint(){};
+  PlannerViewPoint(const int idx, const double &longitude, const double &latitude, const double &altitude){};
+  virtual ~PlannerViewPoint(){};
   void setOrigin(const double &latitude, const double &longitude, const double &altitude) {
     origin_global_ << latitude, longitude, altitude;
   };

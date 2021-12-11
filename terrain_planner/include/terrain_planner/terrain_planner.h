@@ -41,6 +41,7 @@
 #ifndef TERRAIN_PLANNER_H
 #define TERRAIN_PLANNER_H
 
+#include "adaptive_viewutility/viewutility_map.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/profiler.h"
@@ -89,9 +90,9 @@ class TerrainPlanner {
                                 const double curvature);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
-  void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
+  void publishViewpoints(std::vector<PlannerViewPoint> &viewpoint_vector);
   void publishGoal(const Eigen::Vector3d &position);
-  visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint);
+  visualization_msgs::Marker Viewpoint2MarkerMsg(int id, PlannerViewPoint &viewpoint);
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;
@@ -125,6 +126,8 @@ class TerrainPlanner {
   SETPOINT_MODE setpoint_mode_{SETPOINT_MODE::STATE};
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
+  std::shared_ptr<ViewUtilityMap> viewutility_map_;
+
   std::shared_ptr<Profiler> planner_profiler_;
   TrajectorySegments reference_primitive_;
   mavros_msgs::State current_state_;
@@ -132,7 +135,7 @@ class TerrainPlanner {
   std::vector<Eigen::Vector3d> vehicle_position_history_;
   std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
   std::vector<geometry_msgs::PoseStamped> referencehistory_vector_;
-  std::vector<ViewPoint> viewpoints_;
+  std::vector<PlannerViewPoint> viewpoints_;
   Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
