@@ -71,6 +71,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   path_target_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 1);
   vehicle_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_pose_marker", 1, true);
   planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status", 1, true);
+  viewpoint_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
                                ros::TransportHints().tcpNoDelay());
@@ -376,6 +377,61 @@ void TerrainPlanner::publishVehiclePose(const Eigen::Vector3d &position, const E
   vehicle_pose_pub_.publish(marker);
 }
 
+visualization_msgs::Marker TerrainPlanner::Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "my_namespace";
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::LINE_LIST;
+  marker.action = visualization_msgs::Marker::ADD;
+  const Eigen::Vector3d position = viewpoint.getCenterLocal();
+  std::vector<geometry_msgs::Point> points;
+  points.push_back(toPoint(position));  // Viewpoint center
+  points.push_back(toPoint(position + Eigen::Vector3d(10.0, 10.0, 10.0)));
+  points.push_back(toPoint(position));  // Viewpoint center
+  points.push_back(toPoint(position + Eigen::Vector3d(10.0, -10.0, 10.0)));
+  points.push_back(toPoint(position));  // Viewpoint center
+  points.push_back(toPoint(position + Eigen::Vector3d(-10.0, -10.0, 10.0)));
+  points.push_back(toPoint(position));  // Viewpoint center
+  points.push_back(toPoint(position + Eigen::Vector3d(-10.0, 10.0, 10.0)));
+
+  marker.points = points;
+  // marker.pose.position.x = position(0);
+  // marker.pose.position.y = position(1);
+  // marker.pose.position.z = position(2);
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 1.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+  return marker;
+}
+
+void TerrainPlanner::publishViewpoints(std::vector<ViewPoint> &viewpoint_vector) {
+  visualization_msgs::MarkerArray msg;
+
+  std::vector<visualization_msgs::Marker> marker;
+  visualization_msgs::Marker mark;
+  mark.action = visualization_msgs::Marker::DELETEALL;
+  marker.push_back(mark);
+  msg.markers = marker;
+  viewpoint_pub_.publish(msg);
+
+  std::vector<visualization_msgs::Marker> viewpoint_marker_vector;
+  int i = 0;
+  for (auto viewpoint : viewpoint_vector) {
+    viewpoint_marker_vector.insert(viewpoint_marker_vector.begin(), Viewpoint2MarkerMsg(i, viewpoint));
+    i++;
+  }
+  msg.markers = viewpoint_marker_vector;
+  viewpoint_pub_.publish(msg);
+}
+
 void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg) {
   std::cout << "[TerrainPlanner] Received Global Origin from FMU" << std::endl;
 
@@ -398,6 +454,15 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector3d(lon, lat, alt));
 #endif
   maneuver_library_->getTerrainMap()->setAltitudeOrigin(alt);
+}
+
+void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg) {
+  // Publish recorded viewpoints
+  // TODO: Transform image tag into local position
+  int id = viewpoints_.size();
+  ViewPoint viewpoint(id, vehicle_position_);
+  viewpoints_.push_back(viewpoint);
+  publishViewpoints(viewpoints_);
 }
 
 bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
