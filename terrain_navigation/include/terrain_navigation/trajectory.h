@@ -63,6 +63,13 @@ class Trajectory {
     }
     return vel_vector;
   }
+  std::vector<Eigen::Vector4d> attitude() {
+    std::vector<Eigen::Vector4d> attitude_vector;
+    for (auto state : states) {
+      attitude_vector.push_back(state.attitude);
+    }
+    return attitude_vector;
+  }
   static Eigen::Vector2d getArcCenter(const Eigen::Vector2d &segment_start, const Eigen::Vector2d &segment_end,
                                       double curvature) {
     double segment_distance = (segment_end - segment_start).norm();
@@ -144,6 +151,14 @@ class TrajectorySegments {
       vel_vector.insert(vel_vector.end(), segment_vel.begin(), segment_vel.end());
     }
     return vel_vector;
+  }
+  std::vector<Eigen::Vector4d> attitude() {
+    std::vector<Eigen::Vector4d> attitude_vector;
+    for (auto segment : segments) {
+      std::vector<Eigen::Vector4d> segment_att = segment.attitude();
+      attitude_vector.insert(attitude_vector.end(), segment_att.begin(), segment_att.end());
+    }
+    return attitude_vector;
   }
   void resetSegments() { segments.clear(); };
   void appendSegment(const Trajectory &trajectory) { segments.push_back(trajectory); };

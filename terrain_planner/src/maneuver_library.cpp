@@ -232,14 +232,13 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
 
 TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
   // Calculate utilities of each primitives
+  bool use_viewutility = false;
   for (auto &trajectory : valid_primitives_) {
-    std::vector<ViewPoint> primitive_viewpoints = sampleViewPointFromTrajectorySegment(trajectory);
-
-    /// TODO: Calculate view utility
-    double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
-
-    /// TODO: evaluate utilities (Do we need to define gains?)
-    trajectory.utility += view_utility;
+    if (use_viewutility) {
+      std::vector<ViewPoint> primitive_viewpoints = sampleViewPointFromTrajectorySegment(trajectory);
+      double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
+      trajectory.utility += view_utility;
+    }
 
     // Calculate goal utility
     Eigen::Vector3d end_pos = trajectory.lastSegment().states.back().position;
@@ -323,20 +322,21 @@ std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectorySegment(Tra
   // Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);
   double horizon = 4.0;
   std::vector<ViewPoint> viewpoint_vector;
-  int id = 0;
   double sample_freq = 1.0;
   std::vector<Eigen::Vector3d> pos_vector = segment.position();
-  std::vector<Eigen::Vector3d> vel_vector = segment.velocity();
-  double time = 0.0;
+  std::vector<Eigen::Vector4d> att_vector = segment.attitude();
+  double elapsed_time = 0.0;
   double dt = 0.1;
-  for (size_t i = 0; i < horizon; i++) {
-    if (time > sample_freq) {
-      Eigen::Vector3d pos = pos_vector[i]; //TODO: sample from 
-      Eigen::Vector4d att;
-      ViewPoint viewpoint(id, pos, att);
+  for (size_t i = 0; i < pos_vector.size(); i++) {
+    if (elapsed_time > sample_freq) {
+      elapsed_time = 0.0;
+      Eigen::Vector3d pos = pos_vector[i];  // TODO: sample from
+      Eigen::Vector4d att = att_vector[i];
+      /// TODO: Set ID correctly
+      ViewPoint viewpoint(i, pos, att);
       viewpoint_vector.push_back(viewpoint);
     }
-    time += dt;
+    elapsed_time += dt;
   }
   return viewpoint_vector;
 }
