@@ -120,6 +120,7 @@ class Trajectory {
   std::vector<State> states;
   double curvature{0.0};
   double climb_rate{0.0};
+  double dt{0.0};
 
  private:
 };

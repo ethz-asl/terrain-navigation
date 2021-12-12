@@ -205,7 +205,7 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
   const double climb_rate = rate(1);
   trajectory.climb_rate = climb_rate;
   trajectory.curvature = rate(2) / cruise_speed_;
-
+  trajectory.dt = dt_;
   for (int i = 0; i < std::max(1.0, horizon / dt_); i++) {
     if (std::abs(rate(2)) < 0.0001) {
       rate(2) > 0.0 ? rate(2) = 0.0001 : rate(2) = -0.0001;
