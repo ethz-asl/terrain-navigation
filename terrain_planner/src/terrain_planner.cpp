@@ -420,7 +420,7 @@ visualization_msgs::Marker TerrainPlanner::Viewpoint2MarkerMsg(int id, ViewPoint
   marker.scale.x = 0.5;
   marker.scale.y = 0.5;
   marker.scale.z = 0.5;
-  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.a = 1.0;  // Don't forget to set the alpha!
   marker.color.r = 0.0;
   marker.color.g = 1.0;
   marker.color.b = 1.0;

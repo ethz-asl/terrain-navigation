@@ -60,11 +60,10 @@ ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(0);
   grid_map_["normalized_prior"].setConstant(0);
-  grid_map_["roi"].setConstant(0);
+  grid_map_["roi"].setConstant(1.0);
   grid_map_["elevation_normal_x"].setConstant(0);
   grid_map_["elevation_normal_y"].setConstant(0);
   grid_map_["elevation_normal_z"].setConstant(1);
-
 }
 
 ViewUtilityMap::~ViewUtilityMap() {}
@@ -257,6 +256,7 @@ void ViewUtilityMap::initializeFromGridmap() {
   unsigned width = grid_map_.getSize()(0);
   unsigned height = grid_map_.getSize()(1);
   double resolution = grid_map_.getResolution();
+  setCellInformation(width * height);
   // Compute normals from elevation map
   // Surface normal calculation from: https://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml
   for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
@@ -281,7 +281,7 @@ void ViewUtilityMap::initializeFromGridmap() {
   }
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(0);
-  grid_map_["roi"].setConstant(0);
+  grid_map_["roi"].setConstant(1.0);
   grid_map_["normalized_prior"].setConstant(0);
 }
 
