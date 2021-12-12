@@ -233,15 +233,15 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
 TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
   // Calculate utilities of each primitives
   for (auto &trajectory : valid_primitives_) {
-    ///TODO: Trigger camera when viewpoint reached
+    /// TODO: Trigger camera when viewpoint reached
     /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
-    ///TODO: Sample viewpoint from primitives
+    /// TODO: Sample viewpoint from primitives
     std::vector<ViewPoint> primitive_viewpoints;
 
-    ///TODO: Calculate view utility
+    /// TODO: Calculate view utility
     double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
 
-    ///TODO: evaluate utilities (Do we need to define gains?)
+    /// TODO: evaluate utilities (Do we need to define gains?)
     trajectory.utility += view_utility;
 
     // Calculate goal utility

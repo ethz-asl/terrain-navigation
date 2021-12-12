@@ -1,4 +1,4 @@
-#include "terrain_planner/trajectory.h"
+#include "terrain_navigation/trajectory.h"
 
 #include <gtest/gtest.h>
 #include <iostream>

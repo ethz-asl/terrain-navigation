@@ -34,7 +34,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "terrain_planner/trajectory.h"
+#include "terrain_navigation/trajectory.h"
 
 #include <Eigen/Dense>
 #include <fstream>
