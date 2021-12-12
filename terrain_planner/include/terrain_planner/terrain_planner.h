@@ -120,6 +120,7 @@ class TerrainPlanner {
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
+  Eigen::Vector3d tracking_error_{Eigen::Vector3d::Zero()};
 
   SETPOINT_MODE setpoint_mode_{SETPOINT_MODE::STATE};
 
@@ -142,6 +143,7 @@ class TerrainPlanner {
   std::string resource_path_{};
   bool local_origin_received_{false};
   bool map_initialized_{false};
+  bool planner_enabled_{false};
 };
 
 #endif

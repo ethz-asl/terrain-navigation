@@ -116,8 +116,14 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
       reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
                                            reference_curvature);
       publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
-      if (current_state_.mode == "OFFBOARD")
+      if (current_state_.mode == "OFFBOARD") {
         publishPositionHistory(referencehistory_pub_, reference_position, referencehistory_vector_);
+        tracking_error_ = reference_position - vehicle_position_;
+        planner_enabled_ = true;
+      } else {
+        tracking_error_ = Eigen::Vector3d::Zero();
+        planner_enabled_ = false;
+      }
       break;
     }
     case SETPOINT_MODE::PATH: {
@@ -174,6 +180,8 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   planner_msgs::NavigationStatus msg;
   msg.header.stamp = ros::Time::now();
   msg.planner_time.data = planner_time;
+  msg.tracking_error = toVector3(tracking_error_);
+  msg.enabled = planner_enabled_;
   planner_status_pub_.publish(msg);
 }
 

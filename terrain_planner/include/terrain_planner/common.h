@@ -41,6 +41,7 @@
 
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/Vector3.h>
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -66,6 +67,14 @@ geometry_msgs::Point toPoint(const Eigen::Vector3d &p) {
   position.y = p(1);
   position.z = p(2);
   return position;
+}
+
+geometry_msgs::Vector3 toVector3(const Eigen::Vector3d &p) {
+  geometry_msgs::Vector3 vector;
+  vector.x = p(0);
+  vector.y = p(1);
+  vector.z = p(2);
+  return vector;
 }
 
 geometry_msgs::Pose vector3d2PoseMsg(const Eigen::Vector3d position, const Eigen::Vector4d orientation) {
