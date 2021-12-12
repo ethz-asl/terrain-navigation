@@ -66,8 +66,9 @@ class ManeuverLibrary {
       bool color_loaded = terrain_map_->addColorFromGeotiff(color_map_path);
     }
     if (!loaded) return false;
-    viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
     terrain_map_->AddLayerDistanceTransform("distance_surface");
+    viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
+    viewutility_map_->initializeFromGridmap();
     return true;
   };
   void setTerrainRelativeGoalPosition(const Eigen::Vector3d& pos);

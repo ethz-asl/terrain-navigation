@@ -97,6 +97,7 @@ class ViewUtilityMap {
                                                        const double &view_distance, const Eigen::Vector3d &cell_normal,
                                                        CellInfo &cell_info);
   static double getBestJointPrior(const std::vector<GeometricPrior> &prior_list);
+  void initializeFromGridmap();
   bool initializeFromGeotiff(GDALDataset *dataset);
   bool initializeFromMesh(const std::string &path, const double res = 10.0);
   bool initializeEmptyMap();
