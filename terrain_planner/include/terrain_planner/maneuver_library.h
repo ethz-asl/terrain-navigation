@@ -89,6 +89,7 @@ class ManeuverLibrary {
   std::vector<TrajectorySegments> checkRelaxedCollisions();
   bool checkTrajectoryCollision(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
   double getTrajectoryCollisionCost(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
+  std::vector<ViewPoint> sampleViewPointFromTrajectorySegment(TrajectorySegments &segment);
 
   std::shared_ptr<TerrainMap> terrain_map_;
   std::shared_ptr<ViewUtilityMap> viewutility_map_;

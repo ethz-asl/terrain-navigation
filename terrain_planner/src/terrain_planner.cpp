@@ -114,7 +114,9 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
       reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
                                            reference_curvature);
       publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
-      if (current_state_.mode == "OFFBOARD") {
+      /// TODO: Trigger camera when viewpoint reached
+      /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
+      if (current_state_.mode == "OFFBOARD")
         publishPositionHistory(referencehistory_pub_, reference_position, referencehistory_vector_);
         tracking_error_ = reference_position - vehicle_position_;
         planner_enabled_ = true;
@@ -161,8 +163,6 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
   bool result = maneuver_library_->Solve();
-
-  /// TODO: Evaluate each motion primitive for view utility evaluation
 
   if (result) {
     reference_primitive_ = maneuver_library_->getBestPrimitive();

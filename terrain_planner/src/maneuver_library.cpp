@@ -233,10 +233,7 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
 TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
   // Calculate utilities of each primitives
   for (auto &trajectory : valid_primitives_) {
-    /// TODO: Trigger camera when viewpoint reached
-    /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
-    /// TODO: Sample viewpoint from primitives
-    std::vector<ViewPoint> primitive_viewpoints;
+    std::vector<ViewPoint> primitive_viewpoints = sampleViewPointFromTrajectorySegment(trajectory);
 
     /// TODO: Calculate view utility
     double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
@@ -312,6 +309,36 @@ Eigen::Vector4d ManeuverLibrary::rpy2quaternion(double roll, double pitch, doubl
   q.normalize();
 
   return q;
+}
+
+std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectorySegment(TrajectorySegments &segment) {
+  /// TODO: Sample viewpoint from primitives
+  // Eigen::Vector3d pos =
+  //     cruise_speed_ / rate(2) *
+  //         Eigen::Vector3d(std::sin(yaw) - std::sin(current_yaw), std::cos(yaw) - std::cos(current_yaw), 0) +
+  //     Eigen::Vector3d(0, 0, climb_rate * time) + current_pos;
+  // Eigen::Vector3d vel = cruise_speed_ * Eigen::Vector3d(std::cos(yaw), std::sin(yaw), climb_rate);
+  // const double roll = std::atan(rate(2) * cruise_speed_ / 9.81);
+  // const double pitch = std::atan(climb_rate / cruise_speed_);  /// TODO: link pitch to climbrate
+  // Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);
+  double horizon = 4.0;
+  std::vector<ViewPoint> viewpoint_vector;
+  int id = 0;
+  double sample_freq = 1.0;
+  std::vector<Eigen::Vector3d> pos_vector = segment.position();
+  std::vector<Eigen::Vector3d> vel_vector = segment.velocity();
+  double time = 0.0;
+  double dt = 0.1;
+  for (size_t i = 0; i < horizon; i++) {
+    if (time > sample_freq) {
+      Eigen::Vector3d pos = pos_vector[i]; //TODO: sample from 
+      Eigen::Vector4d att;
+      ViewPoint viewpoint(id, pos, att);
+      viewpoint_vector.push_back(viewpoint);
+    }
+    time += dt;
+  }
+  return viewpoint_vector;
 }
 
 #endif
