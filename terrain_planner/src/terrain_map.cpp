@@ -162,7 +162,10 @@ bool TerrainMap::initializeFromGeotiff(const std::string &path, bool align_terra
 
   /// TODO: This is a workaround with the problem of gdal 3 not translating altitude correctly.
   /// This section just levels the current position to the ground
-  double altitude = grid_map_.atPosition("elevation", Eigen::Vector2d(0.0, 0.0));
+  double altitude{0.0};
+  if (grid_map_.isInside(Eigen::Vector2d(0.0, 0.0)) {
+    altitude = grid_map_.atPosition("elevation", Eigen::Vector2d(0.0, 0.0));
+  }
 
   Eigen::Translation3d meshlab_translation(0.0, 0.0, -altitude);
   Eigen::AngleAxisd meshlab_rotation(Eigen::AngleAxisd::Identity());
