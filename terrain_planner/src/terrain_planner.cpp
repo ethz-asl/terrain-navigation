@@ -107,13 +107,12 @@ void TerrainPlanner::Init() {
   statusloop_spinner_.reset(new ros::AsyncSpinner(1, &statusloop_queue_));
   statusloop_spinner_->start();
   double cmdloop_dt_ = 0.1;
-  ros::TimerOptions cmdlooptimer_options(
-      ros::Duration(cmdloop_dt_), boost::bind(&TerrainPlanner::cmdloopCallback, this, _1), &cmdloop_queue_);
+  ros::TimerOptions cmdlooptimer_options(ros::Duration(cmdloop_dt_),
+                                         boost::bind(&TerrainPlanner::cmdloopCallback, this, _1), &cmdloop_queue_);
   cmdloop_timer_ = nh_.createTimer(cmdlooptimer_options);  // Define timer for constant loop rate
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
-
 }
 
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
@@ -130,7 +129,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
       publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
       /// TODO: Trigger camera when viewpoint reached
       /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
-      if (current_state_.mode == "OFFBOARD")
+      if (current_state_.mode == "OFFBOARD") {
         publishPositionHistory(referencehistory_pub_, reference_position, referencehistory_vector_);
         tracking_error_ = reference_position - vehicle_position_;
         planner_enabled_ = true;
