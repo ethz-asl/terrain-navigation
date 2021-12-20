@@ -53,10 +53,6 @@
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
   vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
-  cmdloop_timer_ = nh_.createTimer(ros::Duration(0.1), &TerrainPlanner::cmdloopCallback,
-                                   this);  // Define timer for constant loop rate
-  statusloop_timer_ = nh_.createTimer(ros::Duration(2.0), &TerrainPlanner::statusloopCallback,
-                                      this);  // Define timer for constant loop rate
 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
 
@@ -100,6 +96,24 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 }
 TerrainPlanner::~TerrainPlanner() {
   // Destructor
+}
+
+void TerrainPlanner::Init() {
+  double statusloop_dt_ = 2.0;
+  ros::TimerOptions statuslooptimer_options(
+      ros::Duration(statusloop_dt_), boost::bind(&TerrainPlanner::statusloopCallback, this, _1), &statusloop_queue_);
+  statusloop_timer_ = nh_.createTimer(statuslooptimer_options);  // Define timer for constant loop rate
+
+  statusloop_spinner_.reset(new ros::AsyncSpinner(1, &statusloop_queue_));
+  statusloop_spinner_->start();
+  double cmdloop_dt_ = 0.1;
+  ros::TimerOptions cmdlooptimer_options(
+      ros::Duration(cmdloop_dt_), boost::bind(&TerrainPlanner::cmdloopCallback, this, _1), &cmdloop_queue_);
+  cmdloop_timer_ = nh_.createTimer(cmdlooptimer_options);  // Define timer for constant loop rate
+
+  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
+  cmdloop_spinner_->start();
+
 }
 
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {

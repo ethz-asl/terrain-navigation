@@ -54,6 +54,9 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<TerrainPlanner> terrain_planner_node = std::make_shared<TerrainPlanner>(nh, nh_private);
 
+  // Initiate ROS spinners
+  terrain_planner_node->Init();
+
   ros::spin();
   return 0;
 }

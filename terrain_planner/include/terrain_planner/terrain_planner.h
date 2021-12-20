@@ -45,6 +45,7 @@
 #include "terrain_planner/common.h"
 #include "terrain_planner/maneuver_library.h"
 
+#include <ros/callback_queue.h>
 #include <ros/ros.h>
 
 #include <geographic_msgs/GeoPointStamped.h>
@@ -65,6 +66,7 @@ class TerrainPlanner {
  public:
   TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
   virtual ~TerrainPlanner();
+  void Init();
 
  private:
   void cmdloopCallback(const ros::TimerEvent &event);
@@ -120,6 +122,10 @@ class TerrainPlanner {
   ros::Time plan_time_;
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
   Eigen::Vector3d tracking_error_{Eigen::Vector3d::Zero()};
+  ros::CallbackQueue statusloop_queue_;
+  ros::CallbackQueue cmdloop_queue_;
+  std::unique_ptr<ros::AsyncSpinner> statusloop_spinner_;
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
   SETPOINT_MODE setpoint_mode_{SETPOINT_MODE::STATE};
 
