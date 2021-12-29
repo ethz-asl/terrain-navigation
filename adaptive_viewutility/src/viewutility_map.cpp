@@ -428,6 +428,7 @@ bool ViewUtilityMap::initializeFromMesh(const std::string &path, const double re
   grid_map_["geometric_prior"].setConstant(0);
   grid_map_["roi"].setConstant(0);
   grid_map_["normalized_prior"].setConstant(0);
+  grid_map_.setFrameId("map");
 }
 
 bool ViewUtilityMap::initializeEmptyMap() {
@@ -491,6 +492,9 @@ void ViewUtilityMap::CompareMapLayer(const std::string &layer, const grid_map::G
       error_vector.push_back(error);
     }
   }
+  /// TODO: Write raw error values into file for ruther analysis
+  std::cout << "Elevation Map Error Statistics" << std::endl;
+  // Compute error values
   double cumulative_error{0.0};
   for (auto error_point : error_vector) {
     cumulative_error += error_point;
@@ -501,7 +505,41 @@ void ViewUtilityMap::CompareMapLayer(const std::string &layer, const grid_map::G
     cumulative_squared_error += std::pow(error_point - mean, 2);
   }
   double stdev = std::sqrt(cumulative_squared_error / error_vector.size());
+  std::cout << "  - Average Error: " << mean << std::endl;
+  std::cout << "  - Average STDEV: " << stdev << std::endl;
 
-  std::cout << "- Average Error: " << mean << std::endl;
-  std::cout << "- Average STDEV: " << stdev << std::endl;
+  // Compute error statistics
+  {
+    double error_thresold = 1.0;
+    int tp_count{0};
+    int total_count{0};
+
+    for (auto error_point : error_vector) {
+      total_count++;
+      if (std::abs(error_point) < std::abs(error_thresold)) {
+        tp_count++;
+      }
+    }
+    double precision = static_cast<double>(tp_count) / static_cast<double>(total_count);
+    std::cout << "  - Precision(" << error_thresold << "m): " << precision << std::endl;
+  }
+  {
+    double reference_precision{0.5};
+    double accuracy = 0.0;
+    int tp_count{0};
+    int total_count{0};
+    double precision{0.0};
+    while (precision < reference_precision) {
+      accuracy += 0.1;
+      for (auto error_point : error_vector) {
+        total_count++;
+        if (std::abs(error_point) < std::abs(accuracy)) {
+          tp_count++;
+        }
+      }
+      precision = static_cast<double>(tp_count) / static_cast<double>(total_count);
+    }
+    std::cout << "  - Accuracy(Precision): " << accuracy << "(" << precision << ")" << std::endl;
+  }
+  /// TODO: Implement Precision / Recall / F-scores
 }

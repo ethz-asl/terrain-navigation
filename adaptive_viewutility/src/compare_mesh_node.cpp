@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
   gt_map_pub = nh.advertise<grid_map_msgs::GridMap>("groundthruth_map", 1, true);
   est_map_pub = nh.advertise<grid_map_msgs::GridMap>("estimated_map", 1, true);
 
-  double resolution = 10.0;
+  double resolution = 1.0;
 
   std::string gt_path, est_path;
 
