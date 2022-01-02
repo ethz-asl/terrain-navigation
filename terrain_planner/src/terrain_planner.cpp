@@ -173,18 +173,36 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     reference_primitive_.segments.clear();
   }
   // Only run planner in offboard mode
-  maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, reference_primitive_);
+  maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, vehicle_attitude_,
+                                              reference_primitive_);
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
   bool result = maneuver_library_->Solve();
 
   if (result) {
-    reference_primitive_ = maneuver_library_->getBestPrimitive();
+    planner_mode_ = PLANNER_MODE::GOAL;
   } else {
-    /// TODO: Take failsafe action when no valid primitive is found
-    std::cout << "[TerrainPlanner] Unable to found a valid motion primitive: using a random primitive" << std::endl;
-    reference_primitive_ = maneuver_library_->getRandomPrimitive();
+    planner_mode_ = PLANNER_MODE::RANDOM;
   }
+
+  planner_mode_ = PLANNER_MODE::GOAL;
+
+  switch (planner_mode_) {
+    case PLANNER_MODE::VIEW_UTILITY:
+      /// TODO: Implement DFS/BFS and MCTS for searching best view utility paths
+      break;
+    case PLANNER_MODE::GOAL:
+      /// TODO: Get Best Primitive with BFS
+      reference_primitive_ = maneuver_library_->getBestPrimitive();
+      break;
+    case PLANNER_MODE::RANDOM:
+    default:
+      /// TODO: Take failsafe action when no valid primitive is found
+      std::cout << "[TerrainPlanner] Unable to found a valid motion primitive: using a random primitive" << std::endl;
+      reference_primitive_ = maneuver_library_->getRandomPrimitive();
+      break;
+  }
+
   double planner_time = planner_profiler_->toc();
   publishCandidateManeuvers(maneuver_library_->getMotionPrimitives());
   publishTrajectory(reference_primitive_.position());

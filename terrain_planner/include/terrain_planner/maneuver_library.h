@@ -51,11 +51,12 @@ class ManeuverLibrary {
   virtual ~ManeuverLibrary();
   std::vector<TrajectorySegments>& generateMotionPrimitives(const Eigen::Vector3d current_pos,
                                                             const Eigen::Vector3d current_vel,
+                                                            const Eigen::Vector4d current_att,
                                                             TrajectorySegments& current_path);
   std::vector<TrajectorySegments>& getMotionPrimitives() { return motion_primitives_; }
   std::vector<TrajectorySegments>& getValidPrimitives() { return valid_primitives_; }
-  TrajectorySegments& getBestPrimitive();
-  TrajectorySegments& getRandomPrimitive();
+  TrajectorySegments getBestPrimitive();
+  TrajectorySegments getRandomPrimitive();
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
                                    Eigen::Vector3d current_vel);
   double getPlanningHorizon() { return planning_horizon_; };
@@ -80,16 +81,21 @@ class ManeuverLibrary {
   std::shared_ptr<TerrainMap>& getTerrainMap() { return terrain_map_; };
   std::shared_ptr<ViewUtilityMap>& getViewUtilityMap() { return viewutility_map_; };
   double getTimeStep() { return dt_; }
+  void expandPrimitives(std::shared_ptr<Primitive> primitive, std::vector<Eigen::Vector3d> rates, double horizon);
 
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
   std::vector<TrajectorySegments> AppendSegment(std::vector<TrajectorySegments>& first_segment,
                                                 const std::vector<Eigen::Vector3d>& rates, const double horizon);
-  std::vector<TrajectorySegments> checkCollisions();
+  bool checkCollisions();
   std::vector<TrajectorySegments> checkRelaxedCollisions();
+  bool checkCollisionsTree(std::shared_ptr<Primitive> primitive, std::vector<TrajectorySegments>& valid_primitives);
+  bool checkViewUtilityTree(std::shared_ptr<Primitive> primitive);
+  bool checkTrajectoryCollision(Trajectory& trajectory, const std::string& layer, bool is_above = true);
   bool checkTrajectoryCollision(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
   double getTrajectoryCollisionCost(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
   std::vector<ViewPoint> sampleViewPointFromTrajectorySegment(TrajectorySegments& segment);
+  std::vector<ViewPoint> sampleViewPointFromTrajectory(Trajectory& segment);
 
   std::shared_ptr<TerrainMap> terrain_map_;
   std::shared_ptr<ViewUtilityMap> viewutility_map_;
@@ -98,6 +104,7 @@ class ManeuverLibrary {
   std::vector<TrajectorySegments> motion_primitives_;
   std::vector<TrajectorySegments> valid_primitives_;
   std::vector<Eigen::Vector3d> primitive_rates_;
+  std::shared_ptr<Primitive> motion_primitive_tree_;
   int num_segments{3};
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 100.0)};  // Terrain relative goal position
   bool check_max_altitude_{true};

@@ -36,6 +36,7 @@
 
 #include <Eigen/Dense>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 struct State {
@@ -163,6 +164,7 @@ class TrajectorySegments {
     return attitude_vector;
   }
   void resetSegments() { segments.clear(); };
+  void prependSegment(const Trajectory &trajectory) { segments.insert(segments.begin(), trajectory); };
   void appendSegment(const Trajectory &trajectory) { segments.push_back(trajectory); };
   Trajectory lastSegment() { return segments.back(); }
   void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
@@ -247,6 +249,25 @@ class TrajectorySegments {
   double K_z_ = 0.5;
   double max_climb_rate_control_{-3.5};
   double max_sink_rate_control_{2.0};
+};
+
+class Primitive {
+ public:
+  Primitive(Trajectory &trajectory) { segment = trajectory; };
+  virtual ~Primitive(){};
+  std::vector<std::shared_ptr<Primitive>> child_primitives;
+  void expandPrimitives(std::shared_ptr<Primitive> primitive);
+  Eigen::Vector3d getEndofSegmentPosition() { return segment.states.back().position; }
+  Eigen::Vector3d getEndofSegmentVelocity() { return segment.states.back().velocity; }
+  bool valid() { return validity; }
+  bool has_child() { return !child_primitives.empty(); }
+  double utility{0.0};
+  // A primitive is not valid if none of the child primitives are valid
+  bool validity{false};
+  bool evaluation{false};
+  Trajectory segment;
+
+ private:
 };
 
 #endif

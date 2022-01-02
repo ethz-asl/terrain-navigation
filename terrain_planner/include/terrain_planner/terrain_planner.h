@@ -62,6 +62,8 @@
 
 enum class SETPOINT_MODE { STATE, PATH };
 
+enum class PLANNER_MODE { RANDOM, GOAL, VIEW_UTILITY };
+
 class TerrainPlanner {
  public:
   TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
@@ -127,6 +129,7 @@ class TerrainPlanner {
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
   SETPOINT_MODE setpoint_mode_{SETPOINT_MODE::STATE};
+  PLANNER_MODE planner_mode_{PLANNER_MODE::GOAL};
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
 

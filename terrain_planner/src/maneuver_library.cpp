@@ -62,16 +62,35 @@ ManeuverLibrary::~ManeuverLibrary() {}
 
 std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
                                                                            const Eigen::Vector3d current_vel,
+                                                                           const Eigen::Vector4d current_att,
                                                                            TrajectorySegments &current_path) {
-  motion_primitives_.clear();
-
-  /// TODO: Reformulate as recursive
-  std::vector<TrajectorySegments> first_segment;
-
   Trajectory current_segment;
   if (!current_path.segments.empty()) {
     current_segment = current_path.getCurrentSegment(current_pos);
+  } else {
+    State state_vector;
+    state_vector.position = current_pos;
+    state_vector.velocity = current_vel.normalized();
+    state_vector.attitude = current_att;
+    current_segment.states.push_back(state_vector);
   }
+
+  motion_primitive_tree_ = std::make_shared<Primitive>(current_segment);
+
+  // Expand motion primitives
+  int tree_depth = 2;
+  for (int i = 0; i < tree_depth; i++) {
+    expandPrimitives(motion_primitive_tree_, primitive_rates_, planning_horizon_);
+  }
+  // Add emergency primitives at the end of the trajectory
+  std::vector<Eigen::Vector3d> emergency_rates;
+  emergency_rates.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
+  double horizon = 2 * M_PI / emergency_rates[0](2);
+  expandPrimitives(motion_primitive_tree_, emergency_rates, horizon);
+
+  /// TODO: Copy motion primitive tree into motion primitives
+  motion_primitives_.clear();
+  std::vector<TrajectorySegments> first_segment;
 
   for (auto rate : primitive_rates_) {
     TrajectorySegments trajectory_segments;
@@ -90,54 +109,108 @@ std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const
   // Append second segment for each primitive
   std::vector<TrajectorySegments> second_segment = AppendSegment(first_segment, primitive_rates_, planning_horizon_);
   std::vector<TrajectorySegments> third_segment = AppendSegment(second_segment, primitive_rates_, planning_horizon_);
-
-  std::vector<Eigen::Vector3d> emergency_rates;
-  emergency_rates.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
-  double horizon = 2 * M_PI / emergency_rates[0](2);
   std::vector<TrajectorySegments> fourth_segment = AppendSegment(third_segment, emergency_rates, horizon);
 
   motion_primitives_ = fourth_segment;
-
-  /// TODO: Append to current trajectory segment
   return motion_primitives_;
 }
 
 bool ManeuverLibrary::Solve() {
-  valid_primitives_ = checkCollisions();  // TODO: Define minimum distance?
+  bool valid_primitives = checkCollisions();
+  bool use_viewutility = false;
+
+  if (valid_primitives) {
+    checkViewUtilityTree(motion_primitive_tree_);
+  }
 
   if (valid_primitives_.size() < 1) {
     // Try to see if relaxing max altitude fixes the problem
-    valid_primitives_ = checkRelaxedCollisions();  // TODO: Define minimum distance?
+    valid_primitives_ = checkRelaxedCollisions();
     if (valid_primitives_.size() < 1) {
       return false;  // No valid motion primitive
     }
   }
-  /// TODO: Rank primitives
   return true;
 }
 
-std::vector<TrajectorySegments> ManeuverLibrary::checkCollisions() {
-  // Iterate through all motion primtiives and only return collision free primitives
-  // The returned primitives are all collision free
-  std::vector<TrajectorySegments> valid_primitives;
-  for (auto &trajectory : motion_primitives_) {
-    // Check collision with terrain
-    bool valid_trajectory{true};
-    bool no_terrain_collision = checkTrajectoryCollision(trajectory, "distance_surface", true);
-    valid_trajectory &= no_terrain_collision;
-    // Check collision with maximum terrain altitude
-    if (check_max_altitude_) {
-      bool max_altitude_collision = checkTrajectoryCollision(trajectory, "max_elevation", false);
-      valid_trajectory &= max_altitude_collision;
+void ManeuverLibrary::expandPrimitives(std::shared_ptr<Primitive> primitive, std::vector<Eigen::Vector3d> rates,
+                                       double horizon) {
+  if (primitive->child_primitives.empty()) {
+    Eigen::Vector3d current_pos = primitive->getEndofSegmentPosition();
+    Eigen::Vector3d current_vel = primitive->getEndofSegmentVelocity();
+    for (auto rate : rates) {
+      Trajectory trajectory = generateArcTrajectory(rate, horizon, current_pos, current_vel);
+      primitive->child_primitives.push_back(std::make_shared<Primitive>(trajectory));
     }
-    if (valid_trajectory) {
-      trajectory.validity = true;
-      valid_primitives.push_back(trajectory);
-    } else {
-      trajectory.validity = false;
+  } else {
+    for (auto &child : primitive->child_primitives) {
+      expandPrimitives(child, rates, horizon);
     }
   }
-  return valid_primitives;
+}
+
+bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> primitive,
+                                          std::vector<TrajectorySegments> &valid_primitives) {
+  bool valid_trajectory{true};
+  // Check collision with terrain
+  Trajectory &current_trajectory = primitive->segment;
+
+  valid_trajectory &= checkTrajectoryCollision(current_trajectory, "distance_surface", true);
+  // Check collision with maximum terrain altitude
+  if (check_max_altitude_) {
+    valid_trajectory &= checkTrajectoryCollision(current_trajectory, "max_elevation", false);
+  }
+
+  if (valid_trajectory) {
+    if (primitive->has_child()) {
+      //If the primitive segment is valid and has a child it needs to have at least one child that is valid
+      bool has_valid_child{false};
+      for (auto &child : primitive->child_primitives) {
+        std::vector<TrajectorySegments> child_segments;
+        if (checkCollisionsTree(child, child_segments)) {
+          has_valid_child = true;
+          for (auto &child : child_segments) {
+            TrajectorySegments valid_segments;
+            child.prependSegment(current_trajectory);
+            valid_primitives.push_back(valid_segments);
+          }
+        }
+      }
+      primitive->validity = has_valid_child;
+    } else {
+      TrajectorySegments valid_segments;
+      valid_segments.appendSegment(current_trajectory);
+    }
+  } else {
+    primitive->validity = false;
+  }
+
+  return primitive->validity;
+}
+
+bool ManeuverLibrary::checkViewUtilityTree(std::shared_ptr<Primitive> primitive) {
+  if (primitive->valid()) {
+    std::vector<ViewPoint> primitive_viewpoints = sampleViewPointFromTrajectory(primitive->segment);
+    double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
+    primitive->utility = view_utility;
+  } else {
+    primitive->utility = 0.0;
+  }
+
+  if (primitive->has_child()) {
+    for (auto &child : primitive->child_primitives) {
+      checkViewUtilityTree(child);
+    }
+  }
+
+  return true;
+}
+
+bool ManeuverLibrary::checkCollisions() {
+  std::vector<TrajectorySegments> valid_primitives;
+  bool valid = checkCollisionsTree(motion_primitive_tree_, valid_primitives);
+  valid_primitives_ = valid_primitives;
+  return valid;
 }
 
 std::vector<TrajectorySegments> ManeuverLibrary::checkRelaxedCollisions() {
@@ -153,6 +226,17 @@ std::vector<TrajectorySegments> ManeuverLibrary::checkRelaxedCollisions() {
     valid_primitives.push_back(trajectory);
   }
   return valid_primitives;
+}
+
+bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory, const std::string &layer, bool is_above) {
+  /// TODO: Reference gridmap terrain
+  for (auto position : trajectory.position()) {
+    // TODO: Make max terrain optional
+    if (terrain_map_->isInCollision(layer, position, is_above)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool ManeuverLibrary::checkTrajectoryCollision(TrajectorySegments &trajectory, const std::string &layer,
@@ -230,16 +314,12 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
   return trajectory;
 }
 
-TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
-  // Calculate utilities of each primitives
-  bool use_viewutility = false;
-  for (auto &trajectory : valid_primitives_) {
-    if (use_viewutility) {
-      std::vector<ViewPoint> primitive_viewpoints = sampleViewPointFromTrajectorySegment(trajectory);
-      double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
-      trajectory.utility += view_utility;
-    }
+TrajectorySegments ManeuverLibrary::getBestPrimitive() {
+  /// TODO: Implement best first search on tree
+  TrajectorySegments primitive;
 
+  // Calculate utilities of each primitives
+  for (auto &trajectory : valid_primitives_) {
     // Calculate goal utility
     Eigen::Vector3d end_pos = trajectory.lastSegment().states.back().position;
     double terrain_altitude = end_pos(3);
@@ -262,20 +342,22 @@ TrajectorySegments &ManeuverLibrary::getBestPrimitive() {
       }
     }
     return valid_primitives_[best_index];
-  } else {
-    return getRandomPrimitive();
   }
+
+  return primitive;
 }
 
-TrajectorySegments &ManeuverLibrary::getRandomPrimitive() {
-  int i = 0;
-  if (valid_primitives_.size() > 0) {
-    i = std::rand() % valid_primitives_.size();
-    return valid_primitives_[i];
-  } else {
-    i = std::rand() % motion_primitives_.size();
-    return motion_primitives_[i];
+TrajectorySegments ManeuverLibrary::getRandomPrimitive() {
+  TrajectorySegments primitive;
+
+  std::shared_ptr<Primitive> primitives = motion_primitive_tree_;
+  while (primitives->has_child()) {
+    int i = std::rand() % primitives->child_primitives.size();
+    primitives = primitives->child_primitives[i];
+    primitive.appendSegment(primitives->segment);
   }
+
+  return primitive;
 }
 
 void ManeuverLibrary::setTerrainRelativeGoalPosition(const Eigen::Vector3d &pos) {
@@ -311,15 +393,28 @@ Eigen::Vector4d ManeuverLibrary::rpy2quaternion(double roll, double pitch, doubl
 }
 
 std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectorySegment(TrajectorySegments &segment) {
-  /// TODO: Sample viewpoint from primitives
-  // Eigen::Vector3d pos =
-  //     cruise_speed_ / rate(2) *
-  //         Eigen::Vector3d(std::sin(yaw) - std::sin(current_yaw), std::cos(yaw) - std::cos(current_yaw), 0) +
-  //     Eigen::Vector3d(0, 0, climb_rate * time) + current_pos;
-  // Eigen::Vector3d vel = cruise_speed_ * Eigen::Vector3d(std::cos(yaw), std::sin(yaw), climb_rate);
-  // const double roll = std::atan(rate(2) * cruise_speed_ / 9.81);
-  // const double pitch = std::atan(climb_rate / cruise_speed_);  /// TODO: link pitch to climbrate
-  // Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);
+  double horizon = 4.0;
+  std::vector<ViewPoint> viewpoint_vector;
+  double sample_freq = 1.0;
+  std::vector<Eigen::Vector3d> pos_vector = segment.position();
+  std::vector<Eigen::Vector4d> att_vector = segment.attitude();
+  double elapsed_time = 0.0;
+  double dt = 0.1;
+  for (size_t i = 0; i < pos_vector.size(); i++) {
+    if (elapsed_time > sample_freq) {
+      elapsed_time = 0.0;
+      Eigen::Vector3d pos = pos_vector[i];  // TODO: sample from
+      Eigen::Vector4d att = att_vector[i];
+      /// TODO: Set ID correctly
+      ViewPoint viewpoint(i, pos, att);
+      viewpoint_vector.push_back(viewpoint);
+    }
+    elapsed_time += dt;
+  }
+  return viewpoint_vector;
+}
+
+std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectory(Trajectory &segment) {
   double horizon = 4.0;
   std::vector<ViewPoint> viewpoint_vector;
   double sample_freq = 1.0;
