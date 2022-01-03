@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
   printGridmapInfo("Estimated map", estimated_map->getGridMap());
 
   /// TODO: Calculate error statistics
-  groundtruth_map->CompareMapLayer("elevation", estimated_map->getGridMap());
+  groundtruth_map->CompareMapLayer(estimated_map->getGridMap());
 
   while (true) {
     MapPublishOnce(gt_map_pub, groundtruth_map);

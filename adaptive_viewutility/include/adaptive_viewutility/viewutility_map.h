@@ -102,9 +102,11 @@ class ViewUtilityMap {
   bool initializeFromMesh(const std::string &path, const double res = 10.0);
   bool initializeEmptyMap();
   void SetRegionOfInterest(const grid_map::Polygon &polygon);
-  void CompareMapLayer(const std::string &layer, const grid_map::GridMap &reference_map);
+  void CompareMapLayer(grid_map::GridMap &reference_map);
+  double CalculatePrecision(const std::vector<double> &error_vector, const double threshold);
 
  private:
+  std::vector<double> calculateErrors(grid_map::GridMap &groundtruth_map, const grid_map::GridMap &reference_map);
   double CalculateViewUtility(ViewPoint &viewpoint, bool update_utility_map, std::vector<CellInfo> &cell_information,
                               grid_map::GridMap &grid_map);
   grid_map::Polygon getVisibilityPolygon(ViewPoint &viewpoint, grid_map::GridMap &grid_map);
