@@ -429,6 +429,7 @@ bool ViewUtilityMap::initializeFromMesh(const std::string &path, const double re
   grid_map_["roi"].setConstant(0);
   grid_map_["normalized_prior"].setConstant(0);
   grid_map_.setFrameId("map");
+  return true;
 }
 
 bool ViewUtilityMap::initializeEmptyMap() {
@@ -446,6 +447,7 @@ bool ViewUtilityMap::initializeEmptyMap() {
   double width = grid_map_.getSize()(0);
   double height = grid_map_.getSize()(1);
   setCellInformation(width * height);
+  return true;
 }
 
 void ViewUtilityMap::OutputMapData(const std::string path) {
