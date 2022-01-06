@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
 
   /// set Current state of vehicle
   /// TODO: Randomly generate initial position
+    Eigen::Vector3d airsim_player_start = airsim_client->getPlayerStart();
 
   for (int i = 0; i < num_experiments; i++) {
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);

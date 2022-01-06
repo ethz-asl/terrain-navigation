@@ -40,8 +40,6 @@
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "terrain_navigation/profiler.h"
 
-// Original player_start(-374.47859375,  -723.12984375, 286.77371094)
-Eigen::Vector3d player_start(-374.47859375, -286.77371094, 723.12984375);
 
 void MapPublishOnce(ros::Publisher &pub, const std::shared_ptr<ViewUtilityMap> &map) {
   map->getGridMap().setTimestamp(ros::Time::now().toNSec());
@@ -61,9 +59,8 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
-  ros::Publisher gt_map_pub, est_map_pub;
-  gt_map_pub = nh.advertise<grid_map_msgs::GridMap>("groundthruth_map", 1, true);
-  est_map_pub = nh.advertise<grid_map_msgs::GridMap>("estimated_map", 1, true);
+  ros::Publisher gt_map_pub = nh.advertise<grid_map_msgs::GridMap>("groundthruth_map", 1, true);
+  ros::Publisher est_map_pub = nh.advertise<grid_map_msgs::GridMap>("estimated_map", 1, true);
 
   double resolution = 1.0;
 

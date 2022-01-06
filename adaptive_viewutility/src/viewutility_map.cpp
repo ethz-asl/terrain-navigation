@@ -471,6 +471,14 @@ void ViewUtilityMap::OutputMapData(const std::string path) {
   return;
 }
 
+void ViewUtilityMap::TransformMap(const Eigen::Vector3d &translation) {
+  Eigen::Translation3d map_translation(translation(0), translation(1), translation(2));
+  Eigen::AngleAxisd map_rotation(0.0 * M_PI / 180.0, Eigen::Vector3d::UnitZ());
+
+  Eigen::Isometry3d transform = map_translation * map_rotation;  // Apply affine transformation.
+  grid_map_ = grid_map_.getTransformedMap(transform, "elevation", grid_map_.getFrameId(), true);
+}
+
 void ViewUtilityMap::SetRegionOfInterest(const grid_map::Polygon &polygon) {
   for (grid_map::PolygonIterator iterator(grid_map_, polygon); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index index(*iterator);

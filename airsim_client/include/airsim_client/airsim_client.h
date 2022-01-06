@@ -68,6 +68,7 @@ class AirsimClient {
   void setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att);
   void setImageDirectory(const std::string &image_directory) { image_directory_path_ = image_directory; };
   void getPose();
+  Eigen::Vector3d getPlayerStart() { return player_start_; };
 
  private:
   msr::airlib::RpcLibClientBase client_;
@@ -75,6 +76,8 @@ class AirsimClient {
   double lat_home_{kDefaultHomeLatitude};
   double lon_home_{kDefaultHomeLongitude};
   double alt_home_{kDefaultHomeAltitude};
+  // Original player_start(-374.47859375,  -723.12984375, 286.77371094)
+  Eigen::Vector3d player_start_{Eigen::Vector3d(-374.47859375, -286.77371094, 723.12984375)};
 };
 
 #endif

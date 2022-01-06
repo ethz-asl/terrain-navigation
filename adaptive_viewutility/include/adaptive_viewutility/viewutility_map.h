@@ -104,6 +104,7 @@ class ViewUtilityMap {
   void SetRegionOfInterest(const grid_map::Polygon &polygon);
   void CompareMapLayer(grid_map::GridMap &reference_map);
   double CalculatePrecision(const std::vector<double> &error_vector, const double threshold);
+  void TransformMap(const Eigen::Vector3d &translation);
 
  private:
   std::vector<double> calculateErrors(grid_map::GridMap &groundtruth_map, const grid_map::GridMap &reference_map);
