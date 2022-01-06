@@ -1,0 +1,9 @@
+<launch>
+    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+    <node pkg="airsim_client" type="test_airsim_node" name="test_planner" output="screen">
+        <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
+        <param name="origin_x" value="150.788"/>
+        <param name="origin_y" value="1319.02"/>
+        <param name="origin_z" value="400.5888"/>
+    </node>
+</launch>

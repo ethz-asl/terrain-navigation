@@ -1,0 +1,22 @@
+<launch>
+    <arg name="visualization" default="true"/>
+    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+    <node pkg="airsim_client" type="test_gridplanner_node" name="test_planner" output="screen">
+        <param name="geotiff_path" value="$(find adaptive_viewutility)/../resources/LandscapeMapwithout_cropped_rescaled_x90.obj"/>
+        <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
+        <param name="origin_x" value="150.788"/>
+        <param name="origin_y" value="1319.02"/>
+        <param name="origin_z" value="400.5888"/>
+        <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
+        <param name="num_experiments" value="30"/>
+        <param name="max_experiment_duration" value="1500"/>
+    </node>
+
+    <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">
+        <rosparam command="load" file="$(find adaptive_viewutility)/launch/visualize.yaml" />
+    </node>
+
+    <group if="$(arg visualization)">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_planner.rviz" />
+    </group>
+</launch>
