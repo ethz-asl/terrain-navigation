@@ -16,3 +16,5 @@ build-test:
 test: build-test
 	Tools/run_tests.sh .
 
+clean:
+	rm output/*.jpeg

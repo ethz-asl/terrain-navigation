@@ -39,8 +39,8 @@
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "adaptive_viewutility/performance_tracker.h"
-#include "terrain_navigation/profiler.h"
 #include "airsim_client/airsim_client.h"
+#include "terrain_navigation/profiler.h"
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
@@ -86,7 +86,9 @@ int main(int argc, char **argv) {
 
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 
-    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 800.0);
+    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 150.0);
+    double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition("elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
+    vehicle_pos(2) = vehicle_pos(2) + elevation;
     Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
     // adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
     std::cout << "Initial Position: " << vehicle_pos.transpose() << std::endl;
