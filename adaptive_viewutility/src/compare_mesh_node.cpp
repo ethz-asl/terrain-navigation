@@ -40,7 +40,6 @@
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "terrain_navigation/profiler.h"
 
-
 void MapPublishOnce(ros::Publisher &pub, const std::shared_ptr<ViewUtilityMap> &map) {
   map->getGridMap().setTimestamp(ros::Time::now().toNSec());
   grid_map_msgs::GridMap message;

@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
   double start_time_seconds_ = 0.0;
 
   std::shared_ptr<AirsimClient> airsim_client = std::make_shared<AirsimClient>();
+  std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
 
   std::string image_directory{""};
   double origin_x, origin_y;
@@ -78,8 +79,15 @@ int main(int argc, char **argv) {
   nh_private.param<double>("origin_x", origin_x, origin_x);
   nh_private.param<double>("origin_y", origin_y, origin_y);
   nh_private.param<double>("origin_z", origin_z, origin_z);
+  std::string file_path;
+  nh_private.param<std::string>("file_path", file_path, "");
+
+  adaptive_viewutility->LoadMap(file_path);
 
   airsim_client->setImageDirectory(image_directory);
+  Eigen::Vector3d player_start = airsim_client->getPlayerStart();
+  Eigen::Vector3d transformed_payer_start = Eigen::Vector3d(-player_start(0), player_start(1), -player_start(2));
+  adaptive_viewutility->getViewUtilityMap()->TransformMap(transformed_payer_start);
   /// set Current state of vehicle
   const Eigen::Vector3d origin(origin_x, origin_y, origin_z);
   Eigen::Vector3d vehicle_pos(0.0, 0.0, 0.0);
@@ -94,7 +102,13 @@ int main(int argc, char **argv) {
   int num_height = int(height / resolution);
   int num_altitude = int(altitude / resolution);
   while (true) {
-    airsim_client->getPose();
+    Eigen::Vector3d position;
+    Eigen::Vector4d attitude;
+    airsim_client->getPose(position, attitude);
+    std::cout << "Vehicle pose" << std::endl;
+    std::cout << " - position: " << position.transpose() << std::endl;
+    std::cout << " - attitude: " << attitude.transpose() << std::endl;
+    adaptive_viewutility->MapPublishOnce();
     ros::Duration(1.0).sleep();
   }
 

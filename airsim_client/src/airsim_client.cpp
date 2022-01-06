@@ -57,14 +57,11 @@ Eigen::Vector4d AirsimClient::quatMultiplication(const Eigen::Vector4d &q, const
   return quat;
 }
 
-void AirsimClient::getPose() {
+void AirsimClient::getPose(Eigen::Vector3d &position, Eigen::Vector4d &attitude) {
   msr::airlib::Pose vehicle_pose = client_.simGetVehiclePose();
-  Eigen::Vector3d position(vehicle_pose.position.x(), vehicle_pose.position.y(), vehicle_pose.position.z());
-  Eigen::Vector4d attitude(vehicle_pose.orientation.w(), vehicle_pose.orientation.x(), vehicle_pose.orientation.y(),
-                           vehicle_pose.orientation.z());
-  std::cout << "Vehicle pose" << std::endl;
-  std::cout << " - position: " << position.transpose() << std::endl;
-  std::cout << " - attitude: " << attitude.transpose() << std::endl;
+  position << vehicle_pose.position.x(), vehicle_pose.position.y(), vehicle_pose.position.z();
+  attitude << vehicle_pose.orientation.w(), vehicle_pose.orientation.x(), vehicle_pose.orientation.y(),
+      vehicle_pose.orientation.z();
 }
 
 void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att) {

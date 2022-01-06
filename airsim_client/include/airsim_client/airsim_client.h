@@ -67,7 +67,7 @@ class AirsimClient {
   static Eigen::Vector4d quatMultiplication(const Eigen::Vector4d &q, const Eigen::Vector4d &p);
   void setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att);
   void setImageDirectory(const std::string &image_directory) { image_directory_path_ = image_directory; };
-  void getPose();
+  void getPose(Eigen::Vector3d &position, Eigen::Vector4d &attitude);
   Eigen::Vector3d getPlayerStart() { return player_start_; };
 
  private:

@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 
   /// set Current state of vehicle
   /// TODO: Randomly generate initial position
-    Eigen::Vector3d airsim_player_start = airsim_client->getPlayerStart();
+  Eigen::Vector3d airsim_player_start = airsim_client->getPlayerStart();
 
   for (int i = 0; i < num_experiments; i++) {
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
@@ -88,7 +88,8 @@ int main(int argc, char **argv) {
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 
     Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 150.0);
-    double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition("elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
+    double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(
+        "elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
     vehicle_pos(2) = vehicle_pos(2) + elevation;
     Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
     // adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
