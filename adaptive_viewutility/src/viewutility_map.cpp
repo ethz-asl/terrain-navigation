@@ -142,11 +142,13 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
     grid_map::Matrix &layer_utility = grid_map["normalized_prior"];
     for (grid_map::PolygonIterator iterator(grid_map, polygon); !iterator.isPastEnd(); ++iterator) {
       const grid_map::Index index(*iterator);
-
+      int idx = index(0) + width * index(1);  // Index number of the gridcell
+      if (cell_information.size() <= idx) {
+        /// TODO: This is a workaround since the polygon iterator is not checking for map bounds
+        continue;
+      }
       /// No need to run any calculations if is not part of ROI
       if (grid_map.at("roi", index) < 0.5) continue;
-
-      int idx = index(0) + width * index(1);  // Index number of the gridcell
 
       // Get position of the gridcell
       /// TODO: Treat terrain height as a distribution
@@ -378,7 +380,7 @@ bool ViewUtilityMap::initializeFromGeotiff(GDALDataset *dataset) {
   }
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(0);
-  grid_map_["roi"].setConstant(0);
+  grid_map_["roi"].setConstant(1);
   grid_map_["normalized_prior"].setConstant(0);
 
   return true;
@@ -426,7 +428,7 @@ bool ViewUtilityMap::initializeFromMesh(const std::string &path, const double re
   }
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(0);
-  grid_map_["roi"].setConstant(0);
+  grid_map_["roi"].setConstant(1);
   grid_map_["normalized_prior"].setConstant(0);
   grid_map_.setFrameId("map");
   return true;

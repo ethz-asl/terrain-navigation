@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 
     Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 0.0);
     Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
-    // adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+    adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
     std::cout << "Initial Position: " << vehicle_pos.transpose() << std::endl;
     std::cout << "Initial Velocity: " << vehicle_vel.transpose() << std::endl;
 

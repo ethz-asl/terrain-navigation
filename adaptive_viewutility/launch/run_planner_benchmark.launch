@@ -2,7 +2,7 @@
     <arg name="visualization" default="true"/>
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="adaptive_viewutility" type="test_planner_node" name="test_planner" output="screen">
-        <param name="file_path" value="$(find adaptive_viewutility)/../resources/landscape_mountains_v5.obj"/>
+        <param name="file_path" value="$(find adaptive_viewutility)/../resources/airsim_groundtruth.obj"/>
         <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
         <param name="num_experiments" value="30"/>
         <param name="max_experiment_duration" value="1000"/>
