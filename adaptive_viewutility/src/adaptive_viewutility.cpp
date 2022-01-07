@@ -51,6 +51,7 @@ AdaptiveViewUtility::AdaptiveViewUtility(const ros::NodeHandle &nh, const ros::N
   camera_pose_pub_ = nh_.advertise<geometry_msgs::PoseArray>("camera_poses", 1, true);
   camera_utility_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
   normal_marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("surface_normal_marker", 1, true);
+  viewpoint_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   viewpoint_image_pub_ = nh_.advertise<sensor_msgs::Image>("image", 1, true);
@@ -86,12 +87,15 @@ void AdaptiveViewUtility::ViewpointPublishOnce() {
   std::vector<geometry_msgs::PoseStamped> posestampedhistory_vector;
   std::vector<geometry_msgs::Pose> posehistory_vector;
   std::vector<visualization_msgs::Marker> markerhistory_vector;
+  std::vector<visualization_msgs::Marker> viewpoint_vector;
+
   int i = 0;
   for (auto viewpoint : viewpoint_) {
     posestampedhistory_vector.insert(posestampedhistory_vector.begin(),
                                      vector3d2PoseStampedMsg(viewpoint.getCenterLocal(), viewpoint.getOrientation()));
     posehistory_vector.insert(posehistory_vector.begin(),
                               vector3d2PoseMsg(viewpoint.getCenterLocal(), viewpoint.getOrientation()));
+    viewpoint_vector.insert(viewpoint_vector.begin(), Viewpoint2MarkerMsg(i, viewpoint));
     markerhistory_vector.insert(markerhistory_vector.begin(),
                                 utility2MarkerMsg(viewpoint.getUtility(), viewpoint.getCenterLocal(), i));
     i++;
@@ -110,6 +114,10 @@ void AdaptiveViewUtility::ViewpointPublishOnce() {
   pose_msg.poses = posehistory_vector;
 
   camera_pose_pub_.publish(pose_msg);
+
+  visualization_msgs::MarkerArray viewpoint_marker_msg;
+  viewpoint_marker_msg.markers = viewpoint_vector;
+  viewpoint_pub_.publish(viewpoint_marker_msg);
 
   visualization_msgs::MarkerArray marker_msg;
   marker_msg.markers = markerhistory_vector;
@@ -360,5 +368,45 @@ visualization_msgs::Marker AdaptiveViewUtility::trajectory2MarkerMsg(Trajectory 
   marker.color.r = 1.0;
   marker.color.g = 0.0;
   marker.color.b = 0.0;
+  return marker;
+}
+
+visualization_msgs::Marker AdaptiveViewUtility::Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "my_namespace";
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::LINE_LIST;
+  marker.action = visualization_msgs::Marker::ADD;
+  const Eigen::Vector3d position = viewpoint.getCenterLocal();
+  const Eigen::Matrix3d rotation = ViewPoint::quat2RotMatrix(viewpoint.getOrientation());
+  std::vector<geometry_msgs::Point> points;
+  Eigen::Vector3d view_center = position;
+  std::vector<Eigen::Vector3d> vertex;
+  vertex.push_back(position + rotation * Eigen::Vector3d(5.0, 5.0, -5.0));
+  vertex.push_back(position + rotation * Eigen::Vector3d(5.0, -5.0, -5.0));
+  vertex.push_back(position + rotation * Eigen::Vector3d(-5.0, -5.0, -5.0));
+  vertex.push_back(position + rotation * Eigen::Vector3d(-5.0, 5.0, -5.0));
+
+  for (size_t i = 0; i < vertex.size(); i++) {
+    points.push_back(toPoint(position));  // Viewpoint center
+    points.push_back(toPoint(vertex[i]));
+    points.push_back(toPoint(vertex[i]));
+    points.push_back(toPoint(vertex[(i + 1) % vertex.size()]));
+  }
+
+  marker.points = points;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.5;
+  marker.scale.y = 0.5;
+  marker.scale.z = 0.5;
+  marker.color.a = 1.0;  // Don't forget to set the alpha!
+  marker.color.r = 0.0;
+  marker.color.g = 0.0;
+  marker.color.b = 1.0;
   return marker;
 }

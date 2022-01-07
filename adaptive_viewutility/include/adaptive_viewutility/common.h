@@ -165,4 +165,12 @@ double getRandom(double min, double max) {
   return std::abs(max - min) * static_cast<double>(rand()) / static_cast<double>(RAND_MAX) + std::min(max, min);
 }
 
+geometry_msgs::Point toPoint(const Eigen::Vector3d &p) {
+  geometry_msgs::Point position;
+  position.x = p(0);
+  position.y = p(1);
+  position.z = p(2);
+  return position;
+}
+
 #endif

@@ -84,6 +84,7 @@ class AdaptiveViewUtility {
   void estimateViewUtility();
   void OutputMapData(const std::string &path);
   void publishViewpointHistory();
+  static visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint);
 
  private:
   void statusLoopCallback(const ros::TimerEvent &event);
@@ -104,6 +105,7 @@ class AdaptiveViewUtility {
   ros::Publisher vehicle_path_pub_;
   ros::Publisher candidate_path_pub_;
   ros::Publisher normal_marker_pub_;
+  ros::Publisher viewpoint_pub_;
 
   std::vector<ViewPoint> viewpoint_;
   std::shared_ptr<ViewUtilityMap> viewutility_map_;
