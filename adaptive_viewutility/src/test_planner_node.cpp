@@ -41,18 +41,27 @@
 #include "adaptive_viewutility/performance_tracker.h"
 #include "terrain_navigation/profiler.h"
 
+void writeGridmapToImage(const grid_map::GridMap &map, const std::string layer, const std::string &file_path) {
+  cv_bridge::CvImage image;
+  grid_map::GridMapRosConverter::toCvImage(map, layer, sensor_msgs::image_encodings::MONO8, image);
+  if (!cv::imwrite(file_path.c_str(), image.image, {cv::IMWRITE_PNG_STRATEGY_DEFAULT})) {
+    std::cout << "Failed to write map to image: " << file_path << std::endl;
+  }
+}
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
-  std::string file_path, output_file_path;
+  std::string file_path, output_file_path, result_directory;
   int num_experiments;
   double max_experiment_duration;
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
+  nh_private.param<std::string>("result_directory", result_directory, "output");
 
   /// set Current state of vehicle
   /// TODO: Randomly generate initial position
@@ -127,9 +136,13 @@ int main(int argc, char **argv) {
       }
     }
     performance_tracker->Output(output_file_path);
+    std::string elevation_output_path = result_directory + "/elevation_" + std::to_string(i) + ".png";
+    writeGridmapToImage(adaptive_viewutility->getViewUtilityMap()->getGridMap(), "elevation", elevation_output_path);
+    std::string prior_output_path = result_directory + "/geometric_prior_" + std::to_string(i) + ".png";
+    writeGridmapToImage(adaptive_viewutility->getViewUtilityMap()->getGridMap(), "geometric_prior", prior_output_path);
     std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
   }
-  std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
+  std::cout << "[TestPlannerNode] Benchmark terminated" << std::endl;
 
   ros::spin();
   return 0;

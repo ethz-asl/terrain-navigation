@@ -4,8 +4,9 @@
     <node pkg="adaptive_viewutility" type="test_planner_node" name="test_planner" output="screen">
         <param name="file_path" value="$(find adaptive_viewutility)/../resources/airsim_groundtruth.obj"/>
         <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
-        <param name="num_experiments" value="30"/>
-        <param name="max_experiment_duration" value="1000"/>
+        <param name="num_experiments" value="1"/>
+        <param name="max_experiment_duration" value="200"/>
+        <param name="result_directory" value="$(find adaptive_viewutility)/../output"/>
     </node>
     <group if="$(arg visualization)">
         <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_planner.rviz" />
