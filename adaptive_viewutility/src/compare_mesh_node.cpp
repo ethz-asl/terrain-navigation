@@ -38,6 +38,7 @@
  */
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
+#include "grid_map_ros/GridMapRosConverter.hpp"
 #include "terrain_navigation/profiler.h"
 
 void MapPublishOnce(ros::Publisher &pub, const std::shared_ptr<ViewUtilityMap> &map) {
@@ -53,6 +54,20 @@ void printGridmapInfo(std::string name, grid_map::GridMap &map) {
   std::cout << " - length: " << map.getLength().transpose() << std::endl;
 }
 
+void CopyMapLayer(const std::string &layer, const grid_map::GridMap &reference_map, grid_map::GridMap &target_map) {
+  target_map.add(layer);
+  for (grid_map::GridMapIterator iterator(target_map); !iterator.isPastEnd(); ++iterator) {
+    const grid_map::Index index(*iterator);
+    Eigen::Vector2d cell_position;
+    target_map.getPosition(index, cell_position);
+    if (reference_map.isInside(cell_position)) {
+      // Using at position allows us to use different resolution maps
+      target_map.at(layer, index) = reference_map.atPosition(layer, cell_position);
+    }
+  }
+  return;
+}
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
   ros::NodeHandle nh("");
@@ -60,13 +75,22 @@ int main(int argc, char **argv) {
 
   ros::Publisher gt_map_pub = nh.advertise<grid_map_msgs::GridMap>("groundthruth_map", 1, true);
   ros::Publisher est_map_pub = nh.advertise<grid_map_msgs::GridMap>("estimated_map", 1, true);
+  ros::Publisher utility_map_pub = nh.advertise<grid_map_msgs::GridMap>("utility_map", 1, true);
 
   double resolution = 1.0;
 
-  std::string gt_path, est_path;
+  std::string gt_path, est_path, viewutility_map_path;
 
   nh_private.param<std::string>("groundtruth_mesh_path", gt_path, "resources/cadastre.tif");
   nh_private.param<std::string>("estimated_mesh_path", est_path, "resources/cadastre.tif");
+
+  if (gt_path.empty() || est_path.empty()) {
+    std::cout << "Missing groundtruth mesh or the estimated mesh" << std::endl;
+    return 1;
+  }
+
+  nh_private.param<std::string>("utility_map_path", viewutility_map_path, "");
+
   double origin_x, origin_y;
   double origin_z{150.0};
   nh_private.param<double>("origin_x", origin_x, origin_x);
@@ -96,13 +120,30 @@ int main(int argc, char **argv) {
   printGridmapInfo("Groundtruth map (After Transform)", groundtruth_map->getGridMap());
   printGridmapInfo("Estimated map", estimated_map->getGridMap());
 
-  /// TODO: Calculate error statistics
   groundtruth_map->CompareMapLayer(estimated_map->getGridMap());
+
+  grid_map::GridMap viewutility_map;
+  if (!viewutility_map_path.empty()) {
+    std::cout << "[CompareMeshNode ] Loading Utility map: " << viewutility_map_path << std::endl;
+    if (grid_map::GridMapRosConverter::loadFromBag(viewutility_map_path, "/grid_map", viewutility_map)) {
+      viewutility_map = viewutility_map.getTransformedMap(transform, "elevation", viewutility_map.getFrameId(), true);
+
+      CopyMapLayer("geometric_prior", viewutility_map, groundtruth_map->getGridMap());
+    } else {
+      std::cout << "  - Failed to load utility map" << std::endl;
+    }
+  }
+
+  /// TODO: Save gridmap data into a csv file with error and utility statistics
 
   while (true) {
     MapPublishOnce(gt_map_pub, groundtruth_map);
     MapPublishOnce(est_map_pub, estimated_map);
-
+    if (!viewutility_map_path.empty()) {
+      grid_map_msgs::GridMap message;
+      grid_map::GridMapRosConverter::toMessage(viewutility_map, message);
+      utility_map_pub.publish(message);
+    }
     ros::Duration(5.0).sleep();
   }
 

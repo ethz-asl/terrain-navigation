@@ -17,4 +17,7 @@ test: build-test
 	Tools/run_tests.sh .
 
 clean:
-	rm output/*.jpeg
+	rm -f output/*.jpeg
+	rm -f output/*.bag
+	rm -f output/*.png
+	rm -f output/*.csv
