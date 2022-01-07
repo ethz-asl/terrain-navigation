@@ -101,6 +101,13 @@ add_executable(compare_mesh_node
 add_dependencies(compare_mesh_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(compare_mesh_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
 
+add_executable(test_gridmap_loader
+  src/test_gridmap_loader.cpp
+)
+add_dependencies(test_gridmap_loader adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(test_gridmap_loader ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
+
+
 ##########
 # EXPORT #
 ##########
