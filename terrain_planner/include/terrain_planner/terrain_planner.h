@@ -92,7 +92,6 @@ class TerrainPlanner {
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
   void publishGoal(const Eigen::Vector3d &position);
-  visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint);
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;

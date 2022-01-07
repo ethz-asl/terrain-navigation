@@ -38,6 +38,7 @@
  */
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "terrain_navigation/profiler.h"
+#include "terrain_navigation/visualization.h"
 
 #include <visualization_msgs/MarkerArray.h>
 
@@ -368,45 +369,5 @@ visualization_msgs::Marker AdaptiveViewUtility::trajectory2MarkerMsg(Trajectory 
   marker.color.r = 1.0;
   marker.color.g = 0.0;
   marker.color.b = 0.0;
-  return marker;
-}
-
-visualization_msgs::Marker AdaptiveViewUtility::Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
-  marker.ns = "my_namespace";
-  marker.id = id;
-  marker.type = visualization_msgs::Marker::LINE_LIST;
-  marker.action = visualization_msgs::Marker::ADD;
-  const Eigen::Vector3d position = viewpoint.getCenterLocal();
-  const Eigen::Matrix3d rotation = ViewPoint::quat2RotMatrix(viewpoint.getOrientation());
-  std::vector<geometry_msgs::Point> points;
-  Eigen::Vector3d view_center = position;
-  std::vector<Eigen::Vector3d> vertex;
-  vertex.push_back(position + rotation * Eigen::Vector3d(5.0, 5.0, -5.0));
-  vertex.push_back(position + rotation * Eigen::Vector3d(5.0, -5.0, -5.0));
-  vertex.push_back(position + rotation * Eigen::Vector3d(-5.0, -5.0, -5.0));
-  vertex.push_back(position + rotation * Eigen::Vector3d(-5.0, 5.0, -5.0));
-
-  for (size_t i = 0; i < vertex.size(); i++) {
-    points.push_back(toPoint(position));  // Viewpoint center
-    points.push_back(toPoint(vertex[i]));
-    points.push_back(toPoint(vertex[i]));
-    points.push_back(toPoint(vertex[(i + 1) % vertex.size()]));
-  }
-
-  marker.points = points;
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = 0.0;
-  marker.pose.orientation.w = 1.0;
-  marker.scale.x = 0.5;
-  marker.scale.y = 0.5;
-  marker.scale.z = 0.5;
-  marker.color.a = 1.0;  // Don't forget to set the alpha!
-  marker.color.r = 0.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
   return marker;
 }

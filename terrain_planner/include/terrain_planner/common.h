@@ -61,14 +61,6 @@ Eigen::Vector3d toEigen(const geometry_msgs::Pose &p) {
   return position;
 }
 
-geometry_msgs::Point toPoint(const Eigen::Vector3d &p) {
-  geometry_msgs::Point position;
-  position.x = p(0);
-  position.y = p(1);
-  position.z = p(2);
-  return position;
-}
-
 geometry_msgs::Vector3 toVector3(const Eigen::Vector3d &p) {
   geometry_msgs::Vector3 vector;
   vector.x = p(0);
