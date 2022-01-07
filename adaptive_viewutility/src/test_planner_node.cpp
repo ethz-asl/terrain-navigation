@@ -140,6 +140,9 @@ int main(int argc, char **argv) {
     writeGridmapToImage(adaptive_viewutility->getViewUtilityMap()->getGridMap(), "elevation", elevation_output_path);
     std::string prior_output_path = result_directory + "/geometric_prior_" + std::to_string(i) + ".png";
     writeGridmapToImage(adaptive_viewutility->getViewUtilityMap()->getGridMap(), "geometric_prior", prior_output_path);
+    std::string saved_map_path = result_directory + "/gridmap_" + std::to_string(i) + ".bag";
+    grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
+                                             "/grid_map");
     std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
   }
   std::cout << "[TestPlannerNode] Benchmark terminated" << std::endl;

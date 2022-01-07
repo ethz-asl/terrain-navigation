@@ -38,8 +38,8 @@
  */
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
-#include "terrain_navigation/profiler.h"
 #include "grid_map_ros/GridMapRosConverter.hpp"
+#include "terrain_navigation/profiler.h"
 
 void MapPublishOnce(ros::Publisher &pub, const std::shared_ptr<ViewUtilityMap> &map) {
   map->getGridMap().setTimestamp(ros::Time::now().toNSec());
@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
 
   grid_map::GridMap loaded_map;
   grid_map::GridMapRosConverter::loadFromBag(saved_map_path, "/grid_map", loaded_map);
-
 
   while (true) {
     MapPublishOnce(original_map_pub, groundtruth_map);
