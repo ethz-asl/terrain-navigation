@@ -6,13 +6,13 @@ import math
 import pandas as pd
 import sys
 
-def planner_benchmark(data_df):
+def analyzeMapStatistics(data_df):
     experiment_id = np.array(data_df["id"])
     error = np.array(data_df["error"])
     utility = np.array(data_df["utility"])
     # the histogram of the data
 
-    fig = plt.figure("Map Data")
+    fig = plt.figure("Map Statistics")
     ax1 = fig.add_subplot(1, 2, 1)
     n, bins, patches = ax1.hist(error, bins=50, facecolor='g', alpha=0.75)
     ax1.set_xlabel('Error [m]')
@@ -26,6 +26,12 @@ def planner_benchmark(data_df):
     ax2.set_ylabel('Number of Points')
     ax2.set_title('View Utility')
     ax2.grid(True)
+
+    fig2 = plt.figure("Map Scatter Plot")
+    ax3 = fig2.add_subplot(1, 1, 1)
+    ax3.scatter(utility, error, alpha=0.5)
+    ax3.set_xlabel('View Utility')
+    ax3.set_ylabel('Error')
     plt.show()
 
 
@@ -33,4 +39,4 @@ def planner_benchmark(data_df):
 # Planner benchmark
 map_data_df = pd.read_csv(sys.argv[1])
 
-planner_benchmark(map_data_df)
+analyzeMapStatistics(map_data_df)
