@@ -490,7 +490,7 @@ void ViewUtilityMap::SetRegionOfInterest(const grid_map::Polygon &polygon) {
 std::vector<double> ViewUtilityMap::calculateErrors(grid_map::GridMap &groundtruth_map,
                                                     const grid_map::GridMap &reference_map) {
   groundtruth_map.add("elevation_difference");
-  groundtruth_map["elevation_difference"].setConstant(0.0);
+  groundtruth_map["elevation_difference"].setConstant(NAN);
 
   std::vector<double> error_vector;
   for (grid_map::GridMapIterator iterator(groundtruth_map); !iterator.isPastEnd(); ++iterator) {

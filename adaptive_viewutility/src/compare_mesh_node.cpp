@@ -78,7 +78,7 @@ void CopyMapLayer(const std::string &layer, const grid_map::GridMap &reference_m
 void writeMapDataToFile(const std::string path, const std::vector<MapData> &map) {
   std::ofstream output_file;
   output_file.open(path, std::ios::app);
-  output_file << "id,x,y,error,utility,\n";
+  output_file << "id,x,y,error,utility,padding,\n";
   int id{0};
   for (auto data : map) {
     output_file << id << ",";
