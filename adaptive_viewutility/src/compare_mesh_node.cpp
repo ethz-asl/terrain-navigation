@@ -41,6 +41,13 @@
 #include "grid_map_ros/GridMapRosConverter.hpp"
 #include "terrain_navigation/profiler.h"
 
+struct MapData {
+  Eigen::Vector2d position{Eigen::Vector2d::Zero()};
+  double elevation{NAN};
+  double error{NAN};
+  double utility{NAN};
+};
+
 void MapPublishOnce(ros::Publisher &pub, const std::shared_ptr<ViewUtilityMap> &map) {
   map->getGridMap().setTimestamp(ros::Time::now().toNSec());
   grid_map_msgs::GridMap message;
@@ -68,6 +75,24 @@ void CopyMapLayer(const std::string &layer, const grid_map::GridMap &reference_m
   return;
 }
 
+void writeMapDataToFile(const std::string path, const std::vector<MapData> &map) {
+  std::ofstream output_file;
+  output_file.open(path, std::ios::app);
+  output_file << "id,x,y,error,utility,\n";
+  int id{0};
+  for (auto data : map) {
+    output_file << id << ",";
+    output_file << data.position(0) << ",";
+    output_file << data.position(1) << ",";
+    output_file << data.error << ",";
+    output_file << data.utility << ",";
+    output_file << 0 << ",";
+    output_file << "\n";
+    id++;
+  }
+  output_file.close();
+}
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
   ros::NodeHandle nh("");
@@ -77,12 +102,11 @@ int main(int argc, char **argv) {
   ros::Publisher est_map_pub = nh.advertise<grid_map_msgs::GridMap>("estimated_map", 1, true);
   ros::Publisher utility_map_pub = nh.advertise<grid_map_msgs::GridMap>("utility_map", 1, true);
 
-  double resolution = 1.0;
-
-  std::string gt_path, est_path, viewutility_map_path;
+  std::string gt_path, est_path, viewutility_map_path, output_path;
 
   nh_private.param<std::string>("groundtruth_mesh_path", gt_path, "resources/cadastre.tif");
   nh_private.param<std::string>("estimated_mesh_path", est_path, "resources/cadastre.tif");
+  nh_private.param<std::string>("map_data_path", output_path, "");
 
   if (gt_path.empty() || est_path.empty()) {
     std::cout << "Missing groundtruth mesh or the estimated mesh" << std::endl;
@@ -91,16 +115,11 @@ int main(int argc, char **argv) {
 
   nh_private.param<std::string>("utility_map_path", viewutility_map_path, "");
 
-  double origin_x, origin_y;
-  double origin_z{150.0};
-  nh_private.param<double>("origin_x", origin_x, origin_x);
-  nh_private.param<double>("origin_y", origin_y, origin_y);
-  nh_private.param<double>("origin_z", origin_z, origin_z);
-
   grid_map::GridMap gt_map =
       grid_map::GridMap({"roi", "elevation", "elevation_normal_x", "elevation_normal_y", "elevation_normal_z",
                          "visibility", "geometric_prior", "normalized_prior"});
   std::shared_ptr<ViewUtilityMap> groundtruth_map = std::make_shared<ViewUtilityMap>(gt_map);
+  double resolution = 1.0;
   groundtruth_map->initializeFromMesh(gt_path, resolution);
 
   grid_map::GridMap est_map =
@@ -134,8 +153,19 @@ int main(int argc, char **argv) {
     }
   }
 
-  /// TODO: Save gridmap data into a csv file with error and utility statistics
-
+  std::vector<MapData> map_data;
+  grid_map::GridMap &grid_map = groundtruth_map->getGridMap();
+  /// TODO: Iterate through gridmap to save map data in file
+  for (grid_map::GridMapIterator iterator(grid_map); !iterator.isPastEnd(); ++iterator) {
+    const grid_map::Index index = *iterator;
+    MapData data;
+    grid_map.getPosition(index, data.position);
+    data.elevation = grid_map.at("elevation", index);
+    data.error = grid_map.at("elevation_difference", index);
+    data.utility = grid_map.at("geometric_prior", index);
+    map_data.push_back(data);
+  }
+  writeMapDataToFile(output_path, map_data);
   while (true) {
     MapPublishOnce(gt_map_pub, groundtruth_map);
     MapPublishOnce(est_map_pub, estimated_map);

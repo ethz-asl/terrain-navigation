@@ -6,9 +6,7 @@
         <param name="groundtruth_mesh_path" value="/home/jaeyoung/dev/mesh/q_max_06/groundtruth_roi_meshlab.obj"/>
         <param name="estimated_mesh_path" value="/home/jaeyoung/dev/mesh/q_max_06/reconstruction_roi_meshlab.obj"/>
         <param name="utility_map_path" value="/home/jaeyoung/catkin_ws/src/terrain-navigation/output/gridmap_0.bag"/>
-        <param name="origin_x" value="600.0"/>
-        <param name="origin_y" value="1000.0"/>
-        <param name="origin_z" value="400.0"/>
+        <param name="map_data_path" value="$(find adaptive_viewutility)/../output/map_data.csv"/>
     </node>
 
     <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">
