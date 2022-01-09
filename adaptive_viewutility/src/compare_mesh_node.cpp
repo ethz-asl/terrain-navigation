@@ -46,6 +46,7 @@ struct MapData {
   double elevation{NAN};
   double error{NAN};
   double utility{NAN};
+  double ground_sample_distance{NAN};
 };
 
 void MapPublishOnce(ros::Publisher &pub, const std::shared_ptr<ViewUtilityMap> &map) {
@@ -78,7 +79,7 @@ void CopyMapLayer(const std::string &layer, const grid_map::GridMap &reference_m
 void writeMapDataToFile(const std::string path, const std::vector<MapData> &map) {
   std::ofstream output_file;
   output_file.open(path, std::ios::app);
-  output_file << "id,x,y,error,utility,padding,\n";
+  output_file << "id,x,y,error,utility,ground_sample_distance,padding,\n";
   int id{0};
   for (auto data : map) {
     output_file << id << ",";
@@ -86,6 +87,7 @@ void writeMapDataToFile(const std::string path, const std::vector<MapData> &map)
     output_file << data.position(1) << ",";
     output_file << data.error << ",";
     output_file << data.utility << ",";
+    output_file << data.ground_sample_distance << ",";
     output_file << 0 << ",";
     output_file << "\n";
     id++;
@@ -148,6 +150,7 @@ int main(int argc, char **argv) {
       viewutility_map = viewutility_map.getTransformedMap(transform, "elevation", viewutility_map.getFrameId(), true);
 
       CopyMapLayer("geometric_prior", viewutility_map, groundtruth_map->getGridMap());
+      CopyMapLayer("ground_sample_distance", viewutility_map, groundtruth_map->getGridMap());
     } else {
       std::cout << "  - Failed to load utility map" << std::endl;
     }
@@ -163,6 +166,7 @@ int main(int argc, char **argv) {
     data.elevation = grid_map.at("elevation", index);
     data.error = grid_map.at("elevation_difference", index);
     data.utility = grid_map.at("geometric_prior", index);
+    data.ground_sample_distance = grid_map.at("ground_sample_distance", index);
     map_data.push_back(data);
   }
   writeMapDataToFile(output_path, map_data);
