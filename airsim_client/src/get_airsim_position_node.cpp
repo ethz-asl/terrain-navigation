@@ -90,8 +90,7 @@ int main(int argc, char **argv) {
 
   airsim_client->setImageDirectory(image_directory);
   Eigen::Vector3d player_start = airsim_client->getPlayerStart();
-  Eigen::Vector3d transformed_payer_start = Eigen::Vector3d(player_start(0), player_start(1), player_start(2));
-  adaptive_viewutility->getViewUtilityMap()->TransformMap(transformed_payer_start);
+  adaptive_viewutility->getViewUtilityMap()->TransformMap(player_start);
   /// set Current state of vehicle
   Eigen::Vector3d vehicle_pos(0.0, 0.0, 0.0);
   Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);

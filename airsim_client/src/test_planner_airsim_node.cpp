@@ -70,6 +70,7 @@ int main(int argc, char **argv) {
 
     // Add elevation map from GeoTIFF file defined in path
     adaptive_viewutility->LoadMap(file_path);
+    adaptive_viewutility->getViewUtilityMap()->TransformMap(airsim_player_start);
 
     grid_map::Polygon polygon;
 
@@ -142,6 +143,9 @@ int main(int argc, char **argv) {
       }
     }
     performance_tracker->Output(output_file_path);
+    std::string saved_map_path = image_directory + "/gridmap_" + std::to_string(i) + ".bag";
+    grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
+                                             "/grid_map");
     std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
   }
   std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
