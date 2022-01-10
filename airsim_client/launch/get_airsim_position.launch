@@ -9,6 +9,6 @@
         <param name="origin_z" value="100.0"/>
     </node>
     <group if="$(arg visualization)">
-        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_planner.rviz" />
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find airsim_client)/launch/config.rviz" />
     </group>
 </launch>

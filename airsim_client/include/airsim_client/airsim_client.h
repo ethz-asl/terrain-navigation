@@ -77,7 +77,8 @@ class AirsimClient {
   double lon_home_{kDefaultHomeLongitude};
   double alt_home_{kDefaultHomeAltitude};
   // Original player_start(-374.47859375,  -723.12984375, 286.77371094)
-  Eigen::Vector3d player_start_{Eigen::Vector3d(-374.47859375, -286.77371094, 723.12984375)};
+  Eigen::Vector3d player_start_{Eigen::Vector3d(374.47859375, -723.12984375, -286.77371094)};
+  Eigen::Vector4d q_ned2enu_{Eigen::Vector4d(std::cos(-0.5 * M_PI), std::sin(-0.5 * M_PI), 0.0, 0.0)};
 };
 
 #endif

@@ -40,6 +40,9 @@
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "airsim_client/airsim_client.h"
 #include "terrain_navigation/profiler.h"
+#include "terrain_navigation/visualization.h"
+
+#include <visualization_msgs/Marker.h>
 
 Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw) {
   double cy = std::cos(yaw * 0.5);
@@ -60,10 +63,14 @@ Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw) {
   return q;
 }
 
+// This application is used to align the Airsim and Adaptive Mapping coordinate systems
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
+
+  ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::Marker>("viewpoint", 1, true);
 
   bool initialized_time = false;
   ros::Time start_time_ = ros::Time::now();
@@ -73,12 +80,9 @@ int main(int argc, char **argv) {
   std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
 
   std::string image_directory{""};
-  double origin_x, origin_y;
-  double origin_z{150.0};
+
   nh_private.param<std::string>("image_directory", image_directory, image_directory);
-  nh_private.param<double>("origin_x", origin_x, origin_x);
-  nh_private.param<double>("origin_y", origin_y, origin_y);
-  nh_private.param<double>("origin_z", origin_z, origin_z);
+
   std::string file_path;
   nh_private.param<std::string>("file_path", file_path, "");
 
@@ -86,10 +90,9 @@ int main(int argc, char **argv) {
 
   airsim_client->setImageDirectory(image_directory);
   Eigen::Vector3d player_start = airsim_client->getPlayerStart();
-  Eigen::Vector3d transformed_payer_start = Eigen::Vector3d(-player_start(0), player_start(1), -player_start(2));
+  Eigen::Vector3d transformed_payer_start = Eigen::Vector3d(player_start(0), player_start(1), player_start(2));
   adaptive_viewutility->getViewUtilityMap()->TransformMap(transformed_payer_start);
   /// set Current state of vehicle
-  const Eigen::Vector3d origin(origin_x, origin_y, origin_z);
   Eigen::Vector3d vehicle_pos(0.0, 0.0, 0.0);
   Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
   Eigen::Vector4d vehicle_att = rpy2quaternion(0.0, 0.0 / 180 * M_PI, 0.0);
@@ -101,13 +104,19 @@ int main(int argc, char **argv) {
   int num_width = int(width / resolution);
   int num_height = int(height / resolution);
   int num_altitude = int(altitude / resolution);
+  Eigen::Vector3d position{Eigen::Vector3d::Zero()};
+  Eigen::Vector4d attitude{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
+
+  ViewPoint viewpoint(0, position, attitude);
   while (true) {
-    Eigen::Vector3d position;
-    Eigen::Vector4d attitude;
     airsim_client->getPose(position, attitude);
-    std::cout << "Vehicle pose" << std::endl;
-    std::cout << " - position: " << position.transpose() << std::endl;
-    std::cout << " - attitude: " << attitude.transpose() << std::endl;
+    viewpoint.setPosition(position);
+    viewpoint.setOrientation(attitude);
+    visualization_msgs::Marker viewpoint_marker_msg = Viewpoint2MarkerMsg(0, viewpoint);
+    viewpoint_pub.publish(viewpoint_marker_msg);
+    // Airsim coordinates are in NED
+    std::cout << "Vehicle pose - position: " << position.transpose() << " / attitude: " << attitude.transpose()
+              << std::endl;
     adaptive_viewutility->MapPublishOnce();
     ros::Duration(1.0).sleep();
   }

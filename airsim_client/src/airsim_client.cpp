@@ -59,18 +59,23 @@ Eigen::Vector4d AirsimClient::quatMultiplication(const Eigen::Vector4d &q, const
 
 void AirsimClient::getPose(Eigen::Vector3d &position, Eigen::Vector4d &attitude) {
   msr::airlib::Pose vehicle_pose = client_.simGetVehiclePose();
-  position << vehicle_pose.position.x(), vehicle_pose.position.y(), vehicle_pose.position.z();
-  attitude << vehicle_pose.orientation.w(), vehicle_pose.orientation.x(), vehicle_pose.orientation.y(),
-      vehicle_pose.orientation.z();
+  Eigen::Vector3d pos_ned(vehicle_pose.position.x(), vehicle_pose.position.y(), vehicle_pose.position.z());
+  Eigen::Matrix3d rotmat = AirsimClient::quat2RotMatrix(q_ned2enu_);
+  position = rotmat * pos_ned;
+
+  Eigen::Vector4d att_ned(vehicle_pose.orientation.w(), vehicle_pose.orientation.x(), vehicle_pose.orientation.y(),
+                          vehicle_pose.orientation.z());
+  Eigen::Vector4d q_camera = Eigen::Vector4d(std::cos(0.25 * M_PI), 0.0, std::sin(0.25 * M_PI), 0.0);
+  Eigen::Vector4d att_camera = AirsimClient::quatMultiplication(att_ned, q_camera);
+  attitude << att_camera(0), att_camera(1), -att_camera(2), -att_camera(3);
 }
 
 void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att) {
   /// Airsim coordinate system is defined in NED. Therefore, we need to tranform our coordinates into NED from ENU
   Eigen::Vector4d att_ned(att(0), att(1), -att(2), -att(3));
-  Eigen::Vector4d q_ned2enu(std::cos(-0.5 * M_PI), std::sin(-0.5 * M_PI), 0.0, 0.0);
   Eigen::Vector4d q_camera = Eigen::Vector4d(std::cos(-0.25 * M_PI), 0.0, std::sin(-0.25 * M_PI), 0.0);
 
-  Eigen::Matrix3d rotmat = AirsimClient::quat2RotMatrix(q_ned2enu);
+  Eigen::Matrix3d rotmat = AirsimClient::quat2RotMatrix(q_ned2enu_);
   Eigen::Vector3d pos_ned = rotmat.inverse() * pos;
   Eigen::Vector4d att_camera = AirsimClient::quatMultiplication(att_ned, q_camera);
 

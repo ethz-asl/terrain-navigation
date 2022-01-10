@@ -96,6 +96,7 @@ class ViewPoint {
   Eigen::Vector3d getCenterLocal() { return center_local_; }
   double getTime() { return time_seconds_; }
   void setTime(double time_seconds) { time_seconds_ = time_seconds; }
+  void setPosition(const Eigen::Vector3d &position) { center_local_ = position; }
   void setOrientation(const Eigen::Vector4d &attitude) {
     orientation_ = attitude;
     Eigen::Matrix3d R_att = quat2RotMatrix(attitude);
