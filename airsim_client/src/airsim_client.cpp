@@ -103,7 +103,7 @@ void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &at
 
         char gps_tag_command[1024];
         char north_south = 'N', east_west = 'E';
-        ///TODO: Convert coordinates using gdal
+        /// TODO: Convert coordinates using gdal
         Eigen::Vector3d home_position_lv03(kDefaultHomeX, kDefaultHomeY, kDefaultHomeAltitude);
         Eigen::Vector3d position_lv03 = pos + home_position_lv03;
         Eigen::Vector3d position_wgs84 = transformCoordinates(ESPG::CH1903_LV03, ESPG::WGS84, position_lv03);

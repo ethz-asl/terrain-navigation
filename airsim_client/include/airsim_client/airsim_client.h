@@ -61,9 +61,9 @@ STRICT_MODE_ON
 #include <opencv2/highgui.hpp>
 
 // Zurich Irchel Park
-static constexpr const double kDefaultHomeX = 683565.21;  // LV03/CH1903
-static constexpr const double kDefaultHomeY = 250246.85;  // rad
-static constexpr const double kDefaultHomeAltitude = 488.0;             // meters
+static constexpr const double kDefaultHomeX = 683565.21;     // LV03/CH1903
+static constexpr const double kDefaultHomeY = 250246.85;     // rad
+static constexpr const double kDefaultHomeAltitude = 488.0;  // meters
 enum class ESPG { ECEF = 4978, WGS84 = 4326, CH1903_LV03 = 21781 };
 
 class AirsimClient {

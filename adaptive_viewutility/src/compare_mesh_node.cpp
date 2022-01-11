@@ -147,6 +147,12 @@ int main(int argc, char **argv) {
   if (!viewutility_map_path.empty()) {
     std::cout << "[CompareMeshNode ] Loading Utility map: " << viewutility_map_path << std::endl;
     if (grid_map::GridMapRosConverter::loadFromBag(viewutility_map_path, "/grid_map", viewutility_map)) {
+      Eigen::Translation3d airsim_start_pos(-374.47859375, 723.12984375, 286.77371094);
+      Eigen::AngleAxisd airsim_start_rot(0.0 * M_PI / 180.0, Eigen::Vector3d(0.0, 0.0, 1.0));
+      Eigen::Isometry3d airsim_transform = airsim_start_pos * airsim_start_rot;
+
+      viewutility_map =
+          viewutility_map.getTransformedMap(airsim_transform, "elevation", viewutility_map.getFrameId(), true);
       viewutility_map = viewutility_map.getTransformedMap(transform, "elevation", viewutility_map.getFrameId(), true);
 
       CopyMapLayer("geometric_prior", viewutility_map, groundtruth_map->getGridMap());
