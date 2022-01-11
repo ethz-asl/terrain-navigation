@@ -48,6 +48,12 @@ STRICT_MODE_OFF
 #include "rpc/rpc_error.h"
 STRICT_MODE_ON
 
+#include <gdal/cpl_string.h>
+#include <gdal/gdal.h>
+#include <gdal/gdal_priv.h>
+#include <gdal/ogr_p.h>
+#include <gdal/ogr_spatialref.h>
+
 #include "common/common_utils/FileSystem.hpp"
 #include "vehicles/multirotor/api/MultirotorRpcLibClient.hpp"
 
@@ -55,9 +61,10 @@ STRICT_MODE_ON
 #include <opencv2/highgui.hpp>
 
 // Zurich Irchel Park
-static constexpr const double kDefaultHomeLatitude = 465710.758583881;  // rad
-static constexpr const double kDefaultHomeLongitude = 5249465.3638352;  // rad
+static constexpr const double kDefaultHomeX = 683565.21;  // LV03/CH1903
+static constexpr const double kDefaultHomeY = 250246.85;  // rad
 static constexpr const double kDefaultHomeAltitude = 488.0;             // meters
+enum class ESPG { ECEF = 4978, WGS84 = 4326, CH1903_LV03 = 21781 };
 
 class AirsimClient {
  public:
@@ -69,12 +76,28 @@ class AirsimClient {
   void setImageDirectory(const std::string &image_directory) { image_directory_path_ = image_directory; };
   void getPose(Eigen::Vector3d &position, Eigen::Vector4d &attitude);
   Eigen::Vector3d getPlayerStart() { return player_start_; };
+  static Eigen::Vector3d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
+                                              const Eigen::Vector3d source_coordinates) {
+    OGRSpatialReference source, target;
+    source.importFromEPSG(static_cast<int>(src_coord));
+    target.importFromEPSG(static_cast<int>(tgt_coord));
+
+    OGRPoint p;
+    p.setX(source_coordinates(0));
+    p.setY(source_coordinates(1));
+    p.setZ(source_coordinates(2));
+    p.assignSpatialReference(&source);
+
+    p.transformTo(&target);
+    Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
+    return target_coordinates;
+  }
 
  private:
   msr::airlib::RpcLibClientBase client_;
   std::string image_directory_path_;
-  double lat_home_{kDefaultHomeLatitude};
-  double lon_home_{kDefaultHomeLongitude};
+  double lat_home_{kDefaultHomeX};
+  double lon_home_{kDefaultHomeY};
   double alt_home_{kDefaultHomeAltitude};
   // Original player_start(-374.47859375,  -723.12984375, 286.77371094)
   Eigen::Vector3d player_start_{Eigen::Vector3d(374.47859375, -723.12984375, -286.77371094)};

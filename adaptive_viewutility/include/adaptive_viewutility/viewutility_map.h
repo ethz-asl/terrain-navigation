@@ -115,6 +115,6 @@ class ViewUtilityMap {
   grid_map::GridMap &grid_map_;
   std::vector<CellInfo> cell_information_;
   GeometricPriorSettings settings_;
-  double max_prior_{0.6};
+  double max_prior_{0.5};
 };
 #endif

@@ -131,8 +131,8 @@ int main(int argc, char **argv) {
   estimated_map->initializeFromMesh(est_path, resolution);
 
   // Known transform acquired by cloudcompare
-  Eigen::Translation3d meshlab_translation(227.044357, -460.073242, -583.809143);
-  Eigen::AngleAxisd meshlab_rotation(11.177129 * M_PI / 180.0, Eigen::Vector3d(0.871801, -0.489854, -0.002307));
+  Eigen::Translation3d meshlab_translation(218.003296, -428.974365, -377.713348);
+  Eigen::AngleAxisd meshlab_rotation(1.082817 * M_PI / 180.0, Eigen::Vector3d(0.050463, 0.056066, -0.997151));
 
   Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
   groundtruth_map->getGridMap() = groundtruth_map->getGridMap().getTransformedMap(

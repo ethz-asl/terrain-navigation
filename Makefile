@@ -1,5 +1,6 @@
 benchmark?=output/benchmark.csv
 package?=terrain_planner
+data?=output
 
 format:
 	Tools/fix_code_style.sh .
@@ -17,7 +18,7 @@ test: build-test
 	Tools/run_tests.sh .
 
 analyze:
-	python3 Tools/visualize_mapdata.py output/map_data.csv
+	python3 Tools/visualize_mapdata.py ${output}/map_data.csv
 
 clean:
 	rm -f output/*.jpeg
