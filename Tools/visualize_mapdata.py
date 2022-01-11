@@ -39,18 +39,18 @@ def analyzeMapStatistics(data_df):
 
     fig2 = plt.figure("Map Scatter Plot")
     ax4 = fig2.add_subplot(1, 3, 1)
-    ax4.scatter(utility, error, alpha=0.5)
+    ax4.scatter(utility, error, alpha=0.5, s=0.5)
     ax4.set_xlabel('Map Quality')
     ax4.set_ylabel('Error')
 
     ax5 = fig2.add_subplot(1, 3, 2)
-    ax5.scatter(gsd, error, alpha=0.5)
+    ax5.scatter(gsd, error, alpha=0.5, s=0.5)
     ax5.set_xlabel('Resolution Prior')
     ax5.set_ylabel('Error')
 
     residual = np.divide(utility, gsd)
     ax6 = fig2.add_subplot(1, 3, 3)
-    ax6.scatter(residual, error, alpha=0.5)
+    ax6.scatter(residual, error, alpha=0.5, s=0.5)
     ax6.set_xlabel('Residual')
     ax6.set_ylabel('Error')
 

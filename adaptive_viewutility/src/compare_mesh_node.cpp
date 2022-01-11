@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
       grid_map::GridMap({"roi", "elevation", "elevation_normal_x", "elevation_normal_y", "elevation_normal_z",
                          "visibility", "geometric_prior", "normalized_prior"});
   std::shared_ptr<ViewUtilityMap> groundtruth_map = std::make_shared<ViewUtilityMap>(gt_map);
-  double resolution = 1.0;
+  double resolution = 5.0;
   groundtruth_map->initializeFromMesh(gt_path, resolution);
 
   grid_map::GridMap est_map =
