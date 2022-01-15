@@ -86,6 +86,8 @@ void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &at
   //
   std::vector<msr::airlib::ImageCaptureBase::ImageRequest> request = {
       msr::airlib::ImageCaptureBase::ImageRequest("", msr::airlib::ImageCaptureBase::ImageType::Scene, false, false)};
+  const std::vector<msr::airlib::ImageCaptureBase::ImageResponse> &dummy_response = client_.simGetImages(request);
+
   const std::vector<msr::airlib::ImageCaptureBase::ImageResponse> &response = client_.simGetImages(request);
 
   if (response.size() > 0) {
