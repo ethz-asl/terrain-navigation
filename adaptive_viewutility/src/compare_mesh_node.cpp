@@ -154,8 +154,8 @@ int main(int argc, char **argv) {
   // Eigen::Translation3d meshlab_translation(179.645706,-468.833771,-246.334869);
   // Eigen::AngleAxisd meshlab_rotation(1.139866 * M_PI / 180.0, Eigen::Vector3d(0.004730, -0.000685, -0.999989));
   // Fisher information render fix
-  Eigen::Translation3d meshlab_translation(194.932800, -427.770630, -313.790955);
-  Eigen::AngleAxisd meshlab_rotation(1.084983 * M_PI / 180.0, Eigen::Vector3d(0.053948, 0.048623, -0.997359));
+  Eigen::Translation3d meshlab_translation(152.851761, -444.852234, -280.415863);
+  Eigen::AngleAxisd meshlab_rotation(1.174365 * M_PI / 180.0, Eigen::Vector3d(-0.000325, 0.009928, -0.999951));
 
   Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
   groundtruth_map->getGridMap() = groundtruth_map->getGridMap().getTransformedMap(

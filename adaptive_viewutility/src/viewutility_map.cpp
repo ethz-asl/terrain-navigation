@@ -62,7 +62,7 @@ ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map
   grid_map_.add("min_eigen_value");
 
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0.0);
+  grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
   grid_map_["normalized_prior"].setConstant(0);
   grid_map_["roi"].setConstant(1.0);
   grid_map_["elevation_normal_x"].setConstant(0);
@@ -263,7 +263,9 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
           double cell_bounds = cell_information[idx].max_cramerrao_bounds;
           if (!std::isfinite(max_cramer_rao_bound) || (max_cramer_rao_bound > limit_cramerrao_bounds))
             max_cramer_rao_bound = limit_cramerrao_bounds;
-          double utility = (max_cramer_rao_bound < 0.1) ? 0.0 : cell_bounds - max_cramer_rao_bound;
+
+          double min_cramer_rao_bound = 0.1;
+          double utility = (max_cramer_rao_bound < min_cramer_rao_bound) ? 0.0 : cell_bounds - max_cramer_rao_bound;
           view_utility += utility;
           // Register view into the view utility map
           ViewInfo viewinfo;
@@ -277,7 +279,7 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
             layer_geometricprior(index(0), index(1)) = max_cramer_rao_bound;
             layer_sample_distance(index(0), index(1)) = gsd_prior;
             layer_incident_prior(index(0), index(1)) = incident_prior;
-            layer_utility(index(0), index(1)) = max_cramer_rao_bound;
+            layer_utility(index(0), index(1)) = max_cramer_rao_bound / min_cramer_rao_bound;
           }
 
           break;
@@ -404,7 +406,7 @@ void ViewUtilityMap::initializeFromGridmap() {
     layer_normal_z(x, y) = normal(2);
   }
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0.0);
+  grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
   grid_map_["roi"].setConstant(1.0);
   grid_map_["normalized_prior"].setConstant(0);
 }
@@ -501,7 +503,7 @@ bool ViewUtilityMap::initializeFromGeotiff(GDALDataset *dataset) {
     layer_normal_z(x, y) = normal(2);
   }
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0.0);
+  grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
   grid_map_["roi"].setConstant(1);
   grid_map_["normalized_prior"].setConstant(0);
 
@@ -549,7 +551,7 @@ bool ViewUtilityMap::initializeFromMesh(const std::string &path, const double re
     layer_normal_z(x, y) = normal(2);
   }
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0.0);
+  grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
   grid_map_["roi"].setConstant(1);
   grid_map_["normalized_prior"].setConstant(0);
   grid_map_.setFrameId("map");
@@ -560,7 +562,7 @@ bool ViewUtilityMap::initializeEmptyMap() {
   grid_map_.setGeometry(grid_map::Length(100.0, 100.0), 10.0, grid_map::Position(0.0, 0.0));
   // Initialize gridmap layers
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0.0);
+  grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
   grid_map_["elevation"].setConstant(1);
   grid_map_["roi"].setConstant(0);
   grid_map_["elevation_normal_x"].setConstant(0);

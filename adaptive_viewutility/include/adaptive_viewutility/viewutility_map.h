@@ -60,7 +60,7 @@ struct ViewInfo {
   Eigen::Vector3d view_vector{Eigen::Vector3d::Zero()};
   double view_distance{-1.0};
 };
-constexpr double limit_cramerrao_bounds{5.0};
+constexpr double limit_cramerrao_bounds{1.0};
 struct CellInfo {
   std::vector<ViewInfo> view_info;
   Eigen::Matrix3d fisher_information{Eigen::Matrix3d::Zero()};
@@ -182,6 +182,6 @@ class ViewUtilityMap {
   std::vector<CellInfo> cell_information_;
   GeometricPriorSettings settings_;
   double max_prior_{0.5};
-  ViewUtilityType utility_type_{ViewUtilityType::GEOMETRIC_PRIOR};
+  ViewUtilityType utility_type_{ViewUtilityType::FISHER_INFORMATION};
 };
 #endif

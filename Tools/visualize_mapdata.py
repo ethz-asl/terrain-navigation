@@ -104,8 +104,8 @@ def analyzePrecision(data_df):
     fig3 = plt.figure("Map Precision")
     ax = fig3.add_subplot(1,1,1)
     ax.plot(length, precision, '-', label='total')
-    step = 0.1
-    utility_length = np.arange(step, 1.0, step)
+    step = 0.2
+    utility_length = np.arange(step, 1.2, step)
     utility = utility[error > 0.0]
     error = error[error > 0.0]
     for utility_threshold in utility_length:
