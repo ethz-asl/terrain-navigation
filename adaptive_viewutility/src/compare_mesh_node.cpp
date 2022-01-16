@@ -114,10 +114,11 @@ int main(int argc, char **argv) {
   ros::Publisher utility_map_pub = nh.advertise<grid_map_msgs::GridMap>("utility_map", 1, true);
 
   std::string gt_path, est_path, viewutility_map_path, output_path;
-
+  bool visualization_enabled{true};
   nh_private.param<std::string>("groundtruth_mesh_path", gt_path, "resources/cadastre.tif");
   nh_private.param<std::string>("estimated_mesh_path", est_path, "resources/cadastre.tif");
   nh_private.param<std::string>("map_data_path", output_path, "");
+  nh_private.param<bool>("visualize", visualization_enabled, true);
 
   if (gt_path.empty() || est_path.empty()) {
     std::cout << "Missing groundtruth mesh or the estimated mesh" << std::endl;
@@ -206,17 +207,17 @@ int main(int argc, char **argv) {
     map_data.push_back(data);
   }
   writeMapDataToFile(output_path, map_data);
-  while (true) {
-    MapPublishOnce(gt_map_pub, groundtruth_map);
-    MapPublishOnce(est_map_pub, estimated_map);
-    if (!viewutility_map_path.empty()) {
-      grid_map_msgs::GridMap message;
-      grid_map::GridMapRosConverter::toMessage(viewutility_map, message);
-      utility_map_pub.publish(message);
+  if (visualization_enabled) {
+    while (true) {
+      MapPublishOnce(gt_map_pub, groundtruth_map);
+      MapPublishOnce(est_map_pub, estimated_map);
+      if (!viewutility_map_path.empty()) {
+        grid_map_msgs::GridMap message;
+        grid_map::GridMapRosConverter::toMessage(viewutility_map, message);
+        utility_map_pub.publish(message);
+      }
+      ros::Duration(5.0).sleep();
     }
-    ros::Duration(5.0).sleep();
   }
-
-  ros::spin();
   return 0;
 }

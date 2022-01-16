@@ -18,6 +18,7 @@ test: build-test
 	Tools/run_tests.sh .
 
 analyze:
+	roslaunch adaptive_viewutility run_compare_mesh.launch
 	python3 Tools/visualize_mapdata.py output/map_data.csv
 
 clean:
