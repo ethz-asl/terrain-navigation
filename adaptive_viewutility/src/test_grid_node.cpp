@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 
   std::string file_path, output_file_path;
   double max_experiment_duration;
-  nh_private.param<std::string>("geotiff_path", file_path, "resources/cadastre.tif");
+  nh_private.param<std::string>("file_path", file_path, "resources/cadastre.tif");
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
 
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 
   // Run sweep segments until the boundary
   double view_distance = 51.6;
-  double altitude = 150.0;
+  double altitude = 100.0;
   Eigen::Vector2d sweep_direction = (polygon.getVertex(1) - polygon.getVertex(0)).normalized();
   Eigen::Vector2d sweep_perpendicular = (polygon.getVertex(3) - polygon.getVertex(0)).normalized();
 

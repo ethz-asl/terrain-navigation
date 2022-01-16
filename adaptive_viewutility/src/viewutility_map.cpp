@@ -57,6 +57,8 @@ ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map
   grid_map_.add("elevation_normal_y");
   grid_map_.add("elevation_normal_z");
   grid_map_.add("ground_sample_distance");
+  grid_map_.add("incident_prior");
+  grid_map_.add("triangulation_prior");
 
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(0);
@@ -66,6 +68,8 @@ ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map
   grid_map_["elevation_normal_y"].setConstant(0);
   grid_map_["elevation_normal_z"].setConstant(1);
   grid_map_["ground_sample_distance"].setConstant(0);
+  grid_map_["incident_prior"].setConstant(0);
+  grid_map_["triangulation_prior"].setConstant(0);
 }
 
 ViewUtilityMap::~ViewUtilityMap() {}
@@ -78,6 +82,20 @@ double ViewUtilityMap::getBestJointPrior(const std::vector<GeometricPrior> &prio
     if (prior.joint > best_prior) best_prior = prior.joint;
   }
   return best_prior;
+}
+
+GeometricPrior ViewUtilityMap::getBestGeometricPrior(const std::vector<GeometricPrior> &prior_list) {
+  double best_prior{0.0};
+  GeometricPrior best_prior_info;
+
+  // Iterate through the list of priors to get the maximum geometric_prior
+  for (auto &prior : prior_list) {
+    if (prior.joint > best_prior) {
+      best_prior = prior.joint;
+      best_prior_info = prior;
+    }
+  }
+  return best_prior_info;
 }
 
 double ViewUtilityMap::getBestGroundSampleDistance(const std::vector<GeometricPrior> &prior_list) {
@@ -153,6 +171,8 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
     grid_map::Matrix &layer_visibility = grid_map["visibility"];
     grid_map::Matrix &layer_geometricprior = grid_map["geometric_prior"];
     grid_map::Matrix &layer_sample_distance = grid_map["ground_sample_distance"];
+    grid_map::Matrix &layer_incident_prior = grid_map["incident_prior"];
+    grid_map::Matrix &layer_triangulation_prior = grid_map["triangulation_prior"];
     grid_map::Matrix &layer_utility = grid_map["normalized_prior"];
     for (grid_map::PolygonIterator iterator(grid_map, polygon); !iterator.isPastEnd(); ++iterator) {
       const grid_map::Index index(*iterator);
@@ -180,6 +200,7 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
           getGeometricPrior(settings_, view_vector, view_distance, cell_normal, cell_information[idx]);
 
       double best_prior = getBestJointPrior(geometric_prior);
+      GeometricPrior best_geometric_prior = getBestGeometricPrior(geometric_prior);
       double best_sample_distance = getBestGroundSampleDistance(geometric_prior);
       bool prior_updated = false;
       double area = std::pow(grid_map_.getResolution(), 2);
@@ -205,7 +226,9 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
         // Update Geometric Prior
         if (prior_updated) {
           layer_geometricprior(index(0), index(1)) = best_prior;
-          layer_sample_distance(index(0), index(1)) = best_sample_distance;
+          layer_sample_distance(index(0), index(1)) = best_geometric_prior.resolution;
+          layer_incident_prior(index(0), index(1)) = best_geometric_prior.incident;
+          layer_triangulation_prior(index(0), index(1)) = best_geometric_prior.triangulation;
           layer_utility(index(0), index(1)) = std::min(best_prior, max_prior_) / max_prior_;
         }
       }

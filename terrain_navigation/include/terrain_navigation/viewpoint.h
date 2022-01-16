@@ -84,9 +84,9 @@ class ViewPoint {
   Eigen::Vector3d RayVector(int pixel_x, int pixel_y) {
     /// TODO: Hardcoded camera parameters
     /// TODO: Get camera intrinsics
-    int c1 = 390.645;
-    int c2 = 541.564;
-    double f = 793.910;
+    int c1 = 360.0;
+    int c2 = 540.0;
+    double f = 540.0;
 
     Eigen::Vector3d ray;
     ray << (pixel_x - c1) / f, (pixel_y - c2) / f, -1.0;

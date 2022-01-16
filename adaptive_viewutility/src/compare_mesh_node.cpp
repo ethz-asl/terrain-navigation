@@ -47,6 +47,9 @@ struct MapData {
   double error{NAN};
   double utility{NAN};
   double ground_sample_distance{NAN};
+  double triangulation_prior{NAN};
+  double incident_prior{NAN};
+  double visibility{NAN};
 };
 
 void MapPublishOnce(ros::Publisher &pub, const std::shared_ptr<ViewUtilityMap> &map) {
@@ -79,7 +82,7 @@ void CopyMapLayer(const std::string &layer, const grid_map::GridMap &reference_m
 void writeMapDataToFile(const std::string path, const std::vector<MapData> &map) {
   std::ofstream output_file;
   output_file.open(path, std::ios::app);
-  output_file << "id,x,y,error,utility,ground_sample_distance,padding,\n";
+  output_file << "id,x,y,error,utility,ground_sample_distance,incident_prior,triangulation_prior,visibility,padding,\n";
   int id{0};
   for (auto data : map) {
     output_file << id << ",";
@@ -88,6 +91,9 @@ void writeMapDataToFile(const std::string path, const std::vector<MapData> &map)
     output_file << data.error << ",";
     output_file << data.utility << ",";
     output_file << data.ground_sample_distance << ",";
+    output_file << data.incident_prior << ",";
+    output_file << data.triangulation_prior << ",";
+    output_file << data.visibility << ",";
     output_file << 0 << ",";
     output_file << "\n";
     id++;
@@ -121,7 +127,7 @@ int main(int argc, char **argv) {
       grid_map::GridMap({"roi", "elevation", "elevation_normal_x", "elevation_normal_y", "elevation_normal_z",
                          "visibility", "geometric_prior", "normalized_prior"});
   std::shared_ptr<ViewUtilityMap> groundtruth_map = std::make_shared<ViewUtilityMap>(gt_map);
-  double resolution = 5.0;
+  double resolution = 1.0;
   groundtruth_map->initializeFromMesh(gt_path, resolution);
 
   grid_map::GridMap est_map =
@@ -131,8 +137,12 @@ int main(int argc, char **argv) {
   estimated_map->initializeFromMesh(est_path, resolution);
 
   // Known transform acquired by cloudcompare
-  Eigen::Translation3d meshlab_translation(218.003296, -428.974365, -377.713348);
-  Eigen::AngleAxisd meshlab_rotation(1.082817 * M_PI / 180.0, Eigen::Vector3d(0.050463, 0.056066, -0.997151));
+  // Qmax05 200steps
+  // Eigen::Translation3d meshlab_translation(218.003296, -428.974365, -377.713348);
+  // Eigen::AngleAxisd meshlab_rotation(1.082817 * M_PI / 180.0, Eigen::Vector3d(0.050463, 0.056066, -0.997151));
+  // Qmax05 400steps
+  Eigen::Translation3d meshlab_translation(235.992828, -424.721649, -361.758606);
+  Eigen::AngleAxisd meshlab_rotation(1.074108 * M_PI / 180.0, Eigen::Vector3d(0.057445, 0.054471, -0.996862));
 
   Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
   groundtruth_map->getGridMap() = groundtruth_map->getGridMap().getTransformedMap(
@@ -157,6 +167,9 @@ int main(int argc, char **argv) {
 
       CopyMapLayer("geometric_prior", viewutility_map, groundtruth_map->getGridMap());
       CopyMapLayer("ground_sample_distance", viewutility_map, groundtruth_map->getGridMap());
+      CopyMapLayer("incident_prior", viewutility_map, groundtruth_map->getGridMap());
+      CopyMapLayer("triangulation_prior", viewutility_map, groundtruth_map->getGridMap());
+      CopyMapLayer("visibility", viewutility_map, groundtruth_map->getGridMap());
     } else {
       std::cout << "  - Failed to load utility map" << std::endl;
     }
@@ -172,7 +185,10 @@ int main(int argc, char **argv) {
     data.elevation = grid_map.at("elevation", index);
     data.error = grid_map.at("elevation_difference", index);
     data.utility = grid_map.at("geometric_prior", index);
+    data.incident_prior = grid_map.at("incident_prior", index);
+    data.triangulation_prior = grid_map.at("triangulation_prior", index);
     data.ground_sample_distance = grid_map.at("ground_sample_distance", index);
+    data.visibility = grid_map.at("visibility", index);
     map_data.push_back(data);
   }
   writeMapDataToFile(output_path, map_data);

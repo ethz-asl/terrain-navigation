@@ -1,12 +1,12 @@
 <launch>
 <!-- Compare mesh between two meshes -->
     <arg name="visualization" default="true"/>
-    <arg name="path" default="/home/jaeyoung/dev/data/gpstagfix_qmax_05_200steps"/>
+    <arg name="path" default="/home/jaeyoung/dev/data/qmax_05_400steps_priors"/>
 
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="adaptive_viewutility" type="compare_mesh_node" name="test_mesh" output="screen">
         <param name="groundtruth_mesh_path" value="/home/jaeyoung/dev/mesh/q_max_06/groundtruth_roi_meshlab.obj"/>
-        <param name="estimated_mesh_path" value="$(arg path)/qmax05_200steps_gpsfix_simplified_3d_mesh.obj"/>
+        <param name="estimated_mesh_path" value="$(arg path)/qmax_05_400steps_more_simplified_3d_mesh.obj"/>
         <param name="utility_map_path" value="$(arg path)/gridmap_0.bag"/>
         <param name="map_data_path" value="$(find adaptive_viewutility)/../output/map_data.csv"/>
     </node>

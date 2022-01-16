@@ -74,7 +74,7 @@ struct GeometricPrior {
 };
 
 struct GeometricPriorSettings {
-  double reference_view_distance{150.0};
+  double reference_view_distance{100.0};
   double sigma_k{45.0 / 180.0 * M_PI};
   double min_triangulation_angle{0.78};
 };
@@ -97,6 +97,7 @@ class ViewUtilityMap {
                                                        const double &view_distance, const Eigen::Vector3d &cell_normal,
                                                        CellInfo &cell_info);
   static double getBestJointPrior(const std::vector<GeometricPrior> &prior_list);
+  static GeometricPrior getBestGeometricPrior(const std::vector<GeometricPrior> &prior_list);
   static double getBestGroundSampleDistance(const std::vector<GeometricPrior> &prior_list);
   void initializeFromGridmap();
   bool initializeFromGeotiff(GDALDataset *dataset);

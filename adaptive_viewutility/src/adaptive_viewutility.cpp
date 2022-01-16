@@ -323,7 +323,7 @@ void AdaptiveViewUtility::estimateViewUtility() {
 void AdaptiveViewUtility::OutputMapData(const std::string &path) { viewutility_map_->OutputMapData(path); }
 
 void AdaptiveViewUtility::InitializeVehicleFromMap(Eigen::Vector3d &init_pos, Eigen::Vector3d &init_vel) {
-  double max_altitude = 150.0;
+  double max_altitude = 50.0;
   grid_map::Index idx(static_cast<int>(getRandom(0, viewutility_map_->getGridMap().getSize()(0))),
                       static_cast<int>(getRandom(0, viewutility_map_->getGridMap().getSize()(1))));
   Eigen::Vector2d init_pos_xy;
