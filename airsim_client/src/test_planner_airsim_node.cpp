@@ -102,7 +102,8 @@ int main(int argc, char **argv) {
 
     bool terminate_mapping = false;
     double simulated_time{0.0};
-
+    int increment{0};
+    int snapshot_increment{5};
     while (true) {
       pipeline_perf.tic();
       adaptive_viewutility->generateMotionPrimitives();
@@ -133,7 +134,13 @@ int main(int argc, char **argv) {
       double map_quality =
           performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
 
-      if (std::abs(map_quality - 0.1) < 0.0001) terminate_mapping = true;  // Terminate if map quality has been met
+      if (increment % snapshot_increment == 0) {
+        std::string saved_map_path =
+            image_directory + "/gridmap_" + std::to_string(static_cast<int>(increment / snapshot_increment)) + ".bag";
+        grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
+                                                 saved_map_path, "/grid_map");
+      }
+      increment++;
 
       // Terminate if simulation time has exceeded
       if (simulated_time > max_experiment_duration) terminate_mapping = true;
@@ -143,9 +150,6 @@ int main(int argc, char **argv) {
       }
     }
     performance_tracker->Output(output_file_path);
-    std::string saved_map_path = image_directory + "/gridmap_" + std::to_string(i) + ".bag";
-    grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
-                                             "/grid_map");
     std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
   }
   std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
