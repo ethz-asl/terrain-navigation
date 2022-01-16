@@ -96,18 +96,32 @@ def analyzePrecision(data_df):
 
     total = np.count_nonzero(~np.isnan(error))
     precision = np.array([])
-    length = np.arange(0.0, 5.0, 0.5)
+    length = np.arange(0.0, 2.0, 0.05)
     for threshold in length:
         rate = (error < threshold).sum() / total
         precision = np.append(precision, rate)
 
     fig3 = plt.figure("Map Precision")
     ax = fig3.add_subplot(1,1,1)
-    ax.plot(length, precision, '-o')
+    ax.plot(length, precision, '-', label='total')
+    step = 0.1
+    utility_length = np.arange(step, 1.0, step)
+    utility = utility[error > 0.0]
+    error = error[error > 0.0]
+    for utility_threshold in utility_length:
+        utility_precision = np.array([])
+        total = np.count_nonzero(utility[np.where((utility<utility_threshold) & (utility> utility_threshold-step))])
+        for threshold in length:
+            rate = (error[np.where((utility<utility_threshold) & (utility> utility_threshold-step))] < threshold).sum() / total
+            utility_precision = np.append(utility_precision, rate)
+        
+        ax.plot(length, utility_precision, '-', label='%.2f < $\alpha < %.2f' %(utility_threshold-step, utility_threshold))
+
     ax.set_xlabel('Error [m]')
     ax.set_ylabel('Precision')
     ax.set_title('Precision')
     ax.grid(True)
+    ax.legend()
 
 def makeupMetrics(data_df):
     error = np.array(data_df["error"])
