@@ -20,6 +20,7 @@ test: build-test
 analyze:
 	roslaunch adaptive_viewutility run_compare_mesh.launch
 	python3 Tools/visualize_mapdata.py output/map_data.csv
+	rm -f output/*.csv
 
 clean:
 	rm -f output/*.jpeg

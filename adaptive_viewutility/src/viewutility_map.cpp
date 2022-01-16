@@ -626,7 +626,7 @@ std::vector<double> ViewUtilityMap::calculateErrors(grid_map::GridMap &groundtru
       /// TODO: Define ROI
       if (reference_map.isInside(cell_pos)) {
         double ref_elevation = reference_map.atPosition("elevation", cell_pos);
-        double error = ref_elevation - cell_elevation;
+        double error = std::abs(ref_elevation - cell_elevation);
         groundtruth_map.at("elevation_difference", index) = error;
         error_vector.push_back(error);
       } else {

@@ -90,6 +90,25 @@ def analyzeMapScatter(data_df):
     ax9.set_xlabel('Visibility Count')
     ax9.set_ylabel('Error [m]')
 
+def analyzePrecision(data_df):
+    error = np.array(data_df["error"])
+    utility = np.array(data_df["utility"])
+
+    total = np.count_nonzero(~np.isnan(error))
+    precision = np.array([])
+    length = np.arange(0.0, 5.0, 0.5)
+    for threshold in length:
+        rate = (error < threshold).sum() / total
+        precision = np.append(precision, rate)
+
+    fig3 = plt.figure("Map Precision")
+    ax = fig3.add_subplot(1,1,1)
+    ax.plot(length, precision, '-o')
+    ax.set_xlabel('Error [m]')
+    ax.set_ylabel('Precision')
+    ax.set_title('Precision')
+    ax.grid(True)
+
 def makeupMetrics(data_df):
     error = np.array(data_df["error"])
     utility = np.array(data_df["utility"])
@@ -120,4 +139,5 @@ map_data_df = pd.read_csv(sys.argv[1])
 analyzeMapStatistics(map_data_df)
 analyzeMapScatter(map_data_df)
 makeupMetrics(map_data_df)
+analyzePrecision(map_data_df)
 plt.show()
