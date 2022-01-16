@@ -50,6 +50,7 @@ struct MapData {
   double triangulation_prior{NAN};
   double incident_prior{NAN};
   double visibility{NAN};
+  double min_eigen_value{NAN};
 };
 
 void MapPublishOnce(ros::Publisher &pub, const std::shared_ptr<ViewUtilityMap> &map) {
@@ -82,7 +83,8 @@ void CopyMapLayer(const std::string &layer, const grid_map::GridMap &reference_m
 void writeMapDataToFile(const std::string path, const std::vector<MapData> &map) {
   std::ofstream output_file;
   output_file.open(path, std::ios::app);
-  output_file << "id,x,y,error,utility,ground_sample_distance,incident_prior,triangulation_prior,visibility,padding,\n";
+  output_file << "id,x,y,error,utility,ground_sample_distance,incident_prior,triangulation_prior,visibility,min_eigen_"
+                 "value,padding,\n";
   int id{0};
   for (auto data : map) {
     output_file << id << ",";
@@ -94,6 +96,7 @@ void writeMapDataToFile(const std::string path, const std::vector<MapData> &map)
     output_file << data.incident_prior << ",";
     output_file << data.triangulation_prior << ",";
     output_file << data.visibility << ",";
+    output_file << data.min_eigen_value << ",";
     output_file << 0 << ",";
     output_file << "\n";
     id++;
@@ -141,8 +144,17 @@ int main(int argc, char **argv) {
   // Eigen::Translation3d meshlab_translation(218.003296, -428.974365, -377.713348);
   // Eigen::AngleAxisd meshlab_rotation(1.082817 * M_PI / 180.0, Eigen::Vector3d(0.050463, 0.056066, -0.997151));
   // Qmax05 400steps
-  Eigen::Translation3d meshlab_translation(235.992828, -424.721649, -361.758606);
-  Eigen::AngleAxisd meshlab_rotation(1.074108 * M_PI / 180.0, Eigen::Vector3d(0.057445, 0.054471, -0.996862));
+  // Eigen::Translation3d meshlab_translation(235.992828, -424.721649, -361.758606);
+  // Eigen::AngleAxisd meshlab_rotation(1.074108 * M_PI / 180.0, Eigen::Vector3d(0.057445, 0.054471, -0.996862));
+  // Triangulation Prior fix
+  // Eigen::Translation3d meshlab_translation(182.640350,-459.849915,-242.304398);
+  // Eigen::AngleAxisd meshlab_rotation(1.136428 * M_PI / 180.0, Eigen::Vector3d(0.003528,-0.001497,-0.999993));
+  // Fisher information fix
+  // Eigen::Translation3d meshlab_translation(179.645706,-468.833771,-246.334869);
+  // Eigen::AngleAxisd meshlab_rotation(1.139866 * M_PI / 180.0, Eigen::Vector3d(0.004730, -0.000685, -0.999989));
+  // Fisher information render fix
+  Eigen::Translation3d meshlab_translation(194.932800, -427.770630, -313.790955);
+  Eigen::AngleAxisd meshlab_rotation(1.084983 * M_PI / 180.0, Eigen::Vector3d(0.053948, 0.048623, -0.997359));
 
   Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
   groundtruth_map->getGridMap() = groundtruth_map->getGridMap().getTransformedMap(
@@ -170,6 +182,7 @@ int main(int argc, char **argv) {
       CopyMapLayer("incident_prior", viewutility_map, groundtruth_map->getGridMap());
       CopyMapLayer("triangulation_prior", viewutility_map, groundtruth_map->getGridMap());
       CopyMapLayer("visibility", viewutility_map, groundtruth_map->getGridMap());
+      CopyMapLayer("min_eigen_value", viewutility_map, groundtruth_map->getGridMap());
     } else {
       std::cout << "  - Failed to load utility map" << std::endl;
     }
@@ -189,6 +202,7 @@ int main(int argc, char **argv) {
     data.triangulation_prior = grid_map.at("triangulation_prior", index);
     data.ground_sample_distance = grid_map.at("ground_sample_distance", index);
     data.visibility = grid_map.at("visibility", index);
+    data.min_eigen_value = grid_map.at("min_eigen_value", index);
     map_data.push_back(data);
   }
   writeMapDataToFile(output_path, map_data);

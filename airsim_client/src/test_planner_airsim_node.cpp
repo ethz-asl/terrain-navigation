@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 
-    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 150.0);
+    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 100.0);
     double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(
         "elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
     vehicle_pos(2) = vehicle_pos(2) + elevation;

@@ -60,9 +60,12 @@ struct ViewInfo {
   Eigen::Vector3d view_vector{Eigen::Vector3d::Zero()};
   double view_distance{-1.0};
 };
-
+constexpr double limit_cramerrao_bounds{5.0};
 struct CellInfo {
   std::vector<ViewInfo> view_info;
+  Eigen::Matrix3d fisher_information{Eigen::Matrix3d::Zero()};
+  double min_eigen_value{0.0};
+  double max_cramerrao_bounds{limit_cramerrao_bounds};
 };
 
 struct GeometricPrior {
@@ -76,8 +79,10 @@ struct GeometricPrior {
 struct GeometricPriorSettings {
   double reference_view_distance{100.0};
   double sigma_k{45.0 / 180.0 * M_PI};
-  double min_triangulation_angle{0.78};
+  double min_triangulation_angle{0.083 * M_PI};
 };
+
+enum class ViewUtilityType { GEOMETRIC_PRIOR, FISHER_INFORMATION };
 
 class ViewUtilityMap {
  public:
@@ -92,16 +97,76 @@ class ViewUtilityMap {
   void UpdateUtility(ViewPoint &viewpoint);
   void OutputMapData(const std::string path);
   double CalculateViewUtility(std::vector<ViewPoint> &viewpoint_set, bool update_utility_map);
+
+  /**
+   * @brief Get the Geometric Prior object
+   *
+   * @param settings Geometric prior configuration
+   * @param view_vector_query Unit vector that is queried for calculating the geometric prior
+   * @param view_distance Distance of the viewpoint
+   * @param cell_normal Unit vector of cell normal
+   * @param cell_info List containing view information of each cell
+   * @return std::vector<GeometricPrior>
+   */
   static std::vector<GeometricPrior> getGeometricPrior(const GeometricPriorSettings &settings,
                                                        const Eigen::Vector3d &view_vector_query,
                                                        const double &view_distance, const Eigen::Vector3d &cell_normal,
-                                                       CellInfo &cell_info);
+                                                       const Eigen::Vector3d &center_ray, CellInfo &cell_info);
+  /**
+   * @brief Calculate Incident Prior
+   *
+   * @param unit_view_vector unit vector of camera viewpoint from cell position
+   * @param cell_normal cell normal unit vector
+   * @param sigma_k constant factor defining incident angle sensitivity
+   * @todo This function is not robust against non-unit vectors being used as parameters
+   * @return double incident prior
+   */
+  static double getIncidentPrior(const Eigen::Vector3d &unit_view_vector, const Eigen::Vector3d &cell_normal,
+                                 double sigma_k);
+
+  /**
+   * @brief Calculate Groundsample prior
+   *
+   * @param bearing_vector
+   * @param optical_center
+   * @param reference_view_distance
+   * @return double
+   */
+  static double getGroundSamplePrior(const Eigen::Vector3d &bearing_vector, const Eigen::Vector3d &optical_center,
+                                     const double reference_view_distance);
+
+  /**
+   * @brief Calculate Fisher information matrix of a single view
+   *
+   * @param bearing_vector Bearing vector of a landmark from camera
+   * @param view_distance Distance to the landmark from camera
+   * @param sigma Standard Deviation of the bearing vector measurements
+   * @return Eigen::Matrix3d Fisher information matrix of a viewpoint
+   */
+  static Eigen::Matrix3d getFisherInformationMatrix(const Eigen::Vector3d &bearing_vector, const double &view_distance,
+                                                    const double sigma);
   static double getBestJointPrior(const std::vector<GeometricPrior> &prior_list);
   static GeometricPrior getBestGeometricPrior(const std::vector<GeometricPrior> &prior_list);
   static double getBestGroundSampleDistance(const std::vector<GeometricPrior> &prior_list);
   void initializeFromGridmap();
   bool initializeFromGeotiff(GDALDataset *dataset);
+
+  /**
+   * @brief Initialize View Utiltiy Map from Mesh
+   *
+   * @param path path to the mesh file
+   * @param res [m] resoultion of the map
+   * @return true successfully loaded meshfile
+   * @return false mesh loading was unsuccessful
+   */
   bool initializeFromMesh(const std::string &path, const double res = 10.0);
+
+  /**
+   * @brief Initialize Empty ViewUtility Map
+   *
+   * @return true successfully loaded meshfile
+   * @return false mesh loading was unsuccessful
+   */
   bool initializeEmptyMap();
   void SetRegionOfInterest(const grid_map::Polygon &polygon);
   void CompareMapLayer(grid_map::GridMap &reference_map);
@@ -117,5 +182,6 @@ class ViewUtilityMap {
   std::vector<CellInfo> cell_information_;
   GeometricPriorSettings settings_;
   double max_prior_{0.5};
+  ViewUtilityType utility_type_{ViewUtilityType::GEOMETRIC_PRIOR};
 };
 #endif

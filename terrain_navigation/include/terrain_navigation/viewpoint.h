@@ -61,6 +61,8 @@ class ViewPoint {
     corner_ray_vectors_.push_back(RayVector(720, 1080));
     corner_ray_vectors_.push_back(RayVector(720, 0));
 
+    center_ray_vector_ = RayVector(360.0, 540);
+
     orientation_ = orientation;
     Eigen::Matrix3d R_att = quat2RotMatrix(orientation);
 
@@ -68,6 +70,7 @@ class ViewPoint {
     for (auto &corner_ray : corner_ray_vectors_) {
       corner_ray = R_att * corner_ray;
     }
+    center_ray_vector_ = R_att * center_ray_vector_;
   };
   ViewPoint(const int idx, const double &longitude, const double &latitude, const double &altitude) {
     index_ = idx;
@@ -105,6 +108,7 @@ class ViewPoint {
     for (auto &corner_ray : corner_ray_vectors_) {
       corner_ray = R_att * corner_ray;
     }
+    center_ray_vector_ = R_att * center_ray_vector_;
   }
   void setUtility(const double &utility) { utility_ = utility; };
   void setImage(const std::string &image_path) {
@@ -114,6 +118,7 @@ class ViewPoint {
   };
   cv::Mat getImage() { return image_; }
   std::vector<Eigen::Vector3d> getCornerRayVectors() { return corner_ray_vectors_; };
+  Eigen::Vector3d getCenterRayVector() { return center_ray_vector_; };
   Eigen::Vector4d getOrientation() { return orientation_; };
   double getUtility() { return utility_; };
   int getIndex() { return index_; }
@@ -137,6 +142,7 @@ class ViewPoint {
   Eigen::Vector3d origin_global_{Eigen::Vector3d(0.0, 0.0, 0.0)};
   Eigen::Vector4d orientation_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
   std::vector<Eigen::Vector3d> corner_ray_vectors_;
+  Eigen::Vector3d center_ray_vector_;
   double time_seconds_{0.0};
   double utility_{0.0};
   cv::Mat image_;  // Store image of the viewpoint

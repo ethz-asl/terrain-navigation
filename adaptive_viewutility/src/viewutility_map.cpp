@@ -59,9 +59,10 @@ ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map
   grid_map_.add("ground_sample_distance");
   grid_map_.add("incident_prior");
   grid_map_.add("triangulation_prior");
+  grid_map_.add("min_eigen_value");
 
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0);
+  grid_map_["geometric_prior"].setConstant(0.0);
   grid_map_["normalized_prior"].setConstant(0);
   grid_map_["roi"].setConstant(1.0);
   grid_map_["elevation_normal_x"].setConstant(0);
@@ -70,6 +71,7 @@ ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map
   grid_map_["ground_sample_distance"].setConstant(0);
   grid_map_["incident_prior"].setConstant(0);
   grid_map_["triangulation_prior"].setConstant(0);
+  grid_map_["min_eigen_value"].setConstant(0);
 }
 
 ViewUtilityMap::~ViewUtilityMap() {}
@@ -174,6 +176,7 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
     grid_map::Matrix &layer_incident_prior = grid_map["incident_prior"];
     grid_map::Matrix &layer_triangulation_prior = grid_map["triangulation_prior"];
     grid_map::Matrix &layer_utility = grid_map["normalized_prior"];
+    grid_map::Matrix &layer_min_eigen_value = grid_map["min_eigen_value"];
     for (grid_map::PolygonIterator iterator(grid_map, polygon); !iterator.isPastEnd(); ++iterator) {
       const grid_map::Index index(*iterator);
       int idx = index(0) + width * index(1);  // Index number of the gridcell
@@ -194,43 +197,97 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
                                                   grid_map.at("elevation_normal_z", index))};
 
       // Calculate and store view vectors so that we don't need to repeat the calculation
-      Eigen::Vector3d view_vector = (viewpoint_center_local - cell_pos).normalized();
-      double view_distance = (viewpoint_center_local - cell_pos).norm();
-      std::vector<GeometricPrior> geometric_prior =
-          getGeometricPrior(settings_, view_vector, view_distance, cell_normal, cell_information[idx]);
+      Eigen::Vector3d view_vector = viewpoint_center_local - cell_pos;
+      Eigen::Vector3d view_vector_u = view_vector.normalized();
+      double view_distance = view_vector.norm();
+      Eigen::Vector3d optical_center = viewpoint.getCenterRayVector();
+      double cell_area = std::pow(grid_map_.getResolution(), 2);
 
-      double best_prior = getBestJointPrior(geometric_prior);
-      GeometricPrior best_geometric_prior = getBestGeometricPrior(geometric_prior);
-      double best_sample_distance = getBestGroundSampleDistance(geometric_prior);
-      bool prior_updated = false;
-      double area = std::pow(grid_map_.getResolution(), 2);
-      /// TODO: This results in over estimation of view utility since it does not account for view
-      if (best_prior > layer_geometricprior(index(0), index(1))) {
-        prior_updated = true;
-        if (best_prior < max_prior_) {
-          // TODO: Why are we dividing to 100.0? where does 100 come from?
-          view_utility += best_prior - layer_geometricprior(index(0), index(1)) * area / 100.0;
+      switch (utility_type_) {
+        case ViewUtilityType::GEOMETRIC_PRIOR: {
+          std::vector<GeometricPrior> geometric_prior = getGeometricPrior(
+              settings_, view_vector_u, view_distance, cell_normal, optical_center, cell_information[idx]);
+
+          double best_prior = getBestJointPrior(geometric_prior);
+          GeometricPrior best_geometric_prior = getBestGeometricPrior(geometric_prior);
+          double best_sample_distance = getBestGroundSampleDistance(geometric_prior);
+          bool prior_updated = false;
+          /// TODO: This results in over estimation of view utility since it does not account for view
+          if (best_prior > layer_geometricprior(index(0), index(1))) {
+            prior_updated = true;
+            if (best_prior < max_prior_) {
+              // TODO: Why are we dividing to 100.0? where does 100 come from?
+              view_utility += best_prior - layer_geometricprior(index(0), index(1)) * cell_area / 100.0;
+            }
+          }
+
+          // Register view into the view utility map
+          ViewInfo viewinfo;
+          viewinfo.view_vector = view_vector_u;
+          viewinfo.view_distance = view_distance;
+          viewinfo.view_index = view_index;
+          cell_information[idx].view_info.push_back(viewinfo);
+
+          if (update_utility_map) {
+            // Update Geometric Prior
+            if (prior_updated) {
+              layer_geometricprior(index(0), index(1)) = best_prior;
+              layer_sample_distance(index(0), index(1)) = best_sample_distance;
+              layer_utility(index(0), index(1)) = std::min(best_prior, max_prior_) / max_prior_;
+              layer_sample_distance(index(0), index(1)) = best_geometric_prior.resolution;
+              layer_incident_prior(index(0), index(1)) = best_geometric_prior.incident;
+              layer_triangulation_prior(index(0), index(1)) = best_geometric_prior.triangulation;
+            }
+          }
+          break;
+        }
+        case ViewUtilityType::FISHER_INFORMATION: {
+          double sigma_k{30.0 / 180.0 * M_PI};
+          double incident_prior = getIncidentPrior(view_vector_u, cell_normal, sigma_k);
+
+          Eigen::Matrix3d cell_fim = cell_information[idx].fisher_information;
+
+          // Calculate fisher information of each bearing vector observation
+          double reference_view_distance = 100;
+          Eigen::Vector3d bearing_vector = -view_vector;
+          double gsd_prior = getGroundSamplePrior(bearing_vector, optical_center, reference_view_distance);
+          double pixel_res = 0.5 * M_PI / 1080.0;
+          double sigma = std::sin(pixel_res);
+          Eigen::Matrix3d fim = getFisherInformationMatrix(bearing_vector, view_distance, sigma);
+          Eigen::Matrix3d accumulated_fim = cell_fim + (incident_prior * gsd_prior * fim);
+
+          // Compute Cramer Rao Bounds
+          /// TODO: Catch if fim is singular
+          Eigen::Matrix3d covariance_matrix = accumulated_fim.inverse();
+          double max_cramer_rao_bound = std::sqrt(covariance_matrix.diagonal().maxCoeff());
+          double cell_bounds = cell_information[idx].max_cramerrao_bounds;
+          if (!std::isfinite(max_cramer_rao_bound) || (max_cramer_rao_bound > limit_cramerrao_bounds))
+            max_cramer_rao_bound = limit_cramerrao_bounds;
+          double utility = (max_cramer_rao_bound < 0.1) ? 0.0 : cell_bounds - max_cramer_rao_bound;
+          view_utility += utility;
+          // Register view into the view utility map
+          ViewInfo viewinfo;
+          viewinfo.view_vector = view_vector_u;
+          viewinfo.view_distance = view_distance;
+          viewinfo.view_index = view_index;
+          cell_information[idx].view_info.push_back(viewinfo);
+          cell_information[idx].fisher_information = accumulated_fim;
+          cell_information[idx].max_cramerrao_bounds = max_cramer_rao_bound;
+          if (update_utility_map) {
+            layer_geometricprior(index(0), index(1)) = max_cramer_rao_bound;
+            layer_sample_distance(index(0), index(1)) = gsd_prior;
+            layer_incident_prior(index(0), index(1)) = incident_prior;
+            layer_utility(index(0), index(1)) = max_cramer_rao_bound;
+          }
+
+          break;
         }
       }
 
-      // Register view into the view utility map
-      ViewInfo viewinfo;
-      viewinfo.view_vector = view_vector;
-      viewinfo.view_distance = view_distance;
-      viewinfo.view_index = view_index;
-      cell_information[idx].view_info.push_back(viewinfo);
-
       if (update_utility_map) {
         // Update Visibility count
+        /// TODO: This increases the visibility count even though it is very far away
         layer_visibility(index(0), index(1)) += 1.0;  // Increase visibility count
-        // Update Geometric Prior
-        if (prior_updated) {
-          layer_geometricprior(index(0), index(1)) = best_prior;
-          layer_sample_distance(index(0), index(1)) = best_geometric_prior.resolution;
-          layer_incident_prior(index(0), index(1)) = best_geometric_prior.incident;
-          layer_triangulation_prior(index(0), index(1)) = best_geometric_prior.triangulation;
-          layer_utility(index(0), index(1)) = std::min(best_prior, max_prior_) / max_prior_;
-        }
       }
     }
 
@@ -244,22 +301,47 @@ void ViewUtilityMap::UpdateUtility(ViewPoint &viewpoint) {
   CalculateViewUtility(viewpoint, true, cell_information_, grid_map_);
 }
 
+double ViewUtilityMap::getGroundSamplePrior(const Eigen::Vector3d &bearing_vector,
+                                            const Eigen::Vector3d &optical_center,
+                                            const double reference_view_distance) {
+  double projected_distance = (bearing_vector).dot(optical_center);
+  double relative_gsd = std::pow(reference_view_distance / projected_distance, 2);
+  double gsd_prior = std::min(relative_gsd, 1 / relative_gsd);
+  return gsd_prior;
+}
+
+double ViewUtilityMap::getIncidentPrior(const Eigen::Vector3d &unit_view_vector, const Eigen::Vector3d &cell_normal,
+                                        double sigma_k) {
+  double incident_angle = std::acos(unit_view_vector.dot(cell_normal));
+  double incident_prior = std::exp(-std::pow(incident_angle, 2) / (2 * std::pow(sigma_k, 2)));
+  return incident_prior;
+}
+
+Eigen::Matrix3d ViewUtilityMap::getFisherInformationMatrix(const Eigen::Vector3d &bearing_vector,
+                                                           const double &view_distance, const double sigma) {
+  const double inverse_depth = 1 / view_distance;
+  Eigen::Matrix3d jacobian = inverse_depth * Eigen::Matrix3d::Identity() -
+                             std::pow(inverse_depth, 3) * bearing_vector * bearing_vector.transpose();
+  Eigen::Matrix3d fim = std::pow(1 / sigma, 2) * jacobian * jacobian.transpose();
+  return fim;
+}
+
 std::vector<GeometricPrior> ViewUtilityMap::getGeometricPrior(const GeometricPriorSettings &settings,
                                                               const Eigen::Vector3d &view_vector_query,
                                                               const double &view_distance,
-                                                              const Eigen::Vector3d &cell_normal, CellInfo &cell_info) {
+                                                              const Eigen::Vector3d &cell_normal,
+                                                              const Eigen::Vector3d &center_ray, CellInfo &cell_info) {
   std::vector<GeometricPrior> prior;
   /// Calculate incidence prior
-  double sigma_k = settings.sigma_k;  /// TODO: Parmaeterize
-  double reference_view_distance = settings.reference_view_distance;
   double min_angle = settings.min_triangulation_angle;
 
-  double incident_angle = std::acos(view_vector_query.dot(cell_normal));
-  double incident_prior = std::exp(-std::pow(incident_angle, 2) / (2 * std::pow(sigma_k, 2)));
+  double sigma_k = settings.sigma_k;
+  double incident_prior = getIncidentPrior(view_vector_query, cell_normal, sigma_k);
 
   /// Calculate ground sample distance prior
-  double relative_gsd = std::pow(reference_view_distance / view_distance, 2);
-  double gsd_prior = std::min(relative_gsd, 1 / relative_gsd);
+  double reference_view_distance = settings.reference_view_distance;
+  Eigen::Vector3d bearing_vector = -view_distance * view_vector_query;
+  double gsd_prior = getGroundSamplePrior(bearing_vector, center_ray, reference_view_distance);
 
   // Calculate pairwise priors
   int i = 0;
@@ -272,7 +354,8 @@ std::vector<GeometricPrior> ViewUtilityMap::getGeometricPrior(const GeometricPri
     // Calculate triangulation prior
     double angle = std::abs(
         std::acos(view_vector_query.dot(view.view_vector)));  /// TODO: Make sure the vectors are all normalized
-    double triangulation_prior = 1 - (std::pow((std::min(angle, min_angle) - min_angle), 2) / (min_angle * min_angle));
+    double triangulation_prior =
+        1.0 - (std::pow((std::min(angle, min_angle) - min_angle), 2) / (min_angle * min_angle));
 
     GeometricPrior geometric_prior;
     geometric_prior.incident = incident_prior;
@@ -321,7 +404,7 @@ void ViewUtilityMap::initializeFromGridmap() {
     layer_normal_z(x, y) = normal(2);
   }
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0);
+  grid_map_["geometric_prior"].setConstant(0.0);
   grid_map_["roi"].setConstant(1.0);
   grid_map_["normalized_prior"].setConstant(0);
 }
@@ -418,7 +501,7 @@ bool ViewUtilityMap::initializeFromGeotiff(GDALDataset *dataset) {
     layer_normal_z(x, y) = normal(2);
   }
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0);
+  grid_map_["geometric_prior"].setConstant(0.0);
   grid_map_["roi"].setConstant(1);
   grid_map_["normalized_prior"].setConstant(0);
 
@@ -466,7 +549,7 @@ bool ViewUtilityMap::initializeFromMesh(const std::string &path, const double re
     layer_normal_z(x, y) = normal(2);
   }
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0);
+  grid_map_["geometric_prior"].setConstant(0.0);
   grid_map_["roi"].setConstant(1);
   grid_map_["normalized_prior"].setConstant(0);
   grid_map_.setFrameId("map");
@@ -477,7 +560,7 @@ bool ViewUtilityMap::initializeEmptyMap() {
   grid_map_.setGeometry(grid_map::Length(100.0, 100.0), 10.0, grid_map::Position(0.0, 0.0));
   // Initialize gridmap layers
   grid_map_["visibility"].setConstant(0);
-  grid_map_["geometric_prior"].setConstant(0);
+  grid_map_["geometric_prior"].setConstant(0.0);
   grid_map_["elevation"].setConstant(1);
   grid_map_["roi"].setConstant(0);
   grid_map_["elevation_normal_x"].setConstant(0);
@@ -543,7 +626,7 @@ std::vector<double> ViewUtilityMap::calculateErrors(grid_map::GridMap &groundtru
       /// TODO: Define ROI
       if (reference_map.isInside(cell_pos)) {
         double ref_elevation = reference_map.atPosition("elevation", cell_pos);
-        double error = std::abs(ref_elevation - cell_elevation);
+        double error = ref_elevation - cell_elevation;
         groundtruth_map.at("elevation_difference", index) = error;
         error_vector.push_back(error);
       } else {
