@@ -92,7 +92,6 @@ class AirsimClient {
     Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
     return target_coordinates;
   }
-  Eigen::Vector3d 
 
  private:
   msr::airlib::RpcLibClientBase client_;

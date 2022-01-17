@@ -1,7 +1,7 @@
 <launch>
 <!-- Compare mesh between two meshes -->
     <arg name="visualization" default="true"/>
-    <arg name="path" default="/home/jaeyoung/dev/data/cramer_rao_05min"/>
+    <arg name="path" default="/home/jaeyoung/dev/data/random"/>
 
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="adaptive_viewutility" type="compare_mesh_node" name="test_mesh" output="screen" required="true">

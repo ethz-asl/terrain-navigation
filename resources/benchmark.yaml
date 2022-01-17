@@ -1,42 +1,12 @@
+random:
+  name: "Random"
+  path: "/home/jaeyoung/dev/data/random/map_data.csv"
 cramer_raobounds_01:
   name: "CramerRao Bound 0.1"
   path: "/home/jaeyoung/dev/data/cramer_rao_01min/map_data.csv"
-  alignment:
-    translation:
-      - 215.928146
-      - -460.798584
-      - -293.735687
-    rotation:
-      - 1.087505
-    axis:
-      - 0.049478
-      - 0.046597
-      - -0.997688
 cramer_raobounds_03:
   name: "CramerRao Bound 0.3"
   path: "/home/jaeyoung/dev/data/cramer_rao_03min/map_data.csv"
-  alignment:
-    translation:
-      - 197.936615
-      - -430.777863
-      - -305.794128
-    rotation:
-      - 1.084262
-    axis:
-      - 0.053773
-      - 0.049833
-      - -0.997309
 cramer_raobounds_05:
   name: "CramerRao Bound 0.5"
   path: "/home/jaeyoung/dev/data/cramer_rao_05min/map_data.csv"
-  alignment:
-    translation:
-      - 177.168762
-      - -464.848724
-      - -356.928772
-    rotation:
-      - 1.067162
-    axis:
-      - 0.052932
-      - 0.049798
-      - -0.997356
