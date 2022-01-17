@@ -64,6 +64,13 @@ add_executable(test_planner_airsim_node
 add_dependencies(test_planner_airsim_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_planner_airsim_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} pthread AirLib rpc MavLinkCom)
 
+add_executable(test_random_airsim_node
+  src/test_random_airsim_node.cpp
+)
+add_dependencies(test_random_airsim_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_random_airsim_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} pthread AirLib rpc MavLinkCom)
+
+
 add_executable(test_gridplanner_node
   src/test_gridplanner_node.cpp
 )

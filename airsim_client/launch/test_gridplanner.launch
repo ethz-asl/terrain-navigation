@@ -2,14 +2,11 @@
     <arg name="visualization" default="true"/>
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="airsim_client" type="test_gridplanner_node" name="test_planner" output="screen">
-        <param name="geotiff_path" value="$(find adaptive_viewutility)/../resources/LandscapeMapwithout_cropped_rescaled_x90.obj"/>
-        <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
-        <param name="origin_x" value="150.788"/>
-        <param name="origin_y" value="1319.02"/>
-        <param name="origin_z" value="400.5888"/>
+        <param name="file_path" value="/home/jaeyoung/dev/mesh/q_max_06/groundtruth_roi_meshlab.obj"/>
         <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
-        <param name="num_experiments" value="30"/>
-        <param name="max_experiment_duration" value="1500"/>
+        <param name="num_experiments" value="1"/>
+        <param name="max_experiment_duration" value="200"/>
+        <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
     </node>
 
     <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">
