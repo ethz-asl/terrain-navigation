@@ -64,7 +64,7 @@ STRICT_MODE_ON
 static constexpr const double kDefaultHomeX = 683565.21;     // LV03/CH1903
 static constexpr const double kDefaultHomeY = 250246.85;     // rad
 static constexpr const double kDefaultHomeAltitude = 488.0;  // meters
-enum class ESPG { ECEF = 4978, WGS84 = 4326, CH1903_LV03 = 21781 };
+enum class ESPG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21781 };
 
 class AirsimClient {
  public:
@@ -92,6 +92,7 @@ class AirsimClient {
     Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
     return target_coordinates;
   }
+  Eigen::Vector3d 
 
  private:
   msr::airlib::RpcLibClientBase client_;

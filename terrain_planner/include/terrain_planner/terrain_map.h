@@ -34,7 +34,7 @@
 #ifndef TERRAIN_MAP_H
 #define TERRAIN_MAP_H
 
-enum class ESPG { ECEF = 4978, WGS84 = 4326, CH1903_LV03 = 21781 };
+enum class ESPG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21781 };
 
 // #include <grid_map_msgs/GridMap.h>
 #include <grid_map_core/GridMap.hpp>

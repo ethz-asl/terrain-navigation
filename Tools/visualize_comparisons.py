@@ -15,7 +15,7 @@ def analyzeErrorStatistics(fig, data_df, name):
     n, bins, patches = fig.hist(error, bins=100, alpha=0.75, label=name)
     fig.set_xlabel('Error [m]')
     fig.set_ylabel('Number of Points')
-    fig.set_xlim([0.0, 3.0])
+    # fig.set_xlim([0.0, 3.0])
     fig.set_title('Error')
     fig.grid(True)
     fig.legend(loc="upper right")
@@ -34,7 +34,7 @@ def analyzePrecision(fig, data_df, name):
 
     total = np.count_nonzero(~np.isnan(error))
     precision = np.array([])
-    length = np.arange(0.0, 2.0, 0.05)
+    length = np.arange(0.0, 5.0, 0.05)
     for threshold in length:
         rate = (error < threshold).sum() / total
         precision = np.append(precision, rate)

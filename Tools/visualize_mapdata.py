@@ -96,7 +96,7 @@ def analyzePrecision(data_df):
 
     total = np.count_nonzero(~np.isnan(error))
     precision = np.array([])
-    length = np.arange(0.0, 2.0, 0.05)
+    length = np.arange(0.0, 5.0, 0.05)
     for threshold in length:
         rate = (error < threshold).sum() / total
         precision = np.append(precision, rate)

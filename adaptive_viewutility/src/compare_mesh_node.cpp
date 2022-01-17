@@ -41,6 +41,34 @@
 #include "grid_map_ros/GridMapRosConverter.hpp"
 #include "terrain_navigation/profiler.h"
 
+#include <gdal/cpl_string.h>
+#include <gdal/gdal.h>
+#include <gdal/gdal_priv.h>
+#include <gdal/ogr_p.h>
+#include <gdal/ogr_spatialref.h>
+
+enum class ESPG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21781 };
+static constexpr const double kDefaultHomeX = 683565.21;     // LV03/CH1903
+static constexpr const double kDefaultHomeY = 250246.85;     // rad
+static constexpr const double kDefaultHomeAltitude = 488.0;  // meters
+
+static Eigen::Vector3d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
+                                            const Eigen::Vector3d source_coordinates) {
+  OGRSpatialReference source, target;
+  source.importFromEPSG(static_cast<int>(src_coord));
+  target.importFromEPSG(static_cast<int>(tgt_coord));
+
+  OGRPoint p;
+  p.setX(source_coordinates(0));
+  p.setY(source_coordinates(1));
+  p.setZ(source_coordinates(2));
+  p.assignSpatialReference(&source);
+
+  p.transformTo(&target);
+  Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
+  return target_coordinates;
+}
+
 struct MapData {
   Eigen::Vector2d position{Eigen::Vector2d::Zero()};
   double elevation{NAN};
@@ -82,7 +110,7 @@ void CopyMapLayer(const std::string &layer, const grid_map::GridMap &reference_m
 
 void writeMapDataToFile(const std::string path, const std::vector<MapData> &map) {
   std::ofstream output_file;
-  output_file.open(path, std::ios::app);
+  output_file.open(path);
   output_file << "id,x,y,error,utility,ground_sample_distance,incident_prior,triangulation_prior,visibility,min_eigen_"
                  "value,padding,\n";
   int id{0};
@@ -104,6 +132,20 @@ void writeMapDataToFile(const std::string path, const std::vector<MapData> &map)
   output_file.close();
 }
 
+Eigen::Vector3d readOffsetFile(const std::string path) {
+  Eigen::Vector3d offset;
+  std::ifstream file(path);
+  std::string data = "";
+  int i = 0;
+  while(getline(file, data,' '))
+  {
+    offset(i) = std::stod(data);
+    i++;
+  }
+  std::cout << "offset" << offset.transpose() << std::endl;
+  return offset;
+}
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
   ros::NodeHandle nh("");
@@ -113,11 +155,12 @@ int main(int argc, char **argv) {
   ros::Publisher est_map_pub = nh.advertise<grid_map_msgs::GridMap>("estimated_map", 1, true);
   ros::Publisher utility_map_pub = nh.advertise<grid_map_msgs::GridMap>("utility_map", 1, true);
 
-  std::string gt_path, est_path, viewutility_map_path, output_path;
+  std::string gt_path, est_path, viewutility_map_path, output_path, offset_file_path;
   bool visualization_enabled{true};
   nh_private.param<std::string>("groundtruth_mesh_path", gt_path, "resources/cadastre.tif");
   nh_private.param<std::string>("estimated_mesh_path", est_path, "resources/cadastre.tif");
   nh_private.param<std::string>("map_data_path", output_path, "");
+  nh_private.param<std::string>("offset_file_path", offset_file_path, "");
   nh_private.param<bool>("visualize", visualization_enabled, true);
 
   if (gt_path.empty() || est_path.empty()) {
@@ -140,28 +183,16 @@ int main(int argc, char **argv) {
   std::shared_ptr<ViewUtilityMap> estimated_map = std::make_shared<ViewUtilityMap>(est_map);
   estimated_map->initializeFromMesh(est_path, resolution);
 
-  // Known transform acquired by cloudcompare
-  // Qmax05 200steps
-  // Eigen::Translation3d meshlab_translation(218.003296, -428.974365, -377.713348);
-  // Eigen::AngleAxisd meshlab_rotation(1.082817 * M_PI / 180.0, Eigen::Vector3d(0.050463, 0.056066, -0.997151));
-  // Qmax05 400steps
-  // Eigen::Translation3d meshlab_translation(235.992828, -424.721649, -361.758606);
-  // Eigen::AngleAxisd meshlab_rotation(1.074108 * M_PI / 180.0, Eigen::Vector3d(0.057445, 0.054471, -0.996862));
-  // Triangulation Prior fix
-  // Eigen::Translation3d meshlab_translation(182.640350,-459.849915,-242.304398);
-  // Eigen::AngleAxisd meshlab_rotation(1.136428 * M_PI / 180.0, Eigen::Vector3d(0.003528,-0.001497,-0.999993));
-  // Fisher information fix
-  // Eigen::Translation3d meshlab_translation(179.645706,-468.833771,-246.334869);
-  // Eigen::AngleAxisd meshlab_rotation(1.139866 * M_PI / 180.0, Eigen::Vector3d(0.004730, -0.000685, -0.999989));
-  // Cramer Rao 01 min
-  // Eigen::Translation3d meshlab_translation(215.928146, -460.798584, -293.735687);
-  // Eigen::AngleAxisd meshlab_rotation(1.087505 * M_PI / 180.0, Eigen::Vector3d(0.049478, 0.046597, -0.997688));
-  // Cramer Rao 03 min
-  Eigen::Translation3d meshlab_translation(197.936615, -430.777863, -305.794128);
-  Eigen::AngleAxisd meshlab_rotation(1.084262 * M_PI / 180.0, Eigen::Vector3d(0.053773, 0.049833, -0.997309));
-  // Cramer Rao 05 min
-  // Eigen::Translation3d meshlab_translation(177.168762, -464.848724, -356.928772);
-  // Eigen::AngleAxisd meshlab_rotation(1.067162 * M_PI / 180.0, Eigen::Vector3d(0.052932, 0.049798, -0.997356));
+  // Offset data acquired from Pix4D
+  // Eigen::Vector3d position_wgs8432n(465873.000, 5249166.000, 554.000);
+  Eigen::Vector3d position_wgs8432n = readOffsetFile(offset_file_path);
+  Eigen::Vector3d position_lv03 = transformCoordinates(ESPG::WGS84_32N, ESPG::CH1903_LV03, position_wgs8432n);
+  Eigen::Vector3d home(kDefaultHomeX, kDefaultHomeY, kDefaultHomeAltitude);
+  Eigen::Vector3d local_offset = position_lv03 - home;
+  Eigen::Vector3d player_start{Eigen::Vector3d(374.47859375, -723.12984375, -286.77371094)};
+  Eigen::Vector3d adjusted_offset = player_start - local_offset;
+  Eigen::Translation3d meshlab_translation(adjusted_offset(0), adjusted_offset(1), adjusted_offset(2));
+  Eigen::AngleAxisd meshlab_rotation(0.0 * M_PI / 180.0, Eigen::Vector3d(0.0, 0.0, 1.0));
 
   Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
   groundtruth_map->getGridMap() = groundtruth_map->getGridMap().getTransformedMap(
