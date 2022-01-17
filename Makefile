@@ -1,6 +1,7 @@
 benchmark?=output/benchmark.csv
 package?=terrain_planner
 data?=output
+path?=resources/benchmark.yaml
 
 format:
 	Tools/fix_code_style.sh .
@@ -17,10 +18,13 @@ build-test:
 test: build-test
 	Tools/run_tests.sh .
 
-analyze:
+analyze: clean
 	roslaunch adaptive_viewutility run_compare_mesh.launch
 	python3 Tools/visualize_mapdata.py output/map_data.csv
 	rm -f output/*.csv
+
+compare:
+	python3 Tools/visualize_comparisons.py ${path}
 
 clean:
 	rm -f output/*.jpeg

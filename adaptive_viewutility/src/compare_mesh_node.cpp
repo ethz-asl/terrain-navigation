@@ -153,9 +153,15 @@ int main(int argc, char **argv) {
   // Fisher information fix
   // Eigen::Translation3d meshlab_translation(179.645706,-468.833771,-246.334869);
   // Eigen::AngleAxisd meshlab_rotation(1.139866 * M_PI / 180.0, Eigen::Vector3d(0.004730, -0.000685, -0.999989));
-  // Fisher information render fix
-  Eigen::Translation3d meshlab_translation(152.851761, -444.852234, -280.415863);
-  Eigen::AngleAxisd meshlab_rotation(1.174365 * M_PI / 180.0, Eigen::Vector3d(-0.000325, 0.009928, -0.999951));
+  // Cramer Rao 01 min
+  // Eigen::Translation3d meshlab_translation(215.928146, -460.798584, -293.735687);
+  // Eigen::AngleAxisd meshlab_rotation(1.087505 * M_PI / 180.0, Eigen::Vector3d(0.049478, 0.046597, -0.997688));
+  // Cramer Rao 03 min
+  Eigen::Translation3d meshlab_translation(197.936615, -430.777863, -305.794128);
+  Eigen::AngleAxisd meshlab_rotation(1.084262 * M_PI / 180.0, Eigen::Vector3d(0.053773, 0.049833, -0.997309));
+  // Cramer Rao 05 min
+  // Eigen::Translation3d meshlab_translation(177.168762, -464.848724, -356.928772);
+  // Eigen::AngleAxisd meshlab_rotation(1.067162 * M_PI / 180.0, Eigen::Vector3d(0.052932, 0.049798, -0.997356));
 
   Eigen::Isometry3d transform = meshlab_translation * meshlab_rotation;  // Apply affine transformation.
   groundtruth_map->getGridMap() = groundtruth_map->getGridMap().getTransformedMap(
