@@ -1,0 +1,6 @@
+cramer_raobounds_01:
+  name: "01"
+  path: "output/map_data.csv"
+cramer_raobounds_02:
+  name: "02"
+  path: "output/map_data.csv"
