@@ -114,15 +114,23 @@ int main(int argc, char **argv) {
 
     while (true) {
       pipeline_perf.tic();
-      adaptive_viewutility->generateMotionPrimitives();
 
-      adaptive_viewutility->estimateViewUtility();
-
-      Trajectory reference_trajectory = adaptive_viewutility->getBestPrimitive();
       adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+      double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(
+          "elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
+      vehicle_pos(2) = elevation + 100.0;
       Trajectory first_segment;
-      Eigen::Vector4d att(Eigen::Vector4d(1.0, 0.0, 0.0, 0.0));
+      double max_angle = 0.5 * M_PI / 3.0;
+      double theta = getRandom(-max_angle, max_angle);
+      Eigen::Vector3d axis;
+      axis(0) = getRandom(-1.0, 1.0);
+      axis(1) = getRandom(-1.0, 1.0);
+      axis(2) = getRandom(-1.0, 1.0);
+      axis.normalize();
+      Eigen::Vector4d att(std::cos(0.5 * theta), std::sin(0.5 * theta) * axis(0), std::sin(0.5 * theta) * axis(1),
+                          std::sin(0.5 * theta) * axis(2));
       addViewpoint(vehicle_pos, vehicle_vel, att, first_segment);
+      airsim_client->setPose(vehicle_pos, att);
 
       adaptive_viewutility->UpdateUtility(first_segment);
 
