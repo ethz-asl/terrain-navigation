@@ -18,6 +18,7 @@ while [ $(( $((${increment}*${instance})) + ${min_images})) -lt $num_images ]; d
     INSTANCE_DATASET_PATH=${OUTPUT_PATH}/dataset/${instance}
     mkdir -p ${INSTANCE_DATASET_PATH}
     num_subset_images=0
+    cp ${DATASET_PATH}/gridmap_${instance}.bag ${INSTANCE_DATASET_PATH}/
     for FILE in ${DATASET_PATH}/*.jpeg ; do
         echo "Copy file ${FILE} to ${INSTANCE_DATASET_PATH}";
         cp $FILE ${INSTANCE_DATASET_PATH}/
