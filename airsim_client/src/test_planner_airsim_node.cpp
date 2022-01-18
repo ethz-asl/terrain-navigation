@@ -49,9 +49,11 @@ int main(int argc, char **argv) {
 
   std::string file_path, output_file_path;
   int num_experiments;
+  int snapshot_increment;
   double max_experiment_duration;
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
+  nh_private.param<int>("snapshot_increment", snapshot_increment, 25);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
 
@@ -103,7 +105,6 @@ int main(int argc, char **argv) {
     bool terminate_mapping = false;
     double simulated_time{0.0};
     int increment{0};
-    int snapshot_increment{5};
     while (true) {
       pipeline_perf.tic();
       adaptive_viewutility->generateMotionPrimitives();
