@@ -173,6 +173,7 @@ int main(int argc, char **argv) {
       if (increment % snapshot_increment == 0) {
         std::string saved_map_path =
             image_directory + "/gridmap_" + std::to_string(static_cast<int>(increment / snapshot_increment)) + ".bag";
+        std::cout << "Saving: " << saved_map_path << std::endl;
         grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
                                                  saved_map_path, "/grid_map");
       }
@@ -189,6 +190,7 @@ int main(int argc, char **argv) {
     std::string saved_map_path = image_directory + "/gridmap_" + std::to_string(i) + ".bag";
     grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
                                              "/grid_map");
+    std::cout << "Final : " << saved_map_path << std::endl;
     std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
   }
   std::cout << "[TestPlannerNode] Planner terminated" << std::endl;

@@ -18,6 +18,6 @@
     </node>
 
     <group if="$(arg visualization)">
-        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_compare.rviz" />
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_compare.rviz" required="true"/>
     </group>
 </launch>
