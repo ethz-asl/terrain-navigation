@@ -117,16 +117,18 @@ Trajectory ViewPlanner::generateArcTrajectory(Eigen::Vector3d rate, Eigen::Vecto
   return trajectory;
 }
 
-Trajectory &ViewPlanner::getBestPrimitive() {
+Trajectory &ViewPlanner::getBestPrimitive() { return getBestPrimitive(motion_primitives_); }
+
+Trajectory &ViewPlanner::getBestPrimitive(std::vector<Trajectory> &primitive_set) {
   double best_utility = 0.0;
   int best_index = 0;
-  for (int k = 0; k < motion_primitives_.size(); k++) {
-    if (motion_primitives_[k].utility > best_utility) {
-      best_utility = motion_primitives_[k].utility;
+  for (int k = 0; k < primitive_set.size(); k++) {
+    if (primitive_set[k].utility > best_utility) {
+      best_utility = primitive_set[k].utility;
       best_index = k;
     }
   }
-  return motion_primitives_[best_index];
+  return primitive_set[best_index];
 }
 
 Trajectory &ViewPlanner::getRandomPrimitive() {

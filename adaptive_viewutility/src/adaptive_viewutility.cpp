@@ -276,13 +276,6 @@ bool AdaptiveViewUtility::generateMotionPrimitives() {
   return true;
 }
 
-Trajectory AdaptiveViewUtility::getBestPrimitive() {
-  Trajectory trajectory = viewplanner_->getBestPrimitive();
-  // Trajectory trajectory = viewplanner_->getRandomPrimitive();
-
-  return trajectory;
-}
-
 void AdaptiveViewUtility::publishCandidatePaths(std::vector<Trajectory> &motion_primitives) {
   visualization_msgs::MarkerArray msg;
 
@@ -305,6 +298,10 @@ void AdaptiveViewUtility::publishCandidatePaths(std::vector<Trajectory> &motion_
 
 void AdaptiveViewUtility::estimateViewUtility() {
   std::vector<Trajectory> &motion_primitives = viewplanner_->getMotionPrimitives();
+  estimateViewUtility(motion_primitives);
+}
+
+void AdaptiveViewUtility::estimateViewUtility(std::vector<Trajectory> &motion_primitives) {
   for (auto &primitive : motion_primitives) {
     std::vector<ViewPoint> primitive_viewpoint;
     for (int i = 0; i < primitive.states.size(); i++) {

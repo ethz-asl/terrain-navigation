@@ -7,6 +7,7 @@
         <param name="num_experiments" value="1"/>
         <param name="max_experiment_duration" value="200"/>
         <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
+        <param name="enable_greedy" value="false"/>
     </node>
     <group if="$(arg visualization)">
         <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_planner.rviz" />

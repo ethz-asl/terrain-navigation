@@ -51,6 +51,30 @@ void addViewpoint(Eigen::Vector3d pos, Eigen::Vector3d vel, Eigen::Vector4d att,
   return;
 }
 
+Trajectory getRandomViewPoint(std::shared_ptr<AdaptiveViewUtility> &adaptive_viewutility) {
+  Eigen::Vector3d vehicle_pos;
+  Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
+  adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+  adaptive_viewutility->setCurrentState(vehicle_pos, vehicle_vel);
+
+  Trajectory viewpoint;
+  adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+  double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(
+      "elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
+  vehicle_pos(2) = elevation + 100.0;
+  double max_angle = 0.5 * M_PI * 0.5;
+  double theta = getRandom(-max_angle, max_angle);
+  Eigen::Vector3d axis;
+  axis(0) = getRandom(-1.0, 1.0);
+  axis(1) = getRandom(-1.0, 1.0);
+  axis(2) = getRandom(-1.0, 1.0);
+  axis.normalize();
+  Eigen::Vector4d att(std::cos(0.5 * theta), std::sin(0.5 * theta) * axis(0), std::sin(0.5 * theta) * axis(1),
+                      std::sin(0.5 * theta) * axis(2));
+  addViewpoint(vehicle_pos, vehicle_vel, att, viewpoint);
+  return viewpoint;
+}
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
   ros::NodeHandle nh("");
@@ -59,9 +83,11 @@ int main(int argc, char **argv) {
   std::string file_path, output_file_path;
   int num_experiments;
   double max_experiment_duration;
+  bool enable_greedy{false};
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
+  nh_private.param<bool>("enable_greedy", enable_greedy, false);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
 
   std::string image_directory{""};
@@ -97,41 +123,36 @@ int main(int argc, char **argv) {
 
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 
-    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 100.0);
-    double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(
-        "elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
-    vehicle_pos(2) = vehicle_pos(2) + elevation;
-    Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
-    // adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
-    std::cout << "Initial Position: " << vehicle_pos.transpose() << std::endl;
-    std::cout << "Initial Velocity: " << vehicle_vel.transpose() << std::endl;
-    adaptive_viewutility->setCurrentState(vehicle_pos, vehicle_vel);
     Profiler pipeline_perf("Planner Loop");
     std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>(i);
 
     bool terminate_mapping = false;
     double simulated_time{0.0};
     int increment{0};
-    int snapshot_increment{25};
+    const int snapshot_increment{25};
+    const int num_samples{100};
+
     while (true) {
       pipeline_perf.tic();
 
-      adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
-      double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(
-          "elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
-      vehicle_pos(2) = elevation + 100.0;
       Trajectory first_segment;
-      double max_angle = 0.5 * M_PI / 3.0;
-      double theta = getRandom(-max_angle, max_angle);
-      Eigen::Vector3d axis;
-      axis(0) = getRandom(-1.0, 1.0);
-      axis(1) = getRandom(-1.0, 1.0);
-      axis(2) = getRandom(-1.0, 1.0);
-      axis.normalize();
-      Eigen::Vector4d att(std::cos(0.5 * theta), std::sin(0.5 * theta) * axis(0), std::sin(0.5 * theta) * axis(1),
-                          std::sin(0.5 * theta) * axis(2));
-      addViewpoint(vehicle_pos, vehicle_vel, att, first_segment);
-      airsim_client->setPose(vehicle_pos, att);
+      if (enable_greedy) {
+        std::cout << "enable greedy" << std::endl;
+        std::vector<Trajectory> candidate_viewpoints;
+        for (int k = 0; k < num_samples; k++) {
+          Trajectory view = getRandomViewPoint(adaptive_viewutility);
+          candidate_viewpoints.push_back(view);
+        }
+        adaptive_viewutility->estimateViewUtility(candidate_viewpoints);
+        first_segment = adaptive_viewutility->getBestPrimitive(candidate_viewpoints);
+      } else {
+        first_segment = getRandomViewPoint(adaptive_viewutility);
+      }
+
+      Eigen::Vector3d vehicle_pos = first_segment.states[0].position;
+      Eigen::Vector4d vehicle_att = first_segment.states[0].attitude;
+
+      airsim_client->setPose(vehicle_pos, vehicle_att);
 
       adaptive_viewutility->UpdateUtility(first_segment);
 

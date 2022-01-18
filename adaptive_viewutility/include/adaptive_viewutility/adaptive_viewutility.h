@@ -74,7 +74,10 @@ class AdaptiveViewUtility {
     vehicle_velocity_ = vehicle_vel;
   };
   void setMapResolution(const double resolution) { target_map_resolution_ = resolution; };
-  Trajectory getBestPrimitive();
+  Trajectory getBestPrimitive() { return viewplanner_->getBestPrimitive(); };
+  Trajectory getBestPrimitive(std::vector<Trajectory> &primitive_set) {
+    return viewplanner_->getBestPrimitive(primitive_set);
+  };
   bool generateMotionPrimitives();
   std::vector<ViewPoint> &getViewPoints() { return viewpoint_; };
   std::shared_ptr<ViewUtilityMap> &getViewUtilityMap() { return viewutility_map_; };
@@ -82,6 +85,7 @@ class AdaptiveViewUtility {
   void Visualize();
   void publishCandidatePaths(std::vector<Trajectory> &motion_primitives);
   void estimateViewUtility();
+  void estimateViewUtility(std::vector<Trajectory> &motion_primitives);
   void OutputMapData(const std::string &path);
   void publishViewpointHistory();
 

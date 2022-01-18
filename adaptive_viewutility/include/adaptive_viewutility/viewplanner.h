@@ -60,6 +60,7 @@ class ViewPlanner {
                                                     const Eigen::Vector3d current_vel);
   std::vector<Trajectory>& getMotionPrimitives() { return motion_primitives_; }
   Trajectory& getBestPrimitive();
+  Trajectory& getBestPrimitive(std::vector<Trajectory>& primitive_set);
   Trajectory& getRandomPrimitive();
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, Eigen::Vector3d current_pos, Eigen::Vector3d current_vel);
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
