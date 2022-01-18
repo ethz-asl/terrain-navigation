@@ -26,7 +26,13 @@ analyze: clean
 compare:
 	python3 Tools/visualize_comparisons.py ${path}
 
-clean:
+curate-dataset:
+	Tools/curate_dataset.sh output output
+
+clean-dataset:
+	rm -rf output/dataset
+
+clean: clean-dataset
 	rm -f output/*.jpeg
 	rm -f output/*.bag
 	rm -f output/*.png

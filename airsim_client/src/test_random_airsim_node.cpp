@@ -111,7 +111,8 @@ int main(int argc, char **argv) {
 
     bool terminate_mapping = false;
     double simulated_time{0.0};
-
+    int increment{0};
+    int snapshot_increment{25};
     while (true) {
       pipeline_perf.tic();
 
@@ -147,7 +148,13 @@ int main(int argc, char **argv) {
       double map_quality =
           performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
 
-      if (std::abs(map_quality - 0.1) < 0.0001) terminate_mapping = true;  // Terminate if map quality has been met
+      if (increment % snapshot_increment == 0) {
+        std::string saved_map_path =
+            image_directory + "/gridmap_" + std::to_string(static_cast<int>(increment / snapshot_increment)) + ".bag";
+        grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
+                                                 saved_map_path, "/grid_map");
+      }
+      increment++;
 
       // Terminate if simulation time has exceeded
       if (simulated_time > max_experiment_duration) terminate_mapping = true;

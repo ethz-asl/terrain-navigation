@@ -107,6 +107,11 @@ add_executable(test_gridmap_loader
 add_dependencies(test_gridmap_loader adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_gridmap_loader ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
 
+add_executable(evaluate_progress_node
+  src/evaluate_progress_node.cpp
+)
+add_dependencies(evaluate_progress_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(evaluate_progress_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
 
 ##########
 # EXPORT #
