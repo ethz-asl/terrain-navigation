@@ -264,7 +264,7 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
           if (!std::isfinite(max_cramer_rao_bound) || (max_cramer_rao_bound > limit_cramerrao_bounds))
             max_cramer_rao_bound = limit_cramerrao_bounds;
 
-          double min_cramer_rao_bound = 0.5;
+          double min_cramer_rao_bound = 0.1;
           double utility = (max_cramer_rao_bound < min_cramer_rao_bound) ? 0.0 : cell_bounds - max_cramer_rao_bound;
           view_utility += utility;
           // Register view into the view utility map

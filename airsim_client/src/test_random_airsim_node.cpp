@@ -84,8 +84,10 @@ int main(int argc, char **argv) {
   int num_experiments;
   double max_experiment_duration;
   bool enable_greedy{false};
+  int snapshot_increment{20};
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
+  nh_private.param<int>("snapshot_interval", snapshot_increment, 25);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<bool>("enable_greedy", enable_greedy, false);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
@@ -129,7 +131,6 @@ int main(int argc, char **argv) {
     bool terminate_mapping = false;
     double simulated_time{0.0};
     int increment{0};
-    const int snapshot_increment{25};
     const int num_samples{100};
 
     while (true) {
@@ -163,7 +164,7 @@ int main(int argc, char **argv) {
       adaptive_viewutility->ViewpointPublishOnce();
       adaptive_viewutility->publishViewpointHistory();
 
-      double planning_horizon = 2.0;
+      double planning_horizon = 1.0;
       simulated_time += planning_horizon;
 
       double map_quality =

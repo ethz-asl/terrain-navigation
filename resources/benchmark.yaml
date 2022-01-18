@@ -1,12 +1,31 @@
-random:
-  name: "Random"
-  path: "/home/jaeyoung/dev/data/random/map_data.csv"
-cramer_raobounds_01:
-  name: "CramerRao Bound 0.1"
-  path: "/home/jaeyoung/dev/data/cramer_rao_01min/map_data.csv"
-cramer_raobounds_03:
-  name: "CramerRao Bound 0.3"
-  path: "/home/jaeyoung/dev/data/cramer_rao_03min/map_data.csv"
-cramer_raobounds_05:
-  name: "CramerRao Bound 0.5"
-  path: "/home/jaeyoung/dev/data/cramer_rao_05min/map_data.csv"
+# random:
+#   name: "Random"
+#   path: "/home/jaeyoung/dev/data/random/map_data.csv"
+# cramer_raobounds_01:
+#   name: "CramerRao Bound 0.1"
+#   path: "/home/jaeyoung/dev/data/cramer_rao_01min/map_data.csv"
+# cramer_raobounds_03:
+#   name: "CramerRao Bound 0.3"
+#   path: "/home/jaeyoung/dev/data/cramer_rao_03min/map_data.csv"
+# cramer_raobounds_05:
+#   name: "CramerRao Bound 0.5"
+#   path: "/home/jaeyoung/dev/data/cramer_rao_05min/map_data.csv"
+
+# sequential_random_0:
+#   name: "Random 25"
+#   path: "/home/jaeyoung/dev/data/sequential_random/dataset/0/map_data.csv"
+# sequential_random_1:
+#   name: "Random 50"
+#   path: "/home/jaeyoung/dev/data/sequential_random/dataset/1/map_data.csv"
+# sequential_random_2:
+#   name: "Random 75"
+#   path: "/home/jaeyoung/dev/data/sequential_random/dataset/2/map_data.csv"
+sequential_greedy_0:
+  name: "Greedy 25"
+  path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/0/map_data.csv"
+sequential_greedy_1:
+  name: "Greedy 50"
+  path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/1/map_data.csv"
+sequential_greedy_2:
+  name: "Greedy 75"
+  path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/2/map_data.csv"
