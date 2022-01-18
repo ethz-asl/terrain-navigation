@@ -53,6 +53,7 @@ geometry_msgs::Point toPoint(const Eigen::Vector3d &p) {
 }
 
 visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
+  double scale{7.5}; // Size of the viewpoint markers
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
@@ -61,14 +62,13 @@ visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
   marker.type = visualization_msgs::Marker::LINE_LIST;
   marker.action = visualization_msgs::Marker::ADD;
   const Eigen::Vector3d position = viewpoint.getCenterLocal();
-  const Eigen::Matrix3d rotation = ViewPoint::quat2RotMatrix(viewpoint.getOrientation());
   std::vector<geometry_msgs::Point> points;
   Eigen::Vector3d view_center = position;
+  std::vector<Eigen::Vector3d> corner_ray_vectors = viewpoint.getCornerRayVectors();
   std::vector<Eigen::Vector3d> vertex;
-  vertex.push_back(position + rotation * Eigen::Vector3d(5.0, 5.0, -5.0));
-  vertex.push_back(position + rotation * Eigen::Vector3d(5.0, -5.0, -5.0));
-  vertex.push_back(position + rotation * Eigen::Vector3d(-5.0, -5.0, -5.0));
-  vertex.push_back(position + rotation * Eigen::Vector3d(-5.0, 5.0, -5.0));
+  for (auto &corner_ray : corner_ray_vectors) {
+    vertex.push_back(position + scale * corner_ray);
+  }
 
   for (size_t i = 0; i < vertex.size(); i++) {
     points.push_back(toPoint(position));  // Viewpoint center
