@@ -64,6 +64,31 @@ def analyzeCompleteness(fig, data_df, name):
     fig.grid(True)
     fig.legend(loc="lower right")
 
+def analyzeF1score(fig, data_df, name):
+    error = np.array(data_df["error"])
+
+    total_completness = np.prod(error.shape)
+    total_precision = np.count_nonzero(~np.isnan(error))
+
+    # total = np.count_nonzero(~np.isnan(error))
+    completeness = np.array([])
+    precision = np.array([])
+
+    length = np.arange(0.0, 5.0, 0.05)
+    for threshold in length:
+        completeness_rate = (error < threshold).sum() / total_completness
+        completeness = np.append(completeness, completeness_rate)
+        precision_rate = (error < threshold).sum() / total_precision
+        precision = np.append(precision, precision_rate)
+
+    f1_score = 2 * np.divide(np.multiply(precision, completeness), np.add(precision, completeness))
+    fig.plot(length, f1_score, '-', label=name)
+    fig.set_xlabel('Error [m]')
+    fig.set_ylabel('F1 Score')
+    fig.set_title('F1 Score')
+    fig.grid(True)
+    fig.legend(loc="lower right")
+
 
 fig1 = plt.figure("Error Statistics")
 #Error Histogram
@@ -73,8 +98,10 @@ fig2 = plt.figure("Utility Statistics")
 ax21 = fig2.add_subplot(1, 1, 1)
 
 fig3 = plt.figure("Precision Curve")
-ax31 = fig3.add_subplot(1, 2, 1)
-ax32 = fig3.add_subplot(1, 2, 2)
+ax31 = fig3.add_subplot(1, 3, 1)
+ax32 = fig3.add_subplot(1, 3, 2)
+ax33 = fig3.add_subplot(1, 3, 3)
+
 
 
 with open(sys.argv[1]) as file:
@@ -91,6 +118,7 @@ with open(sys.argv[1]) as file:
         analyzeUtilityStatistics(ax21, map_data_df, value['name'])
         analyzePrecision(ax31, map_data_df, value['name'])
         analyzeCompleteness(ax32, map_data_df, value['name'])
+        analyzeF1score(ax33, map_data_df, value['name'])
 
 plt.legend()
 plt.show()
