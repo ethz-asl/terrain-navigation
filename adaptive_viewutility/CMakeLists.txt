@@ -83,6 +83,12 @@ add_executable(test_planner_node
 add_dependencies(test_planner_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_planner_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
 
+add_executable(test_random_node
+  src/test_random_node.cpp
+)
+add_dependencies(test_random_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(test_random_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
+
 add_executable(test_normals_node
   src/test_normals_node.cpp
 )
