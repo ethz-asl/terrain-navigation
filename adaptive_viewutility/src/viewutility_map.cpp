@@ -241,6 +241,54 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
           }
           break;
         }
+        case ViewUtilityType::SPHERICAL_COVERAGE: {
+          /// Generate discrete samples
+          /// Roberts 2017 generate samples through http://blog.marmakoide.org/?p=1
+          const int K = 256;
+          std::vector<Eigen::Vector3d> hemisphere_samples(K);
+          double golden_angle = M_PI * (3.0 - std::sqrt(5.0));
+          for (int i = 0; i < hemisphere_samples.size(); i++) {
+            double theta = golden_angle * i;
+            double z = std::abs((1.0 - 1.0 / double(K)) * (1.0 - 2.0 * i / (double(K) - 1.0)));
+            double radius = sqrt(1.0 - std::pow(z, 2));
+            hemisphere_samples[i](0) = radius * std::cos(theta);
+            hemisphere_samples[i](1) = radius * std::sin(theta);
+            hemisphere_samples[i](2) = z;
+          }
+
+          double F_c{0.0};
+          for (auto &sample : hemisphere_samples) {
+            double w_h = sample.dot(cell_normal);
+            double vj = 0.0;  // Coverage indicator function
+            for (auto view : cell_information[idx].view_info) {
+              if (hemisphereInside(view.view_vector, sample, view.view_distance)) {
+                vj = 1.0;
+                break;  // If the sample is in the covered region, no need to iterate
+              }
+            }
+            vj = hemisphereInside(view_vector_u, sample, view_distance) ? 1.0 : vj;
+            vj = (w_h < 0.0) ? 0.0 : vj;
+            F_c += (2 * M_PI / static_cast<double>(K)) * w_h * vj;
+          }
+          if (F_c > layer_geometricprior(index(0), index(1))) {
+            // This condition should be redundant, but numerically unstable
+            /// TODO: Investigate why this is numerically unstable
+            view_utility += F_c - layer_geometricprior(index(0), index(1));
+          }
+
+          ViewInfo viewinfo;
+          viewinfo.view_vector = view_vector_u;
+          viewinfo.view_distance = view_distance;
+          viewinfo.view_index = view_index;
+          cell_information[idx].view_info.push_back(viewinfo);
+
+          if (update_utility_map) {
+            layer_geometricprior(index(0), index(1)) = F_c;
+            layer_utility(index(0), index(1)) = F_c;
+          }
+
+          break;
+        }
         case ViewUtilityType::FISHER_INFORMATION: {
           double sigma_k{30.0 / 180.0 * M_PI};
           double incident_prior = getIncidentPrior(view_vector_u, cell_normal, sigma_k);

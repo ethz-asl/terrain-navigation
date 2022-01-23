@@ -60,7 +60,7 @@ struct ViewInfo {
   Eigen::Vector3d view_vector{Eigen::Vector3d::Zero()};
   double view_distance{-1.0};
 };
-constexpr double limit_cramerrao_bounds{1.0};
+constexpr double limit_cramerrao_bounds{0.0};
 struct CellInfo {
   std::vector<ViewInfo> view_info;
   Eigen::Matrix3d fisher_information{Eigen::Matrix3d::Zero()};
@@ -82,7 +82,8 @@ struct GeometricPriorSettings {
   double min_triangulation_angle{0.083 * M_PI};
 };
 
-enum class ViewUtilityType { GEOMETRIC_PRIOR, FISHER_INFORMATION };
+// TODO: Implement different geometric priors as child class
+enum class ViewUtilityType { GEOMETRIC_PRIOR, SPHERICAL_COVERAGE, FISHER_INFORMATION };
 
 class ViewUtilityMap {
  public:
@@ -162,6 +163,24 @@ class ViewUtilityMap {
   bool initializeFromMesh(const std::string &path, const double res = 10.0);
 
   /**
+   * @brief Helper function to evaluate coverage with hemisphere radials
+   *
+   * @param view unit vector of view point
+   * @param sample unit vector of hemisphere sample
+   * @param distance distance to view point
+   * @return true inside hemisphere cover
+   * @return false not inside hemisphere cover
+   */
+  bool hemisphereInside(const Eigen::Vector3d &view, const Eigen::Vector3d &sample, const double distance) {
+    double theta_max{0.5 * 0.25 * M_PI};
+    double t0 = 4.0;
+    double t_half = 12.0;
+    double angle = std::acos(sample.dot(view));  // Angle between view sample and sample
+    double radius = theta_max * std::pow(2.0, -std::max(distance - t0, 0.0) / t_half);
+    return bool(angle < radius);  // Sample is inside the radius of a view
+  }
+
+  /**
    * @brief Initialize Empty ViewUtility Map
    *
    * @return true successfully loaded meshfile
@@ -182,6 +201,6 @@ class ViewUtilityMap {
   std::vector<CellInfo> cell_information_;
   GeometricPriorSettings settings_;
   double max_prior_{0.5};
-  ViewUtilityType utility_type_{ViewUtilityType::FISHER_INFORMATION};
+  ViewUtilityType utility_type_{ViewUtilityType::SPHERICAL_COVERAGE};
 };
 #endif
