@@ -13,15 +13,32 @@ sequential_greedy:
 sequential_greedy_lowres:
   name: "Greedy 320 X 240"
   data_0:
-    num_views: 25
+    num_views: 15
     path: "/home/jaeyoung/dev/data/greedy_320240/dataset/0/map_data.csv"
   data_1:
-    num_views: 50
+    num_views: 30
     path: "/home/jaeyoung/dev/data/greedy_320240/dataset/1/map_data.csv"
   data_2:
-    num_views: 75
+    num_views: 45
     path: "/home/jaeyoung/dev/data/greedy_320240/dataset/2/map_data.csv"
+  data_3:
+    num_views: 60
+    path: "/home/jaeyoung/dev/data/greedy_320240/dataset/3/map_data.csv"
 
+sequential_greedy_lowres2:
+  name: "Greedy 320 X 240 Cramer Rao Bounds"
+  # data_0:
+  #   num_views: 15
+  #   path: "/home/jaeyoung/dev/data/greedy_320240_bounds/dataset/0/map_data.csv"
+  data_1:
+    num_views: 30
+    path: "/home/jaeyoung/dev/data/greedy_320240_bounds/dataset/1/map_data.csv"
+  data_2:
+    num_views: 45
+    path: "/home/jaeyoung/dev/data/greedy_320240_bounds/dataset/2/map_data.csv"
+  data_3:
+    num_views: 60
+    path: "/home/jaeyoung/dev/data/greedy_320240_bounds/dataset/3/map_data.csv"
 
 sequential_random:
   name: "Random 1080 X 720"
@@ -38,11 +55,14 @@ sequential_random:
 sequential_random_lowres:
   name: "Random 320 X 240"
   data_0:
-    num_views: 25
+    num_views: 15
     path: "/home/jaeyoung/dev/data/random_320240/dataset/0/map_data.csv"
   data_1:
-    num_views: 50
+    num_views: 30
     path: "/home/jaeyoung/dev/data/random_320240/dataset/1/map_data.csv"
   data_2:
-    num_views: 75
+    num_views: 45
     path: "/home/jaeyoung/dev/data/random_320240/dataset/2/map_data.csv"
+  data_3:
+    num_views: 60
+    path: "/home/jaeyoung/dev/data/random_320240/dataset/3/map_data.csv"
