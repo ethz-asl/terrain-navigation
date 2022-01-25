@@ -195,8 +195,8 @@ int main(int argc, char **argv) {
     if (increment % snapshot_increment == 0) {
       std::string saved_map_path =
           image_directory + "/gridmap_" + std::to_string(static_cast<int>(increment / snapshot_increment)) + ".bag";
-      grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
-                                                saved_map_path, "/grid_map");
+      grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
+                                               "/grid_map");
     }
     increment++;
     // Terminate if simulation time has exceeded
