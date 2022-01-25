@@ -153,11 +153,11 @@ int main(int argc, char **argv) {
   double turning_time = 10.0;
   double simulated_time{0.0};
   int increment{1};
-
+  double elevation = map.atPosition("elevation", vehicle_pos_2d);
+  bool terrain_altitude = false;
   while (true) {
     Trajectory reference_trajectory;
-
-    double elevation = map.atPosition("elevation", vehicle_pos_2d);
+    if (terrain_altitude) elevation = map.atPosition("elevation", vehicle_pos_2d);
     Eigen::Vector3d vehicle_pos(vehicle_pos_2d(0), vehicle_pos_2d(1), elevation + altitude);
     Eigen::Vector3d vehicle_vel(vehicle_vel_2d(0), vehicle_vel_2d(1), 0.0);
     Eigen::Vector4d vehicle_att(1.0, 0.0, 0.0, 0.0);
