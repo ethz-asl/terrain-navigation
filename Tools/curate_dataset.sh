@@ -14,7 +14,7 @@ increment=25
 
 echo "Total number of images: " $num_images
 
-while [ $(( $((${increment}*${instance})) + ${min_images})) -lt $num_images ]; do
+while [ $(( $((${increment}*${instance})) + ${min_images})) -le $num_images ]; do
     INSTANCE_DATASET_PATH=${OUTPUT_PATH}/dataset/${instance}
     mkdir -p ${INSTANCE_DATASET_PATH}
     num_subset_images=0
