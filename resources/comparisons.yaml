@@ -1,0 +1,48 @@
+sequential_greedy:
+  name: "Greedy 1080 X 720"
+  data_0:
+    num_views: 25
+    path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/0/map_data.csv"
+  data_1:
+    num_views: 50
+    path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/1/map_data.csv"
+  data_2:
+    num_views: 75
+    path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/2/map_data.csv"
+
+sequential_greedy_lowres:
+  name: "Greedy 320 X 240"
+  data_0:
+    num_views: 25
+    path: "/home/jaeyoung/dev/data/greedy_320240/dataset/0/map_data.csv"
+  data_1:
+    num_views: 50
+    path: "/home/jaeyoung/dev/data/greedy_320240/dataset/1/map_data.csv"
+  data_2:
+    num_views: 75
+    path: "/home/jaeyoung/dev/data/greedy_320240/dataset/2/map_data.csv"
+
+
+sequential_random:
+  name: "Random 1080 X 720"
+  data_0:
+    num_views: 25
+    path: "/home/jaeyoung/dev/data/sequential_random/dataset/0/map_data.csv"
+  data_1:
+    num_views: 50
+    path: "/home/jaeyoung/dev/data/sequential_random/dataset/1/map_data.csv"
+  data_2:
+    num_views: 75
+    path: "/home/jaeyoung/dev/data/sequential_random/dataset/2/map_data.csv"
+
+sequential_random_lowres:
+  name: "Random 320 X 240"
+  data_0:
+    num_views: 25
+    path: "/home/jaeyoung/dev/data/random_320240/dataset/0/map_data.csv"
+  data_1:
+    num_views: 50
+    path: "/home/jaeyoung/dev/data/random_320240/dataset/1/map_data.csv"
+  data_2:
+    num_views: 75
+    path: "/home/jaeyoung/dev/data/random_320240/dataset/2/map_data.csv"

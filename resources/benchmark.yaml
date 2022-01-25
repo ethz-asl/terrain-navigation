@@ -11,24 +11,34 @@
 #   name: "CramerRao Bound 0.5"
 #   path: "/home/jaeyoung/dev/data/cramer_rao_05min/map_data.csv"
 
-sequential_random_2:
-  name: "Random 75 Views"
-  path: "/home/jaeyoung/dev/data/sequential_random/dataset/2/map_data.csv"
-  progress: "/home/jaeyoung/dev/data/sequential_random/benchmark.csv"
-# sequential_random_1:
-#   name: "Random 50 Views"
-#   path: "/home/jaeyoung/dev/data/sequential_random/dataset/1/map_data.csv"
 # sequential_random_0:
 #   name: "Random 25 Views"
 #   path: "/home/jaeyoung/dev/data/sequential_random/dataset/0/map_data.csv"
+#   num_views: 25
+# sequential_random_1:
+#   name: "Random 50 Views"
+#   path: "/home/jaeyoung/dev/data/sequential_random/dataset/1/map_data.csv"
+#   num_views: 50
+# sequential_random_2:
+#   name: "Random 75 Views"
+#   path: "/home/jaeyoung/dev/data/sequential_random/dataset/2/map_data.csv"
+#   progress: "/home/jaeyoung/dev/data/sequential_random/benchmark.csv"
+#   num_views: 75
 
+
+sequential_greedy_0:
+  name: "Greedy 25 Views"
+  path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/0/map_data.csv"
+  planner: "greedy"
+  num_views: 25
+sequential_greedy_1:
+  name: "Greedy 50 Views"
+  path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/1/map_data.csv"
+  planner: "greedy"
+  num_views: 50
 sequential_greedy_2:
   name: "Greedy 75 Views"
   path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/2/map_data.csv"
   progress: "/home/jaeyoung/dev/data/sequential_greedy_01min/benchmark.csv"
-# sequential_greedy_1:
-#   name: "Greedy 50 Views"
-#   path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/1/map_data.csv"
-# sequential_greedy_0:
-#   name: "Greedy 25 Views"
-#   path: "/home/jaeyoung/dev/data/sequential_greedy_01min/dataset/0/map_data.csv"
+  planner: "greedy"
+  num_views: 75
