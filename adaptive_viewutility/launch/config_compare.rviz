@@ -83,7 +83,7 @@ Visualization Manager:
       Color: 0; 0; 255
       Color Layer: elevation_difference
       Color Transformer: IntensityLayer
-      Enabled: false
+      Enabled: true
       Height Layer: elevation
       Height Transformer: GridMapLayer
       History Length: 1
@@ -97,7 +97,7 @@ Visualization Manager:
       Topic: /estimated_map
       Unreliable: false
       Use Rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/Axes
       Enabled: true
       Length: 100
@@ -169,10 +169,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7947971224784851
+      Pitch: 0.5947973132133484
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.629831314086914
+      Yaw: 5.564842224121094
     Saved: ~
 Window Geometry:
   Displays:

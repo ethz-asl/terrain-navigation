@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
   nh_private.param<std::string>("image_directory", image_directory, image_directory);
-  nh_private.param<int>("snapshot_increment", snapshot_increment, 25);
+  nh_private.param<int>("snapshot_increment", snapshot_increment, 10);
 
   airsim_client->setImageDirectory(image_directory);
 
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
   double planning_horizon = 2.0;
   double turning_time = 10.0;
   double simulated_time{0.0};
-  int increment{0};
+  int increment{1};
 
   while (true) {
     Trajectory reference_trajectory;

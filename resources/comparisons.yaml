@@ -66,3 +66,27 @@ sequential_random_lowres:
   data_3:
     num_views: 60
     path: "/home/jaeyoung/dev/data/random_320240/dataset/3/map_data.csv"
+
+survey_highres:
+  name: "Survey 1080 X 720"
+  data_0:
+    num_views: 10
+    path: "/home/jaeyoung/dev/data/gridmap_1080720/dataset/0/map_data.csv"
+  data_1:
+    num_views: 20
+    path: "/home/jaeyoung/dev/data/gridmap_1080720/dataset/1/map_data.csv"
+  data_2:
+    num_views: 30
+    path: "/home/jaeyoung/dev/data/gridmap_1080720/dataset/2/map_data.csv"
+
+survey_lowres:
+  name: "Survey 320 X 240"
+  data_0:
+    num_views: 10
+    path: "/home/jaeyoung/dev/data/gridmap_320240/dataset/0/map_data.csv"
+  data_1:
+    num_views: 20
+    path: "/home/jaeyoung/dev/data/gridmap_320240/dataset/1/map_data.csv"
+  data_2:
+    num_views: 30
+    path: "/home/jaeyoung/dev/data/gridmap_320240/dataset/2/map_data.csv"
