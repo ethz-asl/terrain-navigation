@@ -29,6 +29,9 @@ compare:
 curate-dataset:
 	Tools/curate_dataset.sh output output
 
+process-dataset:
+	Tools/process_dataset.sh ${path}
+
 clean-dataset:
 	rm -rf output/dataset
 
