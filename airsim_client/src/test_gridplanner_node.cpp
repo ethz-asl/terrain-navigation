@@ -81,20 +81,15 @@ int main(int argc, char **argv) {
   std::string file_path, output_file_path;
   std::string image_directory{""};
   double max_experiment_duration;
-  double origin_x, origin_y;
-  double origin_z{150.0};
-  nh_private.param<std::string>("geotiff_path", file_path, "resources/cadastre.tif");
+  int snapshot_increment;
+  nh_private.param<std::string>("file_path", file_path, "resources/cadastre.tif");
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
   nh_private.param<std::string>("image_directory", image_directory, image_directory);
-  nh_private.param<double>("origin_x", origin_x, origin_x);
-  nh_private.param<double>("origin_y", origin_y, origin_y);
-  nh_private.param<double>("origin_z", origin_z, origin_z);
+  nh_private.param<int>("snapshot_increment", snapshot_increment, 25);
 
   airsim_client->setImageDirectory(image_directory);
 
-  /// set Current state of vehicle
-  const Eigen::Vector3d origin(origin_x, origin_y, origin_z);
 
   // Add elevation map from GeoTIFF file defined in path
   adaptive_viewutility->LoadMap(file_path);
@@ -116,10 +111,11 @@ int main(int argc, char **argv) {
   const double map_width_y = map.getLength().y();
 
   polygon.setFrameId(map.getFrameId());
-  polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-  polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-  polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
-  polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
+  double roi_portion = 0.45;
+  polygon.addVertex(grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
+  polygon.addVertex(grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
+  polygon.addVertex(grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
+  polygon.addVertex(grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
 
   adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 
@@ -134,13 +130,14 @@ int main(int argc, char **argv) {
   Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
 
   // Run sweep segments until the boundary
-  double view_distance = 51.6;
-  double altitude = 150.0;
+  double view_distance = 90.0;
+  double altitude = 100.0;
   Eigen::Vector2d sweep_direction = (polygon.getVertex(1) - polygon.getVertex(0)).normalized();
   Eigen::Vector2d sweep_perpendicular = (polygon.getVertex(3) - polygon.getVertex(0)).normalized();
 
-  double dt = 2.0;
+  double dt = 4.0;
   Eigen::Vector2d vehicle_pos_2d = start_pos_2d;
+  Eigen::Vector2d vehicle_vel_2d = 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
   int max_viewpoints = 1000;  // Terminate when the number of view points exceed the maximum
 
   // Generate a lawnmower pattern survey
@@ -153,25 +150,10 @@ int main(int argc, char **argv) {
   double planning_horizon = 2.0;
   double turning_time = 10.0;
   double simulated_time{0.0};
+  int increment{0};
 
   while (true) {
     Trajectory reference_trajectory;
-    Eigen::Vector2d vehicle_vel_2d = 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
-
-    // Generate sweep pattern
-    Eigen::Vector2d candidate_vehicle_pos_2d = vehicle_vel_2d * dt + vehicle_pos_2d;
-    if (polygon.isInside(candidate_vehicle_pos_2d)) {
-      vehicle_pos_2d = candidate_vehicle_pos_2d;
-      simulated_time += planning_horizon;
-    } else {  // Reached the other end of the vertex
-      sweep_direction = -1.0 * sweep_direction;
-      vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;  // next row
-      simulated_time += turning_time;
-
-      if (!polygon.isInside(vehicle_pos_2d)) {
-        break;
-      }
-    }
 
     double elevation = map.atPosition("elevation", vehicle_pos_2d);
     Eigen::Vector3d vehicle_pos(vehicle_pos_2d(0), vehicle_pos_2d(1), elevation + altitude);
@@ -192,6 +174,29 @@ int main(int argc, char **argv) {
 
     performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
 
+    vehicle_vel_2d = 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
+
+    // Generate sweep pattern
+    Eigen::Vector2d candidate_vehicle_pos_2d = vehicle_vel_2d * dt + vehicle_pos_2d;
+    if (polygon.isInside(candidate_vehicle_pos_2d)) {
+      vehicle_pos_2d = candidate_vehicle_pos_2d;
+      simulated_time += planning_horizon;
+    } else {  // Reached the other end of the vertex
+      sweep_direction = -1.0 * sweep_direction;
+      vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;  // next row
+      simulated_time += turning_time;
+
+      if (!polygon.isInside(vehicle_pos_2d)) {
+        break;
+      }
+    }
+    if (increment % snapshot_increment == 0) {
+      std::string saved_map_path =
+          image_directory + "/gridmap_" + std::to_string(static_cast<int>(increment / snapshot_increment)) + ".bag";
+      grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
+                                                saved_map_path, "/grid_map");
+    }
+    increment++;
     // Terminate if simulation time has exceeded
     if (simulated_time > max_experiment_duration) terminate_mapping = true;
     if (terminate_mapping) {
