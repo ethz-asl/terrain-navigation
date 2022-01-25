@@ -90,9 +90,11 @@ int main(int argc, char **argv) {
 
   airsim_client->setImageDirectory(image_directory);
 
+  Eigen::Vector3d airsim_player_start = airsim_client->getPlayerStart();
 
   // Add elevation map from GeoTIFF file defined in path
   adaptive_viewutility->LoadMap(file_path);
+  adaptive_viewutility->getViewUtilityMap()->TransformMap(airsim_player_start);
 
   ros::Time start_time_ = ros::Time::now();
   double start_time_seconds_ = 0.0;
