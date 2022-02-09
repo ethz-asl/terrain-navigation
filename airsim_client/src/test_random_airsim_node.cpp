@@ -165,6 +165,7 @@ int main(int argc, char **argv) {
       adaptive_viewutility->publishViewpointHistory();
 
       double planning_horizon = 1.0;
+      ///TODO: Use dubins distance for calculating time to reach viewpoint
       simulated_time += planning_horizon;
 
       double map_quality =

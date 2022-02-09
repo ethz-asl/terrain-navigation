@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
   double simulated_time{0.0};
   int increment{1};
   double elevation = map.atPosition("elevation", vehicle_pos_2d);
-  bool terrain_altitude = false;
+  bool terrain_altitude = true;
   while (true) {
     Trajectory reference_trajectory;
     if (terrain_altitude) elevation = map.atPosition("elevation", vehicle_pos_2d);
@@ -186,6 +186,7 @@ int main(int argc, char **argv) {
     } else {  // Reached the other end of the vertex
       sweep_direction = -1.0 * sweep_direction;
       vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;  // next row
+      ///TODO: Use dubins distance for calculating turining time
       simulated_time += turning_time;
 
       if (!polygon.isInside(vehicle_pos_2d)) {

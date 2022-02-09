@@ -299,7 +299,7 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
           double reference_view_distance = 100;
           Eigen::Vector3d bearing_vector = -view_vector;
           double gsd_prior = getGroundSamplePrior(bearing_vector, optical_center, reference_view_distance);
-          double pixel_res = 0.5 * M_PI / 1080.0;
+          double pixel_res = 0.5 * M_PI / 1280.0;
           double sigma = std::sin(pixel_res);
           Eigen::Matrix3d fim = getFisherInformationMatrix(bearing_vector, view_distance, sigma);
           Eigen::Matrix3d accumulated_fim = cell_fim + (incident_prior * gsd_prior * fim);
