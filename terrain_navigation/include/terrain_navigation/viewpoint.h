@@ -56,12 +56,13 @@ class ViewPoint {
     index_ = idx;
     center_local_ = local_position;
     orientation_ = orientation;
+    ///TODO: Read camera parameters from a file
     corner_ray_vectors_.push_back(RayVector(0, 0));
-    corner_ray_vectors_.push_back(RayVector(0, 1080));
-    corner_ray_vectors_.push_back(RayVector(720, 1080));
-    corner_ray_vectors_.push_back(RayVector(720, 0));
+    corner_ray_vectors_.push_back(RayVector(0, 1280));
+    corner_ray_vectors_.push_back(RayVector(960, 1280));
+    corner_ray_vectors_.push_back(RayVector(960, 0));
 
-    center_ray_vector_ = RayVector(360.0, 540);
+    center_ray_vector_ = RayVector(640.0, 480);
 
     orientation_ = orientation;
     Eigen::Matrix3d R_att = quat2RotMatrix(orientation);
@@ -76,9 +77,9 @@ class ViewPoint {
     index_ = idx;
     center_global << longitude, latitude, altitude;
     corner_ray_vectors_.push_back(RayVector(0, 0));
-    corner_ray_vectors_.push_back(RayVector(0, 1080));
-    corner_ray_vectors_.push_back(RayVector(720, 1080));
-    corner_ray_vectors_.push_back(RayVector(720, 0));
+    corner_ray_vectors_.push_back(RayVector(0, 1280));
+    corner_ray_vectors_.push_back(RayVector(960, 1280));
+    corner_ray_vectors_.push_back(RayVector(960, 0));
   }
   virtual ~ViewPoint(){};
   void setOrigin(const double &latitude, const double &longitude, const double &altitude) {
@@ -87,9 +88,10 @@ class ViewPoint {
   Eigen::Vector3d RayVector(int pixel_x, int pixel_y) {
     /// TODO: Hardcoded camera parameters
     /// TODO: Get camera intrinsics
-    int c1 = 360.0;
-    int c2 = 540.0;
-    double f = 540.0;
+    ///TODO: Read camera parameters from a file
+    int c1 = 480.0;
+    int c2 = 640.0;
+    double f = 640.0;
 
     Eigen::Vector3d ray;
     ray << (pixel_x - c1) / f, (pixel_y - c2) / f, -1.0;
