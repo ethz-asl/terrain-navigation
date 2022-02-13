@@ -1,4 +1,4 @@
-#include "terrain_planner/terrain_map.h"
+#include "terrain_navigation/terrain_map.h"
 
 #include <gtest/gtest.h>
 #include <iostream>

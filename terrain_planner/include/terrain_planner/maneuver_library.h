@@ -37,9 +37,9 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 #include "adaptive_viewutility/viewutility_map.h"
+#include "terrain_navigation/terrain_map.h"
 #include "terrain_navigation/trajectory.h"
 #include "terrain_navigation/viewpoint.h"
-#include "terrain_planner/terrain_map.h"
 
 #include <Eigen/Dense>
 #include <memory>
