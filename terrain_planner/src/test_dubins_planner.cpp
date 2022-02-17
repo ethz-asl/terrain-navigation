@@ -100,12 +100,12 @@ int main(int argc, char **argv) {
 
   Eigen::Vector3d start_pos{Eigen::Vector3d(0.0, 0.0, 0.0)};
   double start_heading{M_PI_2};
-  Eigen::Vector3d goal_pos{Eigen::Vector3d(100.0, 0.0, 0.0)};
+  Eigen::Vector3d goal_pos{Eigen::Vector3d(10.0, 0.0, 0.0)};
   double goal_heading{-M_PI_2};
 
   while (true) {
-    start_heading += 0.2;
-    goal_heading -= 0.4;
+    start_heading += 0.02;
+    goal_heading -= 0.04;
     Eigen::Vector3d start_vel{Eigen::Vector3d(std::cos(start_heading), std::sin(start_heading), 0.0)};
     Eigen::Vector3d goal_vel{Eigen::Vector3d(std::cos(goal_heading), std::sin(goal_heading), 0.0)};
 
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     publishPositionSetpoints(start_pos_pub, start_pos, start_vel);
     publishPositionSetpoints(goal_pos_pub, goal_pos, goal_vel);
     publishTrajectory(path_pub, shortest_path.position());
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.1).sleep();
   }
 
   ros::spin();

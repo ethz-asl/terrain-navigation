@@ -170,8 +170,10 @@ class DubinsPlanner {
     trajectory.curvature = 0.0;
     return trajectory;
   }
-  double calculateDistance(Eigen::Vector2d start, double start_heading, int start_direction, Eigen::Vector2d goal,
-                           double goal_heading, int goal_direction, TrajectorySegments &path);
+  double calculateCSCDistance(Eigen::Vector2d start, double start_heading, int start_direction, Eigen::Vector2d goal,
+                              double goal_heading, int goal_direction, TrajectorySegments &path);
+  double calculateCCCDistance(Eigen::Vector2d start, double start_heading, int start_direction, Eigen::Vector2d goal,
+                              double goal_heading, TrajectorySegments &path);
   double getBestCSCPath(const Eigen::Vector2d &start, const Eigen::Vector2d &end, TrajectorySegments &best_path);
   double getBestCCCPath(const Eigen::Vector2d &start, const Eigen::Vector2d &end, TrajectorySegments &best_path);
   Eigen::Vector3d start_pos_{Eigen::Vector3d::Zero()};

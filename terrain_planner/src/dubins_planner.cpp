@@ -47,9 +47,9 @@ DubinsPlanner::DubinsPlanner() {}
 
 DubinsPlanner::~DubinsPlanner() {}
 
-double DubinsPlanner::calculateDistance(Eigen::Vector2d start, double start_heading, int start_direction,
-                                        Eigen::Vector2d goal, double goal_heading, int goal_direction,
-                                        TrajectorySegments &path) {
+double DubinsPlanner::calculateCSCDistance(Eigen::Vector2d start, double start_heading, int start_direction,
+                                           Eigen::Vector2d goal, double goal_heading, int goal_direction,
+                                           TrajectorySegments &path) {
   path.resetSegments();
   Eigen::Vector2d start_circle_center = getArcCenter(start, start_heading, minimum_turning_radius, start_direction);
   Eigen::Vector2d goal_circle_center = getArcCenter(goal, goal_heading, minimum_turning_radius, goal_direction);
@@ -82,30 +82,62 @@ double DubinsPlanner::calculateDistance(Eigen::Vector2d start, double start_head
   return distance;
 }
 
-double DubinsPlanner::getBestCSCPath(const Eigen::Vector2d &start, const Eigen::Vector2d &end, TrajectorySegments &best_path) {
+double DubinsPlanner::calculateCCCDistance(Eigen::Vector2d start, double start_heading, int start_direction,
+                                           Eigen::Vector2d goal, double goal_heading, TrajectorySegments &path) {
+  path.resetSegments();
+
+  Eigen::Vector2d start_circle_center = getArcCenter(start, start_heading, minimum_turning_radius, start_direction);
+  Eigen::Vector2d goal_circle_center = getArcCenter(goal, goal_heading, minimum_turning_radius, start_direction);
+  double D = (goal_circle_center - start_circle_center).norm();
+  Eigen::Vector2d v1 = (goal_circle_center - start_circle_center).normalized();
+  double theta = std::atan2(v1(1), v1(0)) + start_direction * std::acos(D / (4.0 * minimum_turning_radius));
+  Eigen::Vector2d third_circle_center =
+      start_circle_center + 2.0 * minimum_turning_radius * Eigen::Vector2d(std::cos(theta), std::sin(theta));
+
+  Eigen::Vector2d pt1 =
+      start_circle_center + minimum_turning_radius * (third_circle_center - start_circle_center).normalized();
+  Eigen::Vector2d pt2 =
+      goal_circle_center + minimum_turning_radius * (third_circle_center - goal_circle_center).normalized();
+  double arclength_start = getArcLength(start, pt1, start_circle_center, minimum_turning_radius, start_direction);
+  double arclength_middle = getArcLength(pt1, pt2, third_circle_center, minimum_turning_radius, -start_direction);
+  double arclength_goal = getArcLength(pt2, goal, goal_circle_center, minimum_turning_radius, start_direction);
+  double distance = arclength_start + arclength_middle + arclength_goal;
+
+  Trajectory first_arc_segment =
+      getArcTrajectory(start, start_heading, arclength_start, minimum_turning_radius, start_direction);
+  path.appendSegment(first_arc_segment);
+  double pt1_heading = start_heading + start_direction * arclength_start / minimum_turning_radius;
+  Trajectory middle_arc_segment =
+      getArcTrajectory(pt1, pt1_heading, arclength_middle, minimum_turning_radius, -start_direction);
+  path.appendSegment(middle_arc_segment);
+  double pt2_heading = pt1_heading - start_direction * arclength_middle / minimum_turning_radius;
+  Trajectory end_arc_segment =
+      getArcTrajectory(pt2, pt2_heading, arclength_goal, minimum_turning_radius, start_direction);
+  path.appendSegment(end_arc_segment);
+  return distance;
+}
+
+double DubinsPlanner::getBestCSCPath(const Eigen::Vector2d &start, const Eigen::Vector2d &end,
+                                     TrajectorySegments &best_path) {
   double distance = std::numeric_limits<double>::infinity();
 
   TrajectorySegments candidate_path;
-  double rsr_distance =
-      calculateDistance(start, start_heading_, -1, end, goal_heading_, -1, candidate_path);
+  double rsr_distance = calculateCSCDistance(start, start_heading_, -1, end, goal_heading_, -1, candidate_path);
   if (rsr_distance < distance) {
     distance = rsr_distance;
     best_path = candidate_path;
   }
-  double lsl_distance =
-      calculateDistance(start, start_heading_, 1, end, goal_heading_, 1, candidate_path);
+  double lsl_distance = calculateCSCDistance(start, start_heading_, 1, end, goal_heading_, 1, candidate_path);
   if (lsl_distance < distance) {
     distance = lsl_distance;
     best_path = candidate_path;
   }
-  double lsr_distance =
-      calculateDistance(start, start_heading_, 1, end, goal_heading_, -1, candidate_path);
+  double lsr_distance = calculateCSCDistance(start, start_heading_, 1, end, goal_heading_, -1, candidate_path);
   if (lsr_distance < distance) {
     distance = lsr_distance;
     best_path = candidate_path;
   }
-  double rsl_distance =
-      calculateDistance(start, start_heading_, -1, end, goal_heading_, 1, candidate_path);
+  double rsl_distance = calculateCSCDistance(start, start_heading_, -1, end, goal_heading_, 1, candidate_path);
   if (rsl_distance < distance) {
     distance = rsl_distance;
     best_path = candidate_path;
@@ -113,14 +145,23 @@ double DubinsPlanner::getBestCSCPath(const Eigen::Vector2d &start, const Eigen::
   return distance;
 }
 
-double DubinsPlanner::getBestCCCPath(const Eigen::Vector2d &start, const Eigen::Vector2d &end, TrajectorySegments &best_path) {
-  Eigen::Vector2d start_circle_center_right = getArcCenter(start, start_heading_, minimum_turning_radius, -1);
-  Eigen::Vector2d start_circle_center_left = getArcCenter(start, start_heading_, minimum_turning_radius, 1);
-  Eigen::Vector2d goal_circle_center_right = getArcCenter(end, goal_heading_, minimum_turning_radius, -1);
-  Eigen::Vector2d goal_circle_center_left = getArcCenter(end, goal_heading_, minimum_turning_radius, 1);
+double DubinsPlanner::getBestCCCPath(const Eigen::Vector2d &start, const Eigen::Vector2d &end,
+                                     TrajectorySegments &best_path) {
   // find the relative angle for L and right
+  TrajectorySegments candidate_path;
   double theta = 0.0;
-  double distance;
+  double distance = std::numeric_limits<double>::infinity();
+  double rlr_distance = calculateCCCDistance(start, start_heading_, -1, end, goal_heading_, candidate_path);
+  if (rlr_distance < distance) {
+    distance = rlr_distance;
+    best_path = candidate_path;
+  }
+  double lrl_distance = calculateCCCDistance(start, start_heading_, 1, end, goal_heading_, candidate_path);
+  if (lrl_distance < distance) {
+    distance = lrl_distance;
+    best_path = candidate_path;
+  }
+
   return distance;
 }
 
@@ -131,16 +172,16 @@ TrajectorySegments DubinsPlanner::Solve() {
   double euclidean_distance = (start_pos_2d - goal_pos_2d).norm();
   TrajectorySegments best_csc_path;
   double min_distance = getBestCSCPath(start_pos_2d, goal_pos_2d, best_csc_path);
-  std::cout << " - best_csc_distance: " << min_distance << std::endl;
   shortest_path = best_csc_path;
-  if (euclidean_distance < 4 * minimum_turning_radius) {    
+
+  if (euclidean_distance < 4.0 * minimum_turning_radius) {
     TrajectorySegments best_ccc_path;
     double best_ccc_distance = getBestCCCPath(start_pos_2d, goal_pos_2d, best_ccc_path);
-    std::cout << " - best_ccc_distance: " << best_ccc_distance << std::endl;
-    if (best_ccc_distance < min_distance){
-        min_distance = best_ccc_distance;
-        shortest_path = best_ccc_path;
+    if (best_ccc_distance < min_distance) {
+      min_distance = best_ccc_distance;
+      shortest_path = best_ccc_path;
     }
   }
+  /// TODO: Solve for climbrate using dubins metric
   return shortest_path;
 }
