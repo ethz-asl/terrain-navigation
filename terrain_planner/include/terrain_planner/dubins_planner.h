@@ -83,10 +83,12 @@ class DubinsPlanner {
    * @param v1
    * @param v2
    */
-  void getTangent(const Eigen::Vector2d &c1, int direction1, const Eigen::Vector2d &c2, int direction2,
+  bool getTangent(const Eigen::Vector2d &c1, int direction1, const Eigen::Vector2d &c2, int direction2,
                   Eigen::Vector2d &v1, Eigen::Vector2d &v2) {
     double distance = (c1 - c2).norm();
-    Eigen::Vector2d V1 = (c2 - c1) / distance;
+    // Handle when circles are within together
+    if (distance <= minimum_turning_radius) return false;
+    Eigen::Vector2d V1 = (c2 - c1).normalized();
     if (direction1 > 0) {  // Start left
       if (direction2 > 0) {
         direction1 = 1;
@@ -106,11 +108,12 @@ class DubinsPlanner {
     }
     double r = minimum_turning_radius;
     double c = (r - direction1 * r) / distance;
+    if (c * c > 1.0) return false;
     double h = std::sqrt(std::max(0.0, 1.0 - c * c));
-    double nx = V1(0) * c - direction2 * h * V1(1);
-    double ny = V1(1) * c + direction2 * h * V1(0);
-    v1 = Eigen::Vector2d(c1(0) + r * nx, c1(1) + r * ny);
-    v2 = Eigen::Vector2d(c2(0) + direction1 * r * nx, c2(1) + direction1 * r * ny);
+    Eigen::Vector2d n(V1(0) * c - direction2 * h * V1(1), V1(1) * c + direction2 * h * V1(0));
+    v1 = Eigen::Vector2d(c1(0) + r * n(0), c1(1) + r * n(1));
+    v2 = Eigen::Vector2d(c2(0) + direction1 * r * n(0), c2(1) + direction1 * r * n(1));
+    return true;
   };
 
   /**
@@ -128,6 +131,7 @@ class DubinsPlanner {
     Eigen::Vector2d v1 = start - center;
     Eigen::Vector2d v2 = end - center;
     double theta = std::atan2(v2(1), v2(0)) - std::atan2(v1(1), v1(0));
+    if (std::abs(theta) <= std::numeric_limits<double>::epsilon()) theta = 0.0;
     if (theta < 0 && direction > 0)
       theta += 2.0 * M_PI;  // direction left
     else if (theta > 0 && direction < 0)

@@ -54,11 +54,12 @@ double DubinsPlanner::calculateCSCDistance(Eigen::Vector2d start, double start_h
   Eigen::Vector2d start_circle_center = getArcCenter(start, start_heading, minimum_turning_radius, start_direction);
   Eigen::Vector2d goal_circle_center = getArcCenter(goal, goal_heading, minimum_turning_radius, goal_direction);
 
-  /// TODO: Get tangent between the two circles
   Eigen::Vector2d tangent_vector_start;
   Eigen::Vector2d tangent_vector_end;
-  getTangent(start_circle_center, start_direction, goal_circle_center, goal_direction, tangent_vector_start,
-             tangent_vector_end);
+  if (!getTangent(start_circle_center, start_direction, goal_circle_center, goal_direction, tangent_vector_start,
+                  tangent_vector_end)) {
+    return std::numeric_limits<double>::infinity();
+  }
   double tangentlength = (tangent_vector_start - tangent_vector_end).norm();
   double arclength_start =
       getArcLength(start, tangent_vector_start, start_circle_center, minimum_turning_radius, start_direction);
