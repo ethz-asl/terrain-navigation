@@ -42,7 +42,6 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-  src/dubins_planner.cpp
   src/maneuver_library.cpp
   src/terrain_planner.cpp
 )

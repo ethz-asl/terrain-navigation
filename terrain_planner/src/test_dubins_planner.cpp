@@ -38,8 +38,8 @@
  */
 
 #include <ros/ros.h>
+#include "adaptive_viewutility/dubins_planner.h"
 #include "terrain_planner/common.h"
-#include "terrain_planner/dubins_planner.h"
 
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>

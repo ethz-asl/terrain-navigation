@@ -39,7 +39,7 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner/dubins_planner.h"
+#include "adaptive_viewutility/dubins_planner.h"
 
 #include <iostream>
 

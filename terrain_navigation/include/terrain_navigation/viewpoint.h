@@ -56,7 +56,7 @@ class ViewPoint {
     index_ = idx;
     center_local_ = local_position;
     orientation_ = orientation;
-    ///TODO: Read camera parameters from a file
+    /// TODO: Read camera parameters from a file
     corner_ray_vectors_.push_back(RayVector(0, 0));
     corner_ray_vectors_.push_back(RayVector(0, 1280));
     corner_ray_vectors_.push_back(RayVector(960, 1280));
@@ -88,7 +88,7 @@ class ViewPoint {
   Eigen::Vector3d RayVector(int pixel_x, int pixel_y) {
     /// TODO: Hardcoded camera parameters
     /// TODO: Get camera intrinsics
-    ///TODO: Read camera parameters from a file
+    /// TODO: Read camera parameters from a file
     int c1 = 480.0;
     int c2 = 640.0;
     double f = 640.0;

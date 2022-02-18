@@ -37,20 +37,10 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
+#include "terrain_navigation/trajectory.h"
+
 #include <Eigen/Dense>
 #include <vector>
-
-struct State {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Eigen::Vector3d position;
-  Eigen::Vector3d velocity;
-  Eigen::Vector4d attitude;
-};
-
-struct Trajectory {
-  std::vector<State> states;
-  double utility{0.0};
-};
 
 class ViewPlanner {
  public:

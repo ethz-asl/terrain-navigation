@@ -37,6 +37,9 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
+#ifndef DUBINS_PLANNER_H
+#define DUBINS_PLANNER_H
+
 #include "terrain_navigation/trajectory.h"
 
 #include <Eigen/Dense>
@@ -59,8 +62,8 @@ class DubinsPlanner {
   /**
    * @brief Get the Arc Center object
    *
-   * @param pos
-   * @param heading
+   * @param pos tangent position
+   * @param heading direction of heading
    * @param radius
    * @param direction
    * @return Eigen::Vector2d
@@ -76,12 +79,12 @@ class DubinsPlanner {
   /**
    * @brief Get the Tangent object
    *
-   * @param c1
-   * @param direction1
-   * @param c2
-   * @param direction2
-   * @param v1
-   * @param v2
+   * @param c1 center of circle 1
+   * @param direction1 direction of circle 1
+   * @param c2 center of circle 2
+   * @param direction2 direction of circle 2
+   * @param v1 tangent start position
+   * @param v2 tangent end position
    */
   bool getTangent(const Eigen::Vector2d &c1, int direction1, const Eigen::Vector2d &c2, int direction2,
                   Eigen::Vector2d &v1, Eigen::Vector2d &v2) {
@@ -187,3 +190,5 @@ class DubinsPlanner {
   double minimum_turning_radius{10.0};
   double sampling_time = 0.05;
 };
+
+#endif

@@ -38,6 +38,7 @@
  */
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
+#include "adaptive_viewutility/dubins_planner.h"
 #include "adaptive_viewutility/performance_tracker.h"
 #include "airsim_client/airsim_client.h"
 #include "terrain_navigation/profiler.h"
@@ -61,6 +62,17 @@ Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw) {
   return q;
 }
 
+double getDubinsMetric(std::shared_ptr<DubinsPlanner> &planner, Eigen::Vector2d start_position,
+                       Eigen::Vector2d goal_position) {
+  /// TODO: Use dubins distance for calculating turining time
+  planner->setStartPosition(Eigen::Vector3d(start_position(0), start_position(1), 0.0), 0.0);
+  planner->setGoalPosition(Eigen::Vector3d(goal_position(0), goal_position(1), 0.0), 0.0);
+  planner->Solve();
+  // planner->getMinimumDistance();
+  double time = 10.0;
+  return time;
+}
+
 void addViewpoint(Trajectory &trajectory, Eigen::Vector3d pos, Eigen::Vector3d vel, Eigen::Vector4d att) {
   State vehicle_state;
   vehicle_state.position = pos;
@@ -77,6 +89,7 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
   std::shared_ptr<AirsimClient> airsim_client = std::make_shared<AirsimClient>();
+  std::shared_ptr<DubinsPlanner> dubins_planner = std::make_shared<DubinsPlanner>();
 
   std::string file_path, output_file_path;
   std::string image_directory{""};
@@ -150,7 +163,6 @@ int main(int argc, char **argv) {
 
   bool terminate_mapping = false;
   double planning_horizon = 2.0;
-  double turning_time = 10.0;
   double simulated_time{0.0};
   int increment{1};
   double elevation = map.atPosition("elevation", vehicle_pos_2d);
@@ -181,14 +193,13 @@ int main(int argc, char **argv) {
     // Generate sweep pattern
     Eigen::Vector2d candidate_vehicle_pos_2d = vehicle_vel_2d * dt + vehicle_pos_2d;
     if (polygon.isInside(candidate_vehicle_pos_2d)) {
+      simulated_time += getDubinsMetric(dubins_planner, vehicle_pos_2d, candidate_vehicle_pos_2d);
       vehicle_pos_2d = candidate_vehicle_pos_2d;
-      simulated_time += planning_horizon;
     } else {  // Reached the other end of the vertex
       sweep_direction = -1.0 * sweep_direction;
+      candidate_vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;
+      simulated_time += getDubinsMetric(dubins_planner, vehicle_pos_2d, candidate_vehicle_pos_2d);
       vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;  // next row
-      ///TODO: Use dubins distance for calculating turining time
-      simulated_time += turning_time;
-
       if (!polygon.isInside(vehicle_pos_2d)) {
         break;
       }
