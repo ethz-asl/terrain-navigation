@@ -62,15 +62,67 @@ Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw) {
   return q;
 }
 
-double getDubinsMetric(std::shared_ptr<DubinsPlanner> &planner, Eigen::Vector2d start_position,
-                       Eigen::Vector2d goal_position) {
+double getDubinsMetric(std::shared_ptr<DubinsPlanner> &planner, Eigen::Vector3d start_position,
+                       Eigen::Vector2d start_vel, Eigen::Vector3d goal_position, Eigen::Vector2d goal_vel,
+                       TrajectorySegments &shortest_path) {
   /// TODO: Use dubins distance for calculating turining time
-  planner->setStartPosition(Eigen::Vector3d(start_position(0), start_position(1), 0.0), 0.0);
-  planner->setGoalPosition(Eigen::Vector3d(goal_position(0), goal_position(1), 0.0), 0.0);
-  planner->Solve();
-  // planner->getMinimumDistance();
-  double time = 10.0;
+  double start_heading = std::atan2(start_vel(1), start_vel(0));
+  planner->setStartPosition(start_position, start_heading);
+  double goal_heading = std::atan2(goal_vel(1), goal_vel(0));
+  planner->setGoalPosition(goal_position, goal_heading);
+  double shortest_distance = planner->Solve(shortest_path);
+  double euclidean_distance = (start_position - goal_position).norm();
+  double time = shortest_distance / 15.0;
   return time;
+}
+
+visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, const int id) {
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time();
+  marker.ns = "normals";
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  std::vector<geometry_msgs::Point> points;
+  for (auto position : trajectory.position()) {
+    geometry_msgs::Point point;
+    point.x = position(0);
+    point.y = position(1);
+    point.z = position(2);
+    points.push_back(point);
+  }
+  marker.points = points;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 1.0;
+  marker.scale.y = 1.0;
+  marker.scale.z = 1.0;
+  marker.color.a = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 0.0;
+  marker.color.b = 1.0;
+  return marker;
+}
+
+void publishTrajectorySegments(ros::Publisher &pub, TrajectorySegments &trajectory) {
+  visualization_msgs::MarkerArray msg;
+
+  std::vector<visualization_msgs::Marker> marker;
+  visualization_msgs::Marker mark;
+  mark.action = visualization_msgs::Marker::DELETEALL;
+  marker.push_back(mark);
+  msg.markers = marker;
+  pub.publish(msg);
+
+  std::vector<visualization_msgs::Marker> maneuver_library_vector;
+  int i = 0;
+  bool visualize_invalid_trajectories = false;
+  maneuver_library_vector.push_back(trajectory2MarkerMsg(trajectory, 0));
+  msg.markers = maneuver_library_vector;
+  pub.publish(msg);
 }
 
 void addViewpoint(Trajectory &trajectory, Eigen::Vector3d pos, Eigen::Vector3d vel, Eigen::Vector4d att) {
@@ -86,6 +138,8 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
+
+  ros::Publisher trajectory_pub_ = nh.advertise<visualization_msgs::MarkerArray>("path", 1, true);
 
   std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
   std::shared_ptr<AirsimClient> airsim_client = std::make_shared<AirsimClient>();
@@ -145,7 +199,7 @@ int main(int argc, char **argv) {
   Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
 
   // Run sweep segments until the boundary
-  double view_distance = 90.0;
+  double view_distance = 45.0;
   double altitude = 100.0;
   Eigen::Vector2d sweep_direction = (polygon.getVertex(1) - polygon.getVertex(0)).normalized();
   Eigen::Vector2d sweep_perpendicular = (polygon.getVertex(3) - polygon.getVertex(0)).normalized();
@@ -167,6 +221,7 @@ int main(int argc, char **argv) {
   int increment{1};
   double elevation = map.atPosition("elevation", vehicle_pos_2d);
   bool terrain_altitude = true;
+  TrajectorySegments vehicle_trajectory;
   while (true) {
     Trajectory reference_trajectory;
     if (terrain_altitude) elevation = map.atPosition("elevation", vehicle_pos_2d);
@@ -185,24 +240,40 @@ int main(int argc, char **argv) {
     adaptive_viewutility->MapPublishOnce();
     adaptive_viewutility->ViewpointPublishOnce();
     adaptive_viewutility->publishViewpointHistory();
+    publishTrajectorySegments(trajectory_pub_, vehicle_trajectory);
+
+    /// TODO: Publish vehcile trajectory
 
     performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
 
-    vehicle_vel_2d = 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
+    vehicle_vel_2d = 15.0 * sweep_direction;
 
     // Generate sweep pattern
     Eigen::Vector2d candidate_vehicle_pos_2d = vehicle_vel_2d * dt + vehicle_pos_2d;
+    TrajectorySegments shortest_path;
     if (polygon.isInside(candidate_vehicle_pos_2d)) {
-      simulated_time += getDubinsMetric(dubins_planner, vehicle_pos_2d, candidate_vehicle_pos_2d);
+      double candidate_elevation = altitude + map.atPosition("elevation", candidate_vehicle_pos_2d);
+      Eigen::Vector3d candidate_vehicle_pos(candidate_vehicle_pos_2d(0), candidate_vehicle_pos_2d(1),
+                                            candidate_elevation);
+      simulated_time += getDubinsMetric(dubins_planner, vehicle_pos, vehicle_vel_2d, candidate_vehicle_pos,
+                                        vehicle_vel_2d, shortest_path);
       vehicle_pos_2d = candidate_vehicle_pos_2d;
     } else {  // Reached the other end of the vertex
       sweep_direction = -1.0 * sweep_direction;
+      Eigen::Vector2d candidate_vehicle_vel_2d = 15.0 * sweep_direction;
       candidate_vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;
-      simulated_time += getDubinsMetric(dubins_planner, vehicle_pos_2d, candidate_vehicle_pos_2d);
+      double candidate_elevation = altitude + map.atPosition("elevation", candidate_vehicle_pos_2d);
+      Eigen::Vector3d candidate_vehicle_pos(candidate_vehicle_pos_2d(0), candidate_vehicle_pos_2d(1),
+                                            candidate_elevation);
+      simulated_time += getDubinsMetric(dubins_planner, vehicle_pos, vehicle_vel_2d, candidate_vehicle_pos,
+                                        candidate_vehicle_vel_2d, shortest_path);
       vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;  // next row
       if (!polygon.isInside(vehicle_pos_2d)) {
         break;
       }
+    }
+    for (auto &segment : shortest_path.segments) {
+      vehicle_trajectory.appendSegment(segment);
     }
     if (increment % snapshot_increment == 0) {
       std::string saved_map_path =

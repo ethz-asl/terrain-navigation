@@ -56,7 +56,13 @@ class DubinsPlanner {
     goal_pos_ = pos;
     goal_heading_ = heading;
   };
-  TrajectorySegments Solve();
+  /**
+   * @brief
+   *
+   * @param shortest_path
+   * @return double length of shortest path
+   */
+  double Solve(TrajectorySegments &shortest_path);
 
  private:
   /**
@@ -187,7 +193,7 @@ class DubinsPlanner {
   double start_heading_{0.0};
   Eigen::Vector3d goal_pos_{Eigen::Vector3d::Zero()};
   double goal_heading_{0.0};
-  double minimum_turning_radius{10.0};
+  double minimum_turning_radius{60.0};  // 15.0(Cruise speed) / 0.25 (yaw rate)
   double sampling_time = 0.05;
 };
 

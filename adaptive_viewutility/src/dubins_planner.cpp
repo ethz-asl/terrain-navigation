@@ -166,8 +166,7 @@ double DubinsPlanner::getBestCCCPath(const Eigen::Vector2d &start, const Eigen::
   return distance;
 }
 
-TrajectorySegments DubinsPlanner::Solve() {
-  TrajectorySegments shortest_path;
+double DubinsPlanner::Solve(TrajectorySegments &shortest_path) {
   Eigen::Vector2d start_pos_2d(start_pos_(0), start_pos_(1));
   Eigen::Vector2d goal_pos_2d(goal_pos_(0), goal_pos_(1));
   double euclidean_distance = (start_pos_2d - goal_pos_2d).norm();
@@ -183,6 +182,18 @@ TrajectorySegments DubinsPlanner::Solve() {
       shortest_path = best_ccc_path;
     }
   }
+  double elevation_rate = (goal_pos_(2) - start_pos_(2)) / min_distance;
+  double distance_progress{0.0};
+  Eigen::Vector2d prev_state;
+  prev_state = start_pos_2d;
+  for (auto &segment : shortest_path.segments) {
+    for (auto &state : segment.states) {
+      Eigen::Vector2d state_2d(state.position(0), state.position(1));
+      distance_progress += (state_2d - prev_state).norm();
+      state.position(2) = start_pos_(2) + distance_progress * elevation_rate;
+      prev_state = state_2d;
+    }
+  }
   /// TODO: Solve for climbrate using dubins metric
-  return shortest_path;
+  return min_distance;
 }
