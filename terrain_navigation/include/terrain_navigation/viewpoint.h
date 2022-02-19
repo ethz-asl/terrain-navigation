@@ -136,10 +136,10 @@ class ViewPoint {
   };
   /**
    * @brief Get the Pixel Resolution object
-   * 
+   *
    * @return double pixel_resolution [rad/pixel]
    */
-  ///TODO: get FOV from ray vectors
+  /// TODO: get FOV from ray vectors
   double getPixelResolution() { return 0.5 * M_PI / image_width_; }
 
  private:
@@ -153,8 +153,8 @@ class ViewPoint {
   double time_seconds_{0.0};
   double utility_{0.0};
   cv::Mat image_;  // Store image of the viewpoint
-  int image_width_ = 1440;
-  int image_height_ = 1080;
+  int image_width_ = 360;
+  int image_height_ = 270;
 };
 
 #endif

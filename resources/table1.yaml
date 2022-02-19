@@ -1,17 +1,37 @@
-sequential_greedy_0:
-  name: "1440 X 1080"
-  path: "/home/jaeyoung/dev/data/greedy14401080/dataset/6/map_data.csv"
+# Greedy Methods
+# sequential_greedy_0:
+#   name: "Greedy 1440 X 1080"
+#   path: "/home/jaeyoung/dev/data/greedy14401080/dataset/6/map_data.csv"
+#   planner: "greedy"
+#   num_views: 70
+
+# sequential_greedy_1:
+#   name: "Greedy 720 X 540"
+#   path: "/home/jaeyoung/dev/data/greedy720540/dataset/6/map_data.csv"
+#   planner: "greedy"
+#   num_views: 70
+
+# sequential_greedy_2:
+#   name: "Greedy 360 X 270"
+#   path: "/home/jaeyoung/dev/data/greedy360270/dataset/6/map_data.csv"
+#   planner: "greedy"
+#   num_views: 70
+
+# Random Methods
+random_0:
+  name: "Random 1440 X 1080"
+  path: "/home/jaeyoung/dev/data/random14401080/dataset/6/map_data.csv"
   planner: "greedy"
   num_views: 70
 
-sequential_greedy_1:
-  name: "720 X 540"
-  path: "/home/jaeyoung/dev/data/greedy720540/dataset/6/map_data.csv"
+random_1:
+  name: "Random 720 X 540"
+  path: "/home/jaeyoung/dev/data/random720540/dataset/6/map_data.csv"
   planner: "greedy"
   num_views: 70
 
-sequential_greedy_2:
-  name: "360 X 270"
-  path: "/home/jaeyoung/dev/data/greedy360270/dataset/6/map_data.csv"
+random_2:
+  name: "Random 360 X 270"
+  path: "/home/jaeyoung/dev/data/random360270/dataset/6/map_data.csv"
   planner: "greedy"
   num_views: 70
