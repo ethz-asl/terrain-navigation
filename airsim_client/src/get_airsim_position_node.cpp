@@ -113,8 +113,7 @@ int main(int argc, char **argv) {
     viewpoint_pub.publish(viewpoint_marker_msg);
     // Airsim coordinates are in NED
     std::cout << "Vehicle pose" << std::endl;
-    std::cout << "   - position: " << position.transpose() << " / attitude: " << attitude.transpose()
-              << std::endl;
+    std::cout << "   - position: " << position.transpose() << " / attitude: " << attitude.transpose() << std::endl;
     adaptive_viewutility->MapPublishOnce();
     ros::Duration(1.0).sleep();
   }

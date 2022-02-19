@@ -61,7 +61,7 @@ class ViewPoint {
     corner_ray_vectors_.push_back(RayVector(0, image_width_));
     corner_ray_vectors_.push_back(RayVector(image_height_, image_width_));
     corner_ray_vectors_.push_back(RayVector(image_height_, 0));
-    center_ray_vector_ = RayVector(image_height_/2, image_width_/2);
+    center_ray_vector_ = RayVector(image_height_ / 2, image_width_ / 2);
 
     orientation_ = orientation;
     Eigen::Matrix3d R_att = quat2RotMatrix(orientation);
@@ -79,7 +79,7 @@ class ViewPoint {
     corner_ray_vectors_.push_back(RayVector(0, image_width_));
     corner_ray_vectors_.push_back(RayVector(image_height_, image_width_));
     corner_ray_vectors_.push_back(RayVector(image_height_, 0));
-    center_ray_vector_ = RayVector(image_height_/2, image_width_/2);
+    center_ray_vector_ = RayVector(image_height_ / 2, image_width_ / 2);
   }
   virtual ~ViewPoint(){};
   void setOrigin(const double &latitude, const double &longitude, const double &altitude) {
@@ -87,9 +87,9 @@ class ViewPoint {
   };
   Eigen::Vector3d RayVector(int pixel_x, int pixel_y) {
     /// TODO: Get camera intrinsics from a file
-    int c1 = image_height_/2;
-    int c2 = image_width_/2;
-    double f = image_width_/2;
+    int c1 = image_height_ / 2;
+    int c2 = image_width_ / 2;
+    double f = image_width_ / 2;
 
     Eigen::Vector3d ray;
     ray << double(pixel_x - c1) / f, double(pixel_y - c2) / f, -1.0;
@@ -134,6 +134,13 @@ class ViewPoint {
         q(0) * q(0) - q(1) * q(1) - q(2) * q(2) + q(3) * q(3);
     return rotmat;
   };
+  /**
+   * @brief Get the Pixel Resolution object
+   * 
+   * @return double pixel_resolution [rad/pixel]
+   */
+  ///TODO: get FOV from ray vectors
+  double getPixelResolution() { return 0.5 * M_PI / image_width_; }
 
  private:
   int index_;
