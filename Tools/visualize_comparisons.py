@@ -38,6 +38,8 @@ def analyzePrecision(fig, data_df, name):
     for threshold in length:
         rate = (error < threshold).sum() / total
         precision = np.append(precision, rate)
+        if threshold == 2.0:
+            print("precision: ", rate, " [Error: ", threshold, "]")
 
     fig.plot(length, precision, '-', label=name)
     fig.set_xlabel('Error [m]')
@@ -56,7 +58,8 @@ def analyzeCompleteness(fig, data_df, name):
     for threshold in length:
         rate = (error < threshold).sum() / total
         completeness = np.append(completeness, rate)
-
+        if threshold == 2.0:
+            print("completeness: ", rate, " [Error: ", threshold, "]")
     fig.plot(length, completeness, '-', label=name)
     fig.set_xlabel('Error [m]')
     fig.set_ylabel('Completeness')

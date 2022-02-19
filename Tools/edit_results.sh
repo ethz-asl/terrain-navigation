@@ -9,3 +9,5 @@ echo $DATASET_PATH
 mv ${DATASET_PATH}/*.obj ${DATASET_PATH}/mesh.obj
 mv ${DATASET_PATH}/*.xyz ${DATASET_PATH}/offset.xyz
 mv ${DATASET_PATH}/*.bag ${DATASET_PATH}/gridmap_0.bag
+
+roslaunch adaptive_viewutility run_compare_mesh.launch path:=$DATASET_PATH

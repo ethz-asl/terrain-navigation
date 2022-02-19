@@ -1,0 +1,17 @@
+sequential_greedy_0:
+  name: "1440 X 1080"
+  path: "/home/jaeyoung/dev/data/greedy14401080/dataset/6/map_data.csv"
+  planner: "greedy"
+  num_views: 70
+
+sequential_greedy_1:
+  name: "720 X 540"
+  path: "/home/jaeyoung/dev/data/greedy720540/dataset/6/map_data.csv"
+  planner: "greedy"
+  num_views: 70
+
+sequential_greedy_2:
+  name: "360 X 270"
+  path: "/home/jaeyoung/dev/data/greedy360270/dataset/6/map_data.csv"
+  planner: "greedy"
+  num_views: 70
