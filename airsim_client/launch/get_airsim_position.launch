@@ -3,7 +3,7 @@
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="airsim_client" type="get_airsim_position_node" name="test_planner" output="screen">
         <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
-        <param name="file_path" value="$(find adaptive_viewutility)/../resources/airsim_groundtruth.obj"/>
+        <param name="file_path" value="/home/jaeyoung/dev/mesh/q_max_06/groundtruth_roi_meshlab.obj"/>
         <param name="origin_x" value="0.0"/>
         <param name="origin_y" value="-100.0"/>
         <param name="origin_z" value="100.0"/>

@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
   /// set Current state of vehicle
   Eigen::Vector3d vehicle_pos(0.0, 0.0, 0.0);
   Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
-  Eigen::Vector4d vehicle_att = rpy2quaternion(0.0, 0.0 / 180 * M_PI, 0.0);
+  Eigen::Vector4d vehicle_att = rpy2quaternion(0.0, 0.0, 0.0);
 
   double resolution = 20.0;
   double width = 200;
@@ -106,15 +106,14 @@ int main(int argc, char **argv) {
   Eigen::Vector3d position{Eigen::Vector3d::Zero()};
   Eigen::Vector4d attitude{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
 
-  ViewPoint viewpoint(0, position, attitude);
   while (true) {
     airsim_client->getPose(position, attitude);
-    viewpoint.setPosition(position);
-    viewpoint.setOrientation(attitude);
+    ViewPoint viewpoint(0, position, attitude);
     visualization_msgs::Marker viewpoint_marker_msg = Viewpoint2MarkerMsg(0, viewpoint);
     viewpoint_pub.publish(viewpoint_marker_msg);
     // Airsim coordinates are in NED
-    std::cout << "Vehicle pose - position: " << position.transpose() << " / attitude: " << attitude.transpose()
+    std::cout << "Vehicle pose" << std::endl;
+    std::cout << "   - position: " << position.transpose() << " / attitude: " << attitude.transpose()
               << std::endl;
     adaptive_viewutility->MapPublishOnce();
     ros::Duration(1.0).sleep();

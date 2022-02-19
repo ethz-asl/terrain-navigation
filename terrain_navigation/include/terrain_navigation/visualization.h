@@ -63,7 +63,6 @@ visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
   marker.action = visualization_msgs::Marker::ADD;
   const Eigen::Vector3d position = viewpoint.getCenterLocal();
   std::vector<geometry_msgs::Point> points;
-  Eigen::Vector3d view_center = position;
   std::vector<Eigen::Vector3d> corner_ray_vectors = viewpoint.getCornerRayVectors();
   std::vector<Eigen::Vector3d> vertex;
   for (auto &corner_ray : corner_ray_vectors) {
