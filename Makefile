@@ -29,6 +29,9 @@ compare:
 precision:
 	python3 Tools/visualize_precision.py ${path}
 
+pathlength:
+	python3 Tools/visualize_pathlength.py ${path}
+
 curate-dataset:
 	Tools/curate_dataset.sh output output
 

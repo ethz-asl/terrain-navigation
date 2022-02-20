@@ -92,6 +92,7 @@ void PerformanceTracker::Output(const std::string path) {
     output_file << metric.quality << ",";
     output_file << 0 << ",";
     output_file << "\n";
+    id_++;
   }
   output_file.close();
   return;

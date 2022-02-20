@@ -49,12 +49,12 @@ int main(int argc, char **argv) {
 
   std::string file_path, output_file_path;
   int num_experiments;
-  int snapshot_increment;
+  double snapshot_interval;  // Interval (seconds) that the package will keep track of
   double max_experiment_duration;
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
-  nh_private.param<int>("snapshot_increment", snapshot_increment, 25);
-  nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
+  nh_private.param<double>("snapshot_interval", snapshot_interval, 20.0);
+  nh_private.param<double>("max_experiment_duration", max_experiment_duration, 200.0);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
 
   std::string image_directory{""};
@@ -104,7 +104,8 @@ int main(int argc, char **argv) {
 
     bool terminate_mapping = false;
     double simulated_time{0.0};
-    int increment{0};
+    double elapsed_time{0.0};
+    int snapshot_index{0};
     while (true) {
       pipeline_perf.tic();
       adaptive_viewutility->generateMotionPrimitives();
@@ -131,23 +132,22 @@ int main(int argc, char **argv) {
 
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
       simulated_time += planning_horizon;
-
-      double map_quality =
-          performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
-
-      if (increment % snapshot_increment == 0) {
-        std::string saved_map_path =
-            image_directory + "/gridmap_" + std::to_string(static_cast<int>(increment / snapshot_increment)) + ".bag";
-        grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
-                                                 saved_map_path, "/grid_map");
-      }
-      increment++;
-
+      elapsed_time += planning_horizon;
       // Terminate if simulation time has exceeded
       if (simulated_time > max_experiment_duration) terminate_mapping = true;
       /// TODO: Define termination condition for map quality
       if (terminate_mapping) {
         break;
+      }
+      if (elapsed_time >= snapshot_interval) {
+        elapsed_time = 0.0;
+        std::string saved_map_path =
+            image_directory + "/gridmap_" + std::to_string(static_cast<int>(snapshot_index)) + ".bag";
+        grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
+                                                 saved_map_path, "/grid_map");
+        double map_quality =
+            performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
+        snapshot_index++;
       }
     }
     performance_tracker->Output(output_file_path);

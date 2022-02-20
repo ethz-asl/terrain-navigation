@@ -1,0 +1,28 @@
+# Figure 7 for IROS2022 submission
+# In order to visualize the plot, run:
+#  make pathlength path=resources/fig6.yaml 
+sequential_greedy:
+  name: "Ours"
+  benchmark: "/home/jaeyoung/dev/data/planner/benchmark.csv"
+  data_0: 
+    path: "/home/jaeyoung/dev/data/planner/dataset/0/map_data.csv"
+  data_1:
+    path: "/home/jaeyoung/dev/data/planner/dataset/1/map_data.csv"
+  data_2:
+    path: "/home/jaeyoung/dev/data/planner/dataset/2/map_data.csv"
+  data_3:
+    path: "/home/jaeyoung/dev/data/planner/dataset/3/map_data.csv"
+  data_4:
+    path: "/home/jaeyoung/dev/data/planner/dataset/4/map_data.csv"
+
+survey:
+  name: "Survey"
+  benchmark: "/home/jaeyoung/dev/data/survey/benchmark.csv"
+  data_0: 
+    path: "/home/jaeyoung/dev/data/survey/dataset/0/map_data.csv"
+  data_1:
+    path: "/home/jaeyoung/dev/data/survey/dataset/1/map_data.csv"
+  data_2:
+    path: "/home/jaeyoung/dev/data/survey/dataset/2/map_data.csv"
+  data_3:
+    path: "/home/jaeyoung/dev/data/survey/dataset/3/map_data.csv"

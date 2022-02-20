@@ -72,7 +72,7 @@ double getDubinsMetric(std::shared_ptr<DubinsPlanner> &planner, Eigen::Vector3d 
   planner->setGoalPosition(goal_position, goal_heading);
   double shortest_distance = planner->Solve(shortest_path);
   double euclidean_distance = (start_position - goal_position).norm();
-  double time = shortest_distance / 15.0;
+  double time = shortest_distance / 15.0;  // 15.0 m/s is the cruise speed
   return time;
 }
 
@@ -148,12 +148,12 @@ int main(int argc, char **argv) {
   std::string file_path, output_file_path;
   std::string image_directory{""};
   double max_experiment_duration;
-  int snapshot_increment;
+  double snapshot_interval;  // Interval (seconds) that the package will keep track of
   nh_private.param<std::string>("file_path", file_path, "resources/cadastre.tif");
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
   nh_private.param<std::string>("image_directory", image_directory, image_directory);
-  nh_private.param<int>("snapshot_increment", snapshot_increment, 10);
+  nh_private.param<double>("snapshot_interval", snapshot_interval, 20.0);
 
   airsim_client->setImageDirectory(image_directory);
 
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
   const double map_width_y = map.getLength().y();
 
   polygon.setFrameId(map.getFrameId());
-  double roi_portion = 0.45;
+  double roi_portion = 0.5;
   polygon.addVertex(grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
   polygon.addVertex(grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
   polygon.addVertex(grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
@@ -199,12 +199,11 @@ int main(int argc, char **argv) {
   Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
 
   // Run sweep segments until the boundary
-  double view_distance = 45.0;
+  double view_distance = 90.0;
   double altitude = 100.0;
   Eigen::Vector2d sweep_direction = (polygon.getVertex(1) - polygon.getVertex(0)).normalized();
   Eigen::Vector2d sweep_perpendicular = (polygon.getVertex(3) - polygon.getVertex(0)).normalized();
 
-  double dt = 4.0;
   Eigen::Vector2d vehicle_pos_2d = start_pos_2d;
   Eigen::Vector2d vehicle_vel_2d = 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
   int max_viewpoints = 1000;  // Terminate when the number of view points exceed the maximum
@@ -215,13 +214,17 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
 
+  double elevation = map.atPosition("elevation", vehicle_pos_2d);
+  bool terrain_altitude = true;
+
+  TrajectorySegments vehicle_trajectory;
+
   bool terminate_mapping = false;
   double planning_horizon = 2.0;
   double simulated_time{0.0};
-  int increment{1};
-  double elevation = map.atPosition("elevation", vehicle_pos_2d);
-  bool terrain_altitude = true;
-  TrajectorySegments vehicle_trajectory;
+  int snapshot_index{0};
+  int num_images{0};
+  double elapsed_time{0.0};
   while (true) {
     Trajectory reference_trajectory;
     if (terrain_altitude) elevation = map.atPosition("elevation", vehicle_pos_2d);
@@ -233,7 +236,7 @@ int main(int argc, char **argv) {
     addViewpoint(reference_trajectory, vehicle_pos, vehicle_vel, vehicle_att);
     // Acquire images along the motion primitive from airsim
     airsim_client->setPose(vehicle_pos, vehicle_att);
-
+    num_images++;
     adaptive_viewutility->UpdateUtility(reference_trajectory);
 
     // Visualize results
@@ -243,45 +246,57 @@ int main(int argc, char **argv) {
     publishTrajectorySegments(trajectory_pub_, vehicle_trajectory);
 
     /// TODO: Publish vehcile trajectory
-
-    performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
-
     vehicle_vel_2d = 15.0 * sweep_direction;
 
     // Generate sweep pattern
+    double dt = 4.0;  // Trigger time interval
     Eigen::Vector2d candidate_vehicle_pos_2d = vehicle_vel_2d * dt + vehicle_pos_2d;
     TrajectorySegments shortest_path;
     if (polygon.isInside(candidate_vehicle_pos_2d)) {
       double candidate_elevation = altitude + map.atPosition("elevation", candidate_vehicle_pos_2d);
+      /// TODO: Constrain climbrate
       Eigen::Vector3d candidate_vehicle_pos(candidate_vehicle_pos_2d(0), candidate_vehicle_pos_2d(1),
                                             candidate_elevation);
-      simulated_time += getDubinsMetric(dubins_planner, vehicle_pos, vehicle_vel_2d, candidate_vehicle_pos,
-                                        vehicle_vel_2d, shortest_path);
+      double dubins_metric = getDubinsMetric(dubins_planner, vehicle_pos, vehicle_vel_2d, candidate_vehicle_pos,
+                                             vehicle_vel_2d, shortest_path);
+      simulated_time += dubins_metric;
+      elapsed_time += dubins_metric;
       vehicle_pos_2d = candidate_vehicle_pos_2d;
     } else {  // Reached the other end of the vertex
       sweep_direction = -1.0 * sweep_direction;
       Eigen::Vector2d candidate_vehicle_vel_2d = 15.0 * sweep_direction;
       candidate_vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;
+      if (!polygon.isInside(candidate_vehicle_pos_2d)) break;
       double candidate_elevation = altitude + map.atPosition("elevation", candidate_vehicle_pos_2d);
       Eigen::Vector3d candidate_vehicle_pos(candidate_vehicle_pos_2d(0), candidate_vehicle_pos_2d(1),
                                             candidate_elevation);
-      simulated_time += getDubinsMetric(dubins_planner, vehicle_pos, vehicle_vel_2d, candidate_vehicle_pos,
-                                        candidate_vehicle_vel_2d, shortest_path);
+      double dubins_metric = getDubinsMetric(dubins_planner, vehicle_pos, vehicle_vel_2d, candidate_vehicle_pos,
+                                             candidate_vehicle_vel_2d, shortest_path);
+      simulated_time += dubins_metric;
+      elapsed_time += dubins_metric;
       vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;  // next row
       if (!polygon.isInside(vehicle_pos_2d)) {
         break;
+      } else {
+        std::cout << "is inside!" << std::endl;
       }
     }
     for (auto &segment : shortest_path.segments) {
       vehicle_trajectory.appendSegment(segment);
     }
-    if (increment % snapshot_increment == 0) {
+    if (elapsed_time > snapshot_interval) {
+      std::cout << "Taking snapshot:" << simulated_time << std::endl;
+      std::cout << "  - Number of images: " << num_images << std::endl;
+      std::cout << "  - Index: " << snapshot_index << std::endl;
+      performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
       std::string saved_map_path =
-          image_directory + "/gridmap_" + std::to_string(static_cast<int>(increment / snapshot_increment)) + ".bag";
+          image_directory + "/gridmap_" + std::to_string(static_cast<int>(snapshot_index)) + ".bag";
       grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
                                                "/grid_map");
+      elapsed_time = 0.0;
+      snapshot_index++;
     }
-    increment++;
+
     // Terminate if simulation time has exceeded
     if (simulated_time > max_experiment_duration) terminate_mapping = true;
     if (terminate_mapping) {

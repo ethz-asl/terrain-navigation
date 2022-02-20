@@ -6,7 +6,7 @@
         <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
         <param name="num_experiments" value="1"/>
         <param name="max_experiment_duration" value="200"/>
-        <param name="snapshot_interval" value="10"/>
+        <param name="snapshot_interval" value="40"/>
         <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
     </node>
 
