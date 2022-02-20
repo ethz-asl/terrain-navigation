@@ -113,8 +113,8 @@ int main(int argc, char **argv) {
 
     planner_->setStartPosition(start_pos, start_heading);
     planner_->setGoalPosition(goal_pos, goal_heading);
-
-    TrajectorySegments shortest_path = planner_->Solve();
+    TrajectorySegments shortest_path;
+    planner_->Solve(shortest_path);
     publishPositionSetpoints(start_pos_pub, start_pos, start_vel);
     publishPositionSetpoints(goal_pos_pub, goal_pos, goal_vel);
     publishTrajectory(path_pub, shortest_path.position());

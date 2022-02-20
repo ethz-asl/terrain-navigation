@@ -26,6 +26,9 @@ analyze: clean
 compare:
 	python3 Tools/visualize_comparisons.py ${path}
 
+precision:
+	python3 Tools/visualize_precision.py ${path}
+
 curate-dataset:
 	Tools/curate_dataset.sh output output
 

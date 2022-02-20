@@ -153,8 +153,8 @@ class ViewPoint {
   double time_seconds_{0.0};
   double utility_{0.0};
   cv::Mat image_;  // Store image of the viewpoint
-  int image_width_ = 360;
-  int image_height_ = 270;
+  int image_width_ = 1440;
+  int image_height_ = 1080;
 };
 
 #endif
