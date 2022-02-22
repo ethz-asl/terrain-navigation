@@ -54,10 +54,11 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
-  std::string file_path, output_file_path, result_directory;
+  std::string file_path, color_file_path, output_file_path, result_directory;
   int num_experiments;
   double max_experiment_duration;
   nh_private.param<std::string>("file_path", file_path, "");
+  nh_private.param<std::string>("color_file_path", color_file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
@@ -70,7 +71,7 @@ int main(int argc, char **argv) {
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
 
     // Add elevation map from GeoTIFF file defined in path
-    adaptive_viewutility->LoadMap(file_path);
+    adaptive_viewutility->LoadMap(file_path, color_file_path);
 
     grid_map::Polygon polygon;
 

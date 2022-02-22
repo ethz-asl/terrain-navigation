@@ -64,7 +64,7 @@ class AdaptiveViewUtility {
   void InitializeVehicleFromMap(Eigen::Vector3d &init_pos, Eigen::Vector3d &init_vel);
   bool AddViewPointFromImage(std::string &image_path);
   void AddViewPoint(const int idx, const double &longitude, const double &latitude, const double &altitude);
-  void LoadMap(const std::string &path);
+  void LoadMap(const std::string &path, const std::string color_map_path = "");
   void MapPublishOnce();
   void ViewpointPublishOnce();
   void NormalPublishOnce();

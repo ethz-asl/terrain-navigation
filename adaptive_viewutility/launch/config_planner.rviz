@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /GridMap1
         - /MarkerArray1
         - /MarkerArray1/Namespaces1
         - /MarkerArray3
@@ -57,6 +56,27 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Class: grid_map_rviz_plugin/GridMap
+      Color: 200; 200; 200
+      Color Layer: color
+      Color Transformer: ColorLayer
+      Enabled: true
+      Height Layer: elevation
+      Height Transformer: GridMapLayer
+      History Length: 1
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 10
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: GridMap
+      Show Grid Lines: false
+      Topic: /grid_map
+      Unreliable: false
+      Use Rainbow: true
+      Value: true
+    - Alpha: 0.20000000298023224
       Autocompute Intensity Bounds: false
       Class: grid_map_rviz_plugin/GridMap
       Color: 200; 200; 200
@@ -72,7 +92,7 @@ Visualization Manager:
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: GridMap
-      Show Grid Lines: true
+      Show Grid Lines: false
       Topic: /grid_map
       Unreliable: false
       Use Rainbow: true
@@ -152,25 +172,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1012.1920776367188
+      Distance: 3143.715087890625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 84.60640716552734
-        Y: -167.00657653808594
-        Z: -323.4049072265625
+        X: -116.4032974243164
+        Y: -124.77135467529297
+        Z: -178.3815155029297
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8697999715805054
+      Pitch: 0.8898003101348877
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.413056373596191
+      Yaw: 0.6298713684082031
     Saved: ~
 Window Geometry:
   Displays:

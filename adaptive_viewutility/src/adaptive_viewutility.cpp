@@ -44,6 +44,7 @@
 
 AdaptiveViewUtility::AdaptiveViewUtility(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
+  terrain_map_ = std::make_shared<TerrainMap>();
   statusloop_timer_ = nh_.createTimer(ros::Duration(1), &AdaptiveViewUtility::statusLoopCallback,
                                       this);  // Define timer for constant loop rate
   camera_path_pub_ = nh_.advertise<nav_msgs::Path>("camera_path", 1, true);
@@ -186,7 +187,7 @@ void AdaptiveViewUtility::AddViewPoint(const int idx, const double &longitude, c
   viewpoint_.push_back(viewpoint);
 }
 
-void AdaptiveViewUtility::LoadMap(const std::string &path) {
+void AdaptiveViewUtility::LoadMap(const std::string &path, const std::string color_map_path) {
   // Default to empty map when no path is specified
   if (path == "") {
     viewutility_map_->initializeEmptyMap();
@@ -205,6 +206,9 @@ void AdaptiveViewUtility::LoadMap(const std::string &path) {
     viewutility_map_->initializeFromMesh(path, target_map_resolution_);
   } else if (file_extension == "tif") {
     bool loaded = terrain_map_->initializeFromGeotiff(path, false);
+    if (!color_map_path.empty()) {  // Load color layer if the color path is nonempty
+      bool color_loaded = terrain_map_->addColorFromGeotiff(color_map_path);
+    }
     viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
     viewutility_map_->initializeFromGridmap();
   } else {
