@@ -80,12 +80,13 @@ int main(int argc, char **argv) {
     const Eigen::Vector2d map_pos = map.getPosition();
     const double map_width_x = map.getLength().x();
     const double map_width_y = map.getLength().y();
+    const double roi_portion = 0.2;
 
     polygon.setFrameId(map.getFrameId());
-    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) - 0.45 * map_width_x, map_pos(1) - 0.1 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + 0.2 * map_width_x, map_pos(1) - roi_portion * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + 0.2 * map_width_x, map_pos(1) + 0.1 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) - 0.3 * map_width_x, map_pos(1) + 0.05 * map_width_y));
 
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 

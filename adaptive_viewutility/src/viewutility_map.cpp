@@ -64,7 +64,7 @@ ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
   grid_map_["normalized_prior"].setConstant(0);
-  grid_map_["roi"].setConstant(1.0);
+  grid_map_["roi"].setConstant(0.0);
   grid_map_["elevation_normal_x"].setConstant(0);
   grid_map_["elevation_normal_y"].setConstant(0);
   grid_map_["elevation_normal_z"].setConstant(1);
@@ -455,7 +455,7 @@ void ViewUtilityMap::initializeFromGridmap() {
   }
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
-  grid_map_["roi"].setConstant(1.0);
+  grid_map_["roi"].setConstant(0.0);
   grid_map_["normalized_prior"].setConstant(0);
 }
 
@@ -501,7 +501,7 @@ bool ViewUtilityMap::initializeFromMesh(const std::string &path, const double re
   }
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
-  grid_map_["roi"].setConstant(1);
+  grid_map_["roi"].setConstant(0.0);
   grid_map_["normalized_prior"].setConstant(0);
   grid_map_.setFrameId("map");
   return true;
@@ -513,7 +513,7 @@ bool ViewUtilityMap::initializeEmptyMap() {
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
   grid_map_["elevation"].setConstant(1);
-  grid_map_["roi"].setConstant(0);
+  grid_map_["roi"].setConstant(0.0);
   grid_map_["elevation_normal_x"].setConstant(0);
   grid_map_["elevation_normal_y"].setConstant(0);
   grid_map_["elevation_normal_z"].setConstant(1);

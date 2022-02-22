@@ -7,7 +7,7 @@
         <param name="color_file_path" value="$(find adaptive_viewutility)/../resources/sertig_color.tif"/>
         <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
         <param name="num_experiments" value="1"/>
-        <param name="max_experiment_duration" value="500"/>
+        <param name="max_experiment_duration" value="300"/>
         <param name="result_directory" value="$(find adaptive_viewutility)/../output"/>
     </node>
     <group if="$(arg visualization)">
