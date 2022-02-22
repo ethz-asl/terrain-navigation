@@ -49,7 +49,6 @@
 #include <gdal/ogr_p.h>
 #include <gdal/ogr_spatialref.h>
 
-enum class ESPG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21781 };
 static constexpr const double kDefaultHomeX = 683565.21;     // LV03/CH1903
 static constexpr const double kDefaultHomeY = 250246.85;     // rad
 static constexpr const double kDefaultHomeAltitude = 488.0;  // meters

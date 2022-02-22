@@ -43,6 +43,7 @@
 #include "adaptive_viewutility/common.h"
 #include "adaptive_viewutility/viewplanner.h"
 #include "adaptive_viewutility/viewutility_map.h"
+#include "terrain_navigation/terrain_map.h"
 #include "terrain_navigation/viewpoint.h"
 
 #include <Eigen/Dense>
@@ -111,6 +112,7 @@ class AdaptiveViewUtility {
   ros::Publisher viewpoint_pub_;
 
   std::vector<ViewPoint> viewpoint_;
+  std::shared_ptr<TerrainMap> terrain_map_;
   std::shared_ptr<ViewUtilityMap> viewutility_map_;
   std::shared_ptr<ViewPlanner> viewplanner_;
 

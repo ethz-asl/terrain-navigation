@@ -42,11 +42,6 @@
 
 #include "terrain_navigation/viewpoint.h"
 
-#include <gdal/cpl_string.h>
-#include <gdal/gdal.h>
-#include <gdal/gdal_priv.h>
-#include <gdal/ogr_spatialref.h>
-
 #include <grid_map_msgs/GridMap.h>
 #include <grid_map_core/GridMap.hpp>
 #include <grid_map_core/iterators/GridMapIterator.hpp>
@@ -150,7 +145,6 @@ class ViewUtilityMap {
   static GeometricPrior getBestGeometricPrior(const std::vector<GeometricPrior> &prior_list);
   static double getBestGroundSampleDistance(const std::vector<GeometricPrior> &prior_list);
   void initializeFromGridmap();
-  bool initializeFromGeotiff(GDALDataset *dataset);
 
   /**
    * @brief Initialize View Utiltiy Map from Mesh

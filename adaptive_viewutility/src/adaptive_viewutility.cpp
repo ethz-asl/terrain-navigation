@@ -204,14 +204,9 @@ void AdaptiveViewUtility::LoadMap(const std::string &path) {
   if (file_extension == "obj") {
     viewutility_map_->initializeFromMesh(path, target_map_resolution_);
   } else if (file_extension == "tif") {
-    GDALAllRegister();
-    GDALDataset *dataset = (GDALDataset *)GDALOpen(path.c_str(), GA_ReadOnly);
-    if (!dataset) {
-      std::cout << "Failed to open" << std::endl;
-      return;
-    }
-
-    viewutility_map_->initializeFromGeotiff(dataset);
+    bool loaded = terrain_map_->initializeFromGeotiff(path, false);
+    viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
+    viewutility_map_->initializeFromGridmap();
   } else {
     throw std::runtime_error("Unknown file type: " + file_extension);
   }
