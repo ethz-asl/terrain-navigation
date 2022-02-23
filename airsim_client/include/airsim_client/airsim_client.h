@@ -64,7 +64,7 @@ STRICT_MODE_ON
 static constexpr const double kDefaultHomeX = 683565.21;     // LV03/CH1903
 static constexpr const double kDefaultHomeY = 250246.85;     // rad
 static constexpr const double kDefaultHomeAltitude = 488.0;  // meters
-enum class ESPG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21781 };
+enum class AIRSIM_ESPG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21781 };
 
 class AirsimClient {
  public:
@@ -76,7 +76,7 @@ class AirsimClient {
   void setImageDirectory(const std::string &image_directory) { image_directory_path_ = image_directory; };
   void getPose(Eigen::Vector3d &position, Eigen::Vector4d &attitude);
   Eigen::Vector3d getPlayerStart() { return player_start_; };
-  static Eigen::Vector3d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
+  static Eigen::Vector3d transformCoordinates(AIRSIM_ESPG src_coord, AIRSIM_ESPG tgt_coord,
                                               const Eigen::Vector3d source_coordinates) {
     OGRSpatialReference source, target;
     source.importFromEPSG(static_cast<int>(src_coord));

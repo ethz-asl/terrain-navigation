@@ -118,10 +118,11 @@ int main(int argc, char **argv) {
     const double map_width_y = map.getLength().y();
 
     polygon.setFrameId(map.getFrameId());
-    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
+    double roi_ratio=0.5;
+    polygon.addVertex(grid_map::Position(map_pos(0) - roi_ratio * map_width_x, map_pos(1) - roi_ratio * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + roi_ratio * map_width_x, map_pos(1) - roi_ratio * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + roi_ratio * map_width_x, map_pos(1) + roi_ratio * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) - roi_ratio * map_width_x, map_pos(1) + roi_ratio * map_width_y));
 
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 
