@@ -129,6 +129,7 @@ class Trajectory {
   double climb_rate{0.0};
   double dt{0.0};
   double utility{0.0};
+  bool viewed{false};
 
  private:
 };

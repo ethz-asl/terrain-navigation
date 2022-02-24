@@ -121,14 +121,17 @@ Trajectory &ViewPlanner::getBestPrimitive() { return getBestPrimitive(motion_pri
 
 Trajectory &ViewPlanner::getBestPrimitive(std::vector<Trajectory> &primitive_set) {
   double best_utility = 0.0;
-  int best_index = 0;
+  int best_index = -1;
   for (int k = 0; k < primitive_set.size(); k++) {
-    if (primitive_set[k].utility > best_utility) {
+    if (primitive_set[k].utility > best_utility && !primitive_set[k].viewed) {
       best_utility = primitive_set[k].utility;
       best_index = k;
     }
   }
-  return primitive_set[best_index];
+  if (best_index > -1) {
+    primitive_set[best_index].viewed = true;
+    return primitive_set[best_index];
+  }
 }
 
 Trajectory &ViewPlanner::getRandomPrimitive() {

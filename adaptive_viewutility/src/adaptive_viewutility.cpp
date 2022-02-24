@@ -288,7 +288,12 @@ void AdaptiveViewUtility::publishCandidatePaths(std::vector<Trajectory> &motion_
   std::vector<visualization_msgs::Marker> maneuver_library_vector;
   int i = 0;
   for (auto maneuver : motion_primitives) {
-    maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));
+    if (maneuver.viewed) continue;
+    Eigen::Vector3d pos = maneuver.states[0].position;
+    Eigen::Vector4d att = maneuver.states[0].attitude;
+    ViewPoint viewpoint(i, pos, att);
+    maneuver_library_vector.insert(maneuver_library_vector.begin(),
+                                   Viewpoint2MarkerMsg(i, viewpoint, Eigen::Vector3d(0.0, 1.0, 0.0)));
     i++;
   }
   msg.markers = maneuver_library_vector;

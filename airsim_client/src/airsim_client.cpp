@@ -108,7 +108,8 @@ void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &at
         /// TODO: Convert coordinates using gdal
         Eigen::Vector3d home_position_lv03(kDefaultHomeX, kDefaultHomeY, kDefaultHomeAltitude);
         Eigen::Vector3d position_lv03 = pos + home_position_lv03;
-        Eigen::Vector3d position_wgs84 = transformCoordinates(AIRSIM_ESPG::CH1903_LV03, AIRSIM_ESPG::WGS84, position_lv03);
+        Eigen::Vector3d position_wgs84 =
+            transformCoordinates(AIRSIM_ESPG::CH1903_LV03, AIRSIM_ESPG::WGS84, position_lv03);
         double lon = position_wgs84(0);
         double lat = position_wgs84(1);
         double altitude = position_wgs84(2);

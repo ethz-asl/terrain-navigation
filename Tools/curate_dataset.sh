@@ -9,8 +9,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 instance=0
 num_images=$(ls ${DATASET_PATH}/*.jpeg | wc -l)
-min_images=20
-increment=20
+min_images=10
+increment=10
 
 echo "Total number of images: " $num_images
 

@@ -52,7 +52,8 @@ geometry_msgs::Point toPoint(const Eigen::Vector3d &p) {
   return position;
 }
 
-visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
+visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint,
+                                               Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0)) {
   double scale{7.5};  // Size of the viewpoint markers
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
@@ -85,9 +86,9 @@ visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint) {
   marker.scale.y = 0.5;
   marker.scale.z = 0.5;
   marker.color.a = 1.0;  // Don't forget to set the alpha!
-  marker.color.r = 0.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
+  marker.color.r = color(0);
+  marker.color.g = color(1);
+  marker.color.b = color(2);
   return marker;
 }
 

@@ -75,22 +75,79 @@ Trajectory getRandomViewPoint(std::shared_ptr<AdaptiveViewUtility> &adaptive_vie
   return viewpoint;
 }
 
+void OutputViewset(std::vector<Trajectory> &view_set, const std::string path) {
+  // Write data to files
+  int id;
+  std::ofstream output_file;
+  std::cout << "Writing viewset output to: " << path;
+  output_file.open(path, std::ios::app);
+  if (id == 0) {  // TODO: Make this nicer
+    output_file << "id,x,y,z,qw, qx, qy, qz, padding,\n";
+  }
+
+  for (auto view : view_set) {
+    output_file << id << ",";
+    output_file << view.states[0].position(0) << ",";
+    output_file << view.states[0].position(1) << ",";
+    output_file << view.states[0].position(2) << ",";
+    output_file << view.states[0].attitude(0) << ",";
+    output_file << view.states[0].attitude(1) << ",";
+    output_file << view.states[0].attitude(2) << ",";
+    output_file << view.states[0].attitude(3) << ",";
+    output_file << 0 << ",";
+    output_file << "\n";
+    id++;
+  }
+  output_file.close();
+  return;
+}
+
+void ReadViewset(const std::string path, std::vector<Trajectory> &view_set) {
+  // Write data to files
+  bool parse_result;
+
+  std::ifstream file(path);
+  std::string str;
+
+  // Look for the image file name in the path
+  while (getline(file, str)) {
+    std::stringstream ss(str);
+    std::vector<std::string> data;
+    std::string cc;
+    while (getline(ss, cc, ',')) {
+      data.push_back(cc);
+    }
+    // #   ID, x, y, z, qw, qx, qy, qz
+    ss >> data[0] >> data[1] >> data[2] >> data[3] >> data[4] >> data[5] >> data[6] >> data[7];
+    if (data[0] == "id") continue;
+    State state;
+    state.position << std::stof(data[1]), std::stof(data[2]), std::stof(data[3]);
+    state.attitude << std::stof(data[4]), std::stof(data[5]), std::stof(data[6]), std::stof(data[7]);
+
+    Trajectory view;
+    view.states.push_back(state);
+    view_set.push_back(view);
+  }
+  return;
+}
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "adaptive_viewutility");
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
-  std::string file_path, output_file_path;
+  std::string file_path, output_dir_path, viewpoint_path;
   int num_experiments;
   double max_experiment_duration;
   bool enable_greedy{false};
   int snapshot_increment{20};
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
-  nh_private.param<int>("snapshot_interval", snapshot_increment, 25);
+  nh_private.param<int>("snapshot_interval", snapshot_increment, 20);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<bool>("enable_greedy", enable_greedy, false);
-  nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
+  nh_private.param<std::string>("viewpoint_path", viewpoint_path, "");
+  nh_private.param<std::string>("output_directory_path", output_dir_path, "output");
 
   std::string image_directory{""};
   nh_private.param<std::string>("image_directory", image_directory, image_directory);
@@ -118,7 +175,7 @@ int main(int argc, char **argv) {
     const double map_width_y = map.getLength().y();
 
     polygon.setFrameId(map.getFrameId());
-    double roi_ratio=0.5;
+    double roi_ratio = 0.5;
     polygon.addVertex(grid_map::Position(map_pos(0) - roi_ratio * map_width_x, map_pos(1) - roi_ratio * map_width_y));
     polygon.addVertex(grid_map::Position(map_pos(0) + roi_ratio * map_width_x, map_pos(1) - roi_ratio * map_width_y));
     polygon.addVertex(grid_map::Position(map_pos(0) + roi_ratio * map_width_x, map_pos(1) + roi_ratio * map_width_y));
@@ -134,17 +191,30 @@ int main(int argc, char **argv) {
     int increment{0};
     const int num_samples{100};
 
+    std::vector<Trajectory> candidate_viewpoints;
+    if (viewpoint_path.empty()) {  // Generate viewpoints and save it to a file
+      for (int k = 0; k < num_samples; k++) {
+        Trajectory view = getRandomViewPoint(adaptive_viewutility);
+        candidate_viewpoints.push_back(view);
+      }
+      std::string generated_view_set_path = output_dir_path + "/viewset.csv";
+      OutputViewset(candidate_viewpoints, generated_view_set_path);
+    } else {
+      // Read viewpoints from saved path
+      ReadViewset(viewpoint_path, candidate_viewpoints);
+    }
+
     while (true) {
+      // Terminate if simulation time has exceeded
+      if (simulated_time >= max_experiment_duration) {
+        break;
+      }
+
       pipeline_perf.tic();
+      /// TODO: Take out used viewpoints
 
       Trajectory first_segment;
       if (enable_greedy) {
-        std::cout << "enable greedy" << std::endl;
-        std::vector<Trajectory> candidate_viewpoints;
-        for (int k = 0; k < num_samples; k++) {
-          Trajectory view = getRandomViewPoint(adaptive_viewutility);
-          candidate_viewpoints.push_back(view);
-        }
         adaptive_viewutility->estimateViewUtility(candidate_viewpoints);
         first_segment = adaptive_viewutility->getBestPrimitive(candidate_viewpoints);
       } else {
@@ -164,32 +234,26 @@ int main(int argc, char **argv) {
       adaptive_viewutility->MapPublishOnce();
       adaptive_viewutility->ViewpointPublishOnce();
       adaptive_viewutility->publishViewpointHistory();
+      adaptive_viewutility->publishCandidatePaths(candidate_viewpoints);
 
       double planning_horizon = 1.0;
       /// TODO: Use dubins distance for calculating time to reach viewpoint
+
       simulated_time += planning_horizon;
+      increment++;
 
       double map_quality =
           performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
-
       if (increment % snapshot_increment == 0) {
-        std::string saved_map_path =
-            image_directory + "/gridmap_" + std::to_string(static_cast<int>(increment / snapshot_increment)) + ".bag";
-        std::cout << "Saving: " << saved_map_path << std::endl;
+        std::string saved_map_path = image_directory + "/gridmap_" +
+                                     std::to_string(static_cast<int>(increment / snapshot_increment) - 1) + ".bag";
         grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
                                                  saved_map_path, "/grid_map");
       }
-      increment++;
-
-      // Terminate if simulation time has exceeded
-      if (simulated_time > max_experiment_duration) terminate_mapping = true;
-      /// TODO: Define termination condition for map quality
-      if (terminate_mapping) {
-        break;
-      }
     }
-    performance_tracker->Output(output_file_path);
-    std::string saved_map_path = image_directory + "/gridmap_" + std::to_string(i) + ".bag";
+    std::string benchmark_file_path = output_dir_path + "/benchmark.csv";
+    performance_tracker->Output(benchmark_file_path);
+    std::string saved_map_path = image_directory + "/gridmap" + ".bag";
     grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
                                              "/grid_map");
     std::cout << "Final : " << saved_map_path << std::endl;
