@@ -23,7 +23,7 @@ def getCompleteness(data_df, threshold):
     return completeness
 
 
-fig1 = plt.figure("Error Statistics")
+fig1 = plt.figure("Error Statistics", figsize=(6, 4))
 #Error Histogram
 ax11 = fig1.add_subplot(2, 1, 1)
 ax11.set_ylim([0.0, 1.0])
