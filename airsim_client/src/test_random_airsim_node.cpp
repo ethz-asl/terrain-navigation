@@ -61,7 +61,8 @@ Trajectory getRandomViewPoint(std::shared_ptr<AdaptiveViewUtility> &adaptive_vie
   adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
   double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(
       "elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
-  vehicle_pos(2) = elevation + 100.0;
+  double altitude = getRandom(50.0, 150.0);
+  vehicle_pos(2) = elevation + altitude;
   double max_angle = 0.5 * M_PI * 0.5;
   double theta = getRandom(-max_angle, max_angle);
   Eigen::Vector3d axis;
@@ -73,6 +74,17 @@ Trajectory getRandomViewPoint(std::shared_ptr<AdaptiveViewUtility> &adaptive_vie
                       std::sin(0.5 * theta) * axis(2));
   addViewpoint(vehicle_pos, vehicle_vel, att, viewpoint);
   return viewpoint;
+}
+
+Trajectory &getRandomPrimitive(std::vector<Trajectory> &view_set) {
+  while (true) {
+    // Lazy sampling until we find a set that was not viewed
+    int i = std::rand() % view_set.size();
+    if (!view_set[i].viewed) {
+      view_set[i].viewed = true;
+      return view_set[i];
+    }
+  }
 }
 
 void OutputViewset(std::vector<Trajectory> &view_set, const std::string path) {
@@ -218,7 +230,7 @@ int main(int argc, char **argv) {
         adaptive_viewutility->estimateViewUtility(candidate_viewpoints);
         first_segment = adaptive_viewutility->getBestPrimitive(candidate_viewpoints);
       } else {
-        first_segment = getRandomViewPoint(adaptive_viewutility);
+        first_segment = getRandomPrimitive(candidate_viewpoints);
       }
 
       Eigen::Vector3d vehicle_pos = first_segment.states[0].position;

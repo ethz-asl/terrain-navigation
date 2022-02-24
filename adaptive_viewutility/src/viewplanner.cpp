@@ -128,10 +128,19 @@ Trajectory &ViewPlanner::getBestPrimitive(std::vector<Trajectory> &primitive_set
       best_index = k;
     }
   }
-  if (best_index > -1) {
-    primitive_set[best_index].viewed = true;
-    return primitive_set[best_index];
+  if (best_index < 0) {
+    // There is no view that can improve the map
+    for (int k = 0; k < primitive_set.size(); k++) {
+      if (!primitive_set[k].viewed) {
+        best_utility = primitive_set[k].utility;
+        best_index = k;
+        break;
+      }
+    }
   }
+
+  primitive_set[best_index].viewed = true;
+  return primitive_set[best_index];
 }
 
 Trajectory &ViewPlanner::getRandomPrimitive() {
