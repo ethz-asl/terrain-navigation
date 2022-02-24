@@ -153,10 +153,12 @@ int main(int argc, char **argv) {
   double max_experiment_duration;
   bool enable_greedy{false};
   int snapshot_increment{20};
+  int num_samples{200};
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
   nh_private.param<int>("snapshot_interval", snapshot_increment, 20);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
+  nh_private.param<int>("num_view_samples", num_samples, 200);
   nh_private.param<bool>("enable_greedy", enable_greedy, false);
   nh_private.param<std::string>("viewpoint_path", viewpoint_path, "");
   nh_private.param<std::string>("output_directory_path", output_dir_path, "output");
@@ -201,7 +203,6 @@ int main(int argc, char **argv) {
     bool terminate_mapping = false;
     double simulated_time{0.0};
     int increment{0};
-    const int num_samples{100};
 
     std::vector<Trajectory> candidate_viewpoints;
     if (viewpoint_path.empty()) {  // Generate viewpoints and save it to a file
