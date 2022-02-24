@@ -68,26 +68,26 @@ sequential_random:
     num_views: 100
     path: "/home/jaeyoung/dev/data/fixed2_random/dataset/9/map_data.csv"
 
-# roberts:
-#   name: "Roberts [32]"
-#   data_0:
-#     num_views: 10
-#     path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/0/map_data.csv"
-#   data_1:
-#     num_views: 20
-#     path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/1/map_data.csv"
-#   data_2:
-#     num_views: 30
-#     path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/2/map_data.csv"
-#   data_3:
-#     num_views: 40
-#     path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/3/map_data.csv"
-#   data_4:
-#     num_views: 50
-#     path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/4/map_data.csv"
-#   data_5:
-#     num_views: 60
-#     path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/5/map_data.csv"
-#   data_6:
-#     num_views: 70
-#     path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/6/map_data.csv"
+roberts:
+  name: "Roberts [32]"
+  data_0:
+    num_views: 10
+    path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/0/map_data.csv"
+  data_1:
+    num_views: 20
+    path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/1/map_data.csv"
+  data_2:
+    num_views: 30
+    path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/2/map_data.csv"
+  data_3:
+    num_views: 40
+    path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/3/map_data.csv"
+  data_4:
+    num_views: 50
+    path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/4/map_data.csv"
+  data_5:
+    num_views: 60
+    path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/5/map_data.csv"
+  data_6:
+    num_views: 70
+    path: "/home/jaeyoung/dev/data/roberts_incremental/dataset/6/map_data.csv"
