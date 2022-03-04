@@ -48,9 +48,9 @@ with open(sys.argv[1]) as file:
     # scalar values to Python the dictionary format
     list = yaml.load(file, Loader=yaml.FullLoader)
     for category_name, category in list.items():
-        views = np.array([])
-        precision = np.array([])
-        completeness = np.array([])
+        views = np.array([0.0])
+        precision = np.array([0.0])
+        completeness = np.array([0.0])
         name = {}
         for key, value in category.items():
             print("key: ", key, " value: ", value)
@@ -65,9 +65,11 @@ with open(sys.argv[1]) as file:
             completeness = np.append(completeness, getCompleteness(map_data_df, max_error))
 
         ax11.plot(views, precision, '-o', label=name)
+        ax11.set_xlim([0, 75])
         ax11.legend(loc="lower right")
         ax12.plot(views, completeness, '-o', label=name)
         ax12.legend(loc="lower right")
+        ax12.set_xlim([0, 75])
 plt.tight_layout()
 plt.legend()
 plt.show()

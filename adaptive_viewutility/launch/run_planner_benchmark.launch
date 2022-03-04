@@ -2,9 +2,9 @@
     <arg name="visualization" default="true"/>
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="adaptive_viewutility" type="test_planner_node" name="test_planner" output="screen">
-        <!-- <param name="file_path" value="/home/jaeyoung/dev/mesh/q_max_06/groundtruth_roi_meshlab.obj"/> -->
-        <param name="file_path" value="$(find adaptive_viewutility)/../resources/sertig.tif"/>
-        <param name="color_file_path" value="$(find adaptive_viewutility)/../resources/sertig_color.tif"/>
+        <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
+        <!-- <param name="file_path" value="$(find adaptive_viewutility)/../resources/sertig.tif"/>
+        <param name="color_file_path" value="$(find adaptive_viewutility)/../resources/sertig_color.tif"/> -->
         <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
         <param name="num_experiments" value="1"/>
         <param name="max_experiment_duration" value="300"/>

@@ -298,11 +298,11 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
           // Calculate fisher information of each bearing vector observation
           double reference_view_distance = 100;
           Eigen::Vector3d bearing_vector = -view_vector;
-          double gsd_prior = getGroundSamplePrior(bearing_vector, optical_center, reference_view_distance);
+          // double gsd_prior = getGroundSamplePrior(bearing_vector, optical_center, reference_view_distance);
           double pixel_res = viewpoint.getPixelResolution();
           double sigma = std::sin(pixel_res);
           Eigen::Matrix3d fim = getFisherInformationMatrix(bearing_vector, view_distance, sigma);
-          Eigen::Matrix3d accumulated_fim = cell_fim + (incident_prior * gsd_prior * fim);
+          Eigen::Matrix3d accumulated_fim = cell_fim + (incident_prior * fim);
 
           // Compute Cramer Rao Bounds
           /// TODO: Catch if fim is singular
@@ -325,7 +325,7 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
           cell_information[idx].max_cramerrao_bounds = max_cramer_rao_bound;
           if (update_utility_map) {
             layer_geometricprior(index(0), index(1)) = max_cramer_rao_bound;
-            layer_sample_distance(index(0), index(1)) = gsd_prior;
+            // layer_sample_distance(index(0), index(1)) = gsd_prior;
             layer_incident_prior(index(0), index(1)) = incident_prior;
             layer_utility(index(0), index(1)) = max_cramer_rao_bound / min_cramer_rao_bound;
           }

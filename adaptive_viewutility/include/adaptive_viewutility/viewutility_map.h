@@ -167,8 +167,8 @@ class ViewUtilityMap {
    */
   bool hemisphereInside(const Eigen::Vector3d &view, const Eigen::Vector3d &sample, const double distance) {
     double theta_max{0.5 * 0.25 * M_PI};
-    double t0 = 4.0;
-    double t_half = 12.0;
+    double t0 = 100.0;
+    double t_half = 30.0;
     double angle = std::acos(sample.dot(view));  // Angle between view sample and sample
     double radius = theta_max * std::pow(2.0, -std::max(distance - t0, 0.0) / t_half);
     return bool(angle < radius);  // Sample is inside the radius of a view

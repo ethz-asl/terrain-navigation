@@ -217,6 +217,8 @@ int main(int argc, char **argv) {
       ReadViewset(viewpoint_path, candidate_viewpoints);
     }
 
+    std::vector<Trajectory> executed_viewset;
+
     while (true) {
       // Terminate if simulation time has exceeded
       if (simulated_time >= max_experiment_duration) {
@@ -233,6 +235,7 @@ int main(int argc, char **argv) {
       } else {
         first_segment = getRandomPrimitive(candidate_viewpoints);
       }
+      executed_viewset.push_back(first_segment);
 
       Eigen::Vector3d vehicle_pos = first_segment.states[0].position;
       Eigen::Vector4d vehicle_att = first_segment.states[0].attitude;
@@ -271,6 +274,9 @@ int main(int argc, char **argv) {
                                              "/grid_map");
     std::cout << "Final : " << saved_map_path << std::endl;
     std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
+    std::string executed_view_set_path = output_dir_path + "/executed_viewset.csv";
+    std::cout << "[TestRandomAirsimNode] Executed view set path: " << executed_view_set_path << std::endl;
+    OutputViewset(executed_viewset, executed_view_set_path);
   }
   std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
 

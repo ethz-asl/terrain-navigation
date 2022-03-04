@@ -2,15 +2,15 @@
     <arg name="visualization" default="true"/>
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="airsim_client" type="test_random_airsim_node" name="test_planner" output="screen">
-        <param name="file_path" value="/home/jaeyoung/dev/mesh/q_max_06/groundtruth_roi_meshlab.obj"/>
-        <param name="viewpoint_path" value="$(find adaptive_viewutility)/../resources/viewset_200.csv"/>
+        <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
+        <param name="viewpoint_path" value="$(find adaptive_viewutility)/../resources/executed_viewset.csv"/>
         <param name="num_view_samples" value="200"/>
         <param name="output_directory_path" value="$(find adaptive_viewutility)/../output"/>
         <param name="num_experiments" value="1"/>
         <param name="max_experiment_duration" value="100"/>
         <param name="snapshot_interval" value="10"/>
         <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
-        <param name="enable_greedy" value="false"/>
+        <param name="enable_greedy" value="true"/>
     </node>
     <group if="$(arg visualization)">
         <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_random.rviz" />

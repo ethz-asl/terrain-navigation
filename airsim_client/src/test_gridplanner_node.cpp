@@ -226,6 +226,8 @@ int main(int argc, char **argv) {
   int num_images{0};
   double elapsed_time{0.0};
   while (true) {
+    // Terminate if simulation time has exceeded
+    if (simulated_time > max_experiment_duration) break;
     Trajectory reference_trajectory;
     if (terrain_altitude) elevation = map.atPosition("elevation", vehicle_pos_2d);
     Eigen::Vector3d vehicle_pos(vehicle_pos_2d(0), vehicle_pos_2d(1), elevation + altitude);
@@ -295,12 +297,6 @@ int main(int argc, char **argv) {
                                                "/grid_map");
       elapsed_time = 0.0;
       snapshot_index++;
-    }
-
-    // Terminate if simulation time has exceeded
-    if (simulated_time > max_experiment_duration) terminate_mapping = true;
-    if (terminate_mapping) {
-      break;
     }
     ros::Duration(0.5).sleep();
   }

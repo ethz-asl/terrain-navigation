@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
   /// set Current state of vehicle
   /// TODO: Randomly generate initial position
   Eigen::Vector3d airsim_player_start = airsim_client->getPlayerStart();
+  std::vector<double> time_vector;
 
   for (int i = 0; i < num_experiments; i++) {
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
@@ -83,14 +84,18 @@ int main(int argc, char **argv) {
     const double map_width_y = map.getLength().y();
 
     polygon.setFrameId(map.getFrameId());
-    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
+    double roi_portion = 0.5;
+    polygon.addVertex(grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
 
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
+    grid_map::Polygon offset_polygon = polygon;
+    offset_polygon.offsetInward(1.0);
+    Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
 
-    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 100.0);
+    Eigen::Vector3d vehicle_pos(start_pos_2d(0), start_pos_2d(1), 100.0);
     double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(
         "elevation", Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1)));
     vehicle_pos(2) = vehicle_pos(2) + elevation;
@@ -107,6 +112,8 @@ int main(int argc, char **argv) {
     double elapsed_time{0.0};
     int snapshot_index{0};
     while (true) {
+      // Terminate if simulation time has exceeded
+      if (simulated_time > max_experiment_duration) break;
       pipeline_perf.tic();
       adaptive_viewutility->generateMotionPrimitives();
 
@@ -125,7 +132,8 @@ int main(int argc, char **argv) {
 
       adaptive_viewutility->setCurrentState(first_segment.states.back().position, first_segment.states.back().velocity);
 
-      pipeline_perf.toc();
+      std::cout << "Planning time: " << pipeline_perf.toc() << std::endl;
+      time_vector.push_back(pipeline_perf.toc());
       adaptive_viewutility->MapPublishOnce();
       adaptive_viewutility->ViewpointPublishOnce();
       adaptive_viewutility->publishViewpointHistory();
@@ -133,12 +141,6 @@ int main(int argc, char **argv) {
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
       simulated_time += planning_horizon;
       elapsed_time += planning_horizon;
-      // Terminate if simulation time has exceeded
-      if (simulated_time > max_experiment_duration) terminate_mapping = true;
-      /// TODO: Define termination condition for map quality
-      if (terminate_mapping) {
-        break;
-      }
       if (elapsed_time >= snapshot_interval) {
         elapsed_time = 0.0;
         std::string saved_map_path =
@@ -154,6 +156,19 @@ int main(int argc, char **argv) {
     std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
   }
   std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
+
+  std::cout << "[TestPlannerNode] Statistics" << std::endl;
+  double accumulated_time{0.0};
+  double accumualted_squared_time{0.0};
+  for (auto time : time_vector) {
+    accumulated_time+=time;
+    accumualted_squared_time+=std::pow(time, 2);
+  }
+  double mean = accumulated_time / time_vector.size();
+  double squared_mean = accumualted_squared_time / time_vector.size();
+  double stdev = std::sqrt(squared_mean - mean);
+  std::cout << "  - mean: " << mean << std::endl;
+  std::cout << "  - stdev: " << stdev << std::endl;
 
   ros::spin();
   return 0;

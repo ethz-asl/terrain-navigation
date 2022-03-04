@@ -2,10 +2,10 @@
     <arg name="visualization" default="true"/>
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="airsim_client" type="test_planner_airsim_node" name="test_planner" output="screen" required="true">
-        <param name="file_path" value="/home/jaeyoung/dev/mesh/q_max_06/groundtruth_roi_meshlab.obj"/>
+        <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
         <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
         <param name="num_experiments" value="1"/>
-        <param name="snapshot_interval" value="40"/>
+        <param name="snapshot_interval" value="20"/>
         <param name="max_experiment_duration" value="200"/>
         <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
     </node>
