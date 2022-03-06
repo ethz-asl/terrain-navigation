@@ -85,10 +85,14 @@ int main(int argc, char **argv) {
 
     polygon.setFrameId(map.getFrameId());
     double roi_portion = 0.5;
-    polygon.addVertex(grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
+    polygon.addVertex(
+        grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
+    polygon.addVertex(
+        grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) - roi_portion * map_width_y));
+    polygon.addVertex(
+        grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
+    polygon.addVertex(
+        grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
 
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
     grid_map::Polygon offset_polygon = polygon;
@@ -161,8 +165,8 @@ int main(int argc, char **argv) {
   double accumulated_time{0.0};
   double accumualted_squared_time{0.0};
   for (auto time : time_vector) {
-    accumulated_time+=time;
-    accumualted_squared_time+=std::pow(time, 2);
+    accumulated_time += time;
+    accumualted_squared_time += std::pow(time, 2);
   }
   double mean = accumulated_time / time_vector.size();
   double squared_mean = accumualted_squared_time / time_vector.size();
