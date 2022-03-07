@@ -106,7 +106,7 @@ Visualization Manager:
       Marker Topic: /path
       Name: MarkerArray
       Namespaces:
-        {}
+        normals: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray

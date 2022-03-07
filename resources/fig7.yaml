@@ -1,28 +1,75 @@
 # Figure 7 for IROS2022 submission
 # In order to visualize the plot, run:
 #  make pathlength path=resources/fig6.yaml 
-sequential_greedy:
-  name: "Ours"
-  benchmark: "/home/jaeyoung/dev/data/planner/benchmark.csv"
-  data_0: 
-    path: "/home/jaeyoung/dev/data/planner/dataset/0/map_data.csv"
-  data_1:
-    path: "/home/jaeyoung/dev/data/planner/dataset/1/map_data.csv"
-  data_2:
-    path: "/home/jaeyoung/dev/data/planner/dataset/2/map_data.csv"
-  data_3:
-    path: "/home/jaeyoung/dev/data/planner/dataset/3/map_data.csv"
-  data_4:
-    path: "/home/jaeyoung/dev/data/planner/dataset/4/map_data.csv"
 
-survey:
-  name: "Survey"
-  benchmark: "/home/jaeyoung/dev/data/survey/benchmark.csv"
+sequential_greedy_1:
+  name: "Ours"
+  benchmark: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/benchmark.csv"
   data_0: 
-    path: "/home/jaeyoung/dev/data/survey/dataset/0/map_data.csv"
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/0/map_data.csv"
   data_1:
-    path: "/home/jaeyoung/dev/data/survey/dataset/1/map_data.csv"
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/1/map_data.csv"
   data_2:
-    path: "/home/jaeyoung/dev/data/survey/dataset/2/map_data.csv"
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/2/map_data.csv"
   data_3:
-    path: "/home/jaeyoung/dev/data/survey/dataset/3/map_data.csv"
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/3/map_data.csv"
+  data_4:
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/4/map_data.csv"
+  data_5:
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/5/map_data.csv"
+  data_6:
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/6/map_data.csv"
+  data_7:
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/7/map_data.csv"
+  data_8:
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/8/map_data.csv"
+  data_9:
+    path: "/media/jaeyoung/120D9B09210D1DF7/planner_nogsd/dataset/9/map_data.csv"
+
+survey_1:
+  name: "Survey"
+  benchmark: "/media/jaeyoung/120D9B09210D1DF7/survey_final/benchmark.csv"
+  data_0: 
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/0/map_data.csv"
+  data_1:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/1/map_data.csv"
+  data_2:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/2/map_data.csv"
+  data_3:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/3/map_data.csv"
+  data_4:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/4/map_data.csv"
+  data_5:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/5/map_data.csv"
+  data_6:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/6/map_data.csv"
+  data_7:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/7/map_data.csv"
+  data_8:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/8/map_data.csv"
+  data_9:
+    path: "/media/jaeyoung/120D9B09210D1DF7/survey_final/dataset/9/map_data.csv"
+
+roberts_1:
+  name: "Roberts[24]"
+  benchmark: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/benchmark.csv"
+  data_0: 
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/0/map_data.csv"
+  data_1:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/1/map_data.csv"
+  data_2:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/2/map_data.csv"
+  data_3:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/3/map_data.csv"
+  data_4:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/4/map_data.csv"
+  data_5:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/5/map_data.csv"
+  data_6:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/6/map_data.csv"
+  data_7:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/7/map_data.csv"
+  data_8:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/8/map_data.csv"
+  data_9:
+    path: "/media/jaeyoung/120D9B09210D1DF7/sequential_roberts/dataset/9/map_data.csv"

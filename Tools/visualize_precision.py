@@ -57,12 +57,14 @@ with open(sys.argv[1]) as file:
             if key == 'name':
                 name = value
                 continue
-            views = np.append(views, value["num_views"])
+            # views = np.append(views, value["num_views"])
 
             map_data_df = pd.read_csv(value['path'])
 
             precision = np.append(precision, getPrecision(map_data_df, max_error))
             completeness = np.append(completeness, getCompleteness(map_data_df, max_error))
+            print(" precision: ", precision)
+            print(" completeness: ", completeness)
 
         ax11.plot(views, precision, '-o', label=name)
         ax11.set_xlim([0, 75])

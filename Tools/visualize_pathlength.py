@@ -23,20 +23,18 @@ def getCompleteness(data_df, threshold):
     return completeness
 
 
-fig1 = plt.figure("Error Statistics")
+fig1 = plt.figure("Error Statistics", figsize=(6, 4))
 #Error Histogram
-ax11 = fig1.add_subplot(1, 2, 1)
-ax11.set_title('Precision')
+ax11 = fig1.add_subplot(2, 1, 1)
 ax11.set_ylim([0.0, 1.0])
-ax11.set_xlabel('Precision')
+ax11.set_ylabel('Precision')
 ax11.set_xlabel('Time [Seconds]')
 ax11.grid(True)
 ax11.legend(loc="lower right")
 
-ax12 = fig1.add_subplot(1, 2, 2)
-ax12.set_title('Completeness')
+ax12 = fig1.add_subplot(2, 1, 2)
 ax12.set_ylim([0.0, 1.0])
-ax12.set_xlabel('Completeness')
+ax12.set_ylabel('Completeness')
 ax12.set_xlabel('Time [Seconds]')
 ax12.grid(True)
 ax12.legend(loc="lower right")
@@ -76,4 +74,5 @@ with open(sys.argv[1]) as file:
         ax12.legend(loc="lower right")
 
 plt.legend()
+plt.tight_layout()
 plt.show()

@@ -9,6 +9,7 @@
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <random>
 
 geometry_msgs::Pose vector3d2PoseMsg(const Eigen::Vector3d position, const Eigen::Vector4d orientation) {
   geometry_msgs::Pose encode_msg;
@@ -163,6 +164,12 @@ bool parseAttitudeFromText(std::string text_path, std::string image_file, Eigen:
 
 double getRandom(double min, double max) {
   return std::abs(max - min) * static_cast<double>(rand()) / static_cast<double>(RAND_MAX) + std::min(max, min);
+}
+
+double getNormalRandom(double mean, double sigma) {
+  std::default_random_engine random_generator_;
+  std::normal_distribution<double> standard_normal_distribution_(mean, sigma);
+  return standard_normal_distribution_(random_generator_);
 }
 
 #endif

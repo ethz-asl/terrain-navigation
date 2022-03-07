@@ -51,10 +51,12 @@ int main(int argc, char **argv) {
   int num_experiments;
   double snapshot_interval;  // Interval (seconds) that the package will keep track of
   double max_experiment_duration;
+  bool viewpoint_noise{false};
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
   nh_private.param<double>("snapshot_interval", snapshot_interval, 20.0);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 200.0);
+  nh_private.param<bool>("viewpoint_noise", viewpoint_noise, false);
   nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
 
   std::string image_directory{""};
@@ -93,7 +95,10 @@ int main(int argc, char **argv) {
         grid_map::Position(map_pos(0) + roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
     polygon.addVertex(
         grid_map::Position(map_pos(0) - roi_portion * map_width_x, map_pos(1) + roi_portion * map_width_y));
+    grid_map::Polygon offset_polygon = polygon;
+    offset_polygon.offsetInward(1.0);
 
+    Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
     grid_map::Polygon offset_polygon = polygon;
     offset_polygon.offsetInward(1.0);
@@ -115,6 +120,8 @@ int main(int argc, char **argv) {
     double simulated_time{0.0};
     double elapsed_time{0.0};
     int snapshot_index{0};
+    std::default_random_engine random_generator_;
+    std::normal_distribution<double> standard_normal_distribution_(0.0, 45.0 / 180.0 * M_PI);
     while (true) {
       // Terminate if simulation time has exceeded
       if (simulated_time > max_experiment_duration) break;
@@ -127,6 +134,20 @@ int main(int argc, char **argv) {
 
       Trajectory first_segment;
       for (int i = 0; i < 5; i++) {
+        // TODO: Add noise
+        if (viewpoint_noise) {
+          double theta = standard_normal_distribution_(random_generator_);
+          std::cout << "Theta: " << theta * 180.0 / M_PI << std::endl;
+          Eigen::Vector3d axis =
+              Eigen::Vector3d(getRandom(-1.0, 1.0), getRandom(-1.0, 1.0), getRandom(-1.0, 1.0)).normalized();
+          axis = axis * std::sin(theta / 2.0);
+          Eigen::Vector4d disturbance_att;
+          disturbance_att << std::cos(theta / 2.0), axis(0), axis(1), axis(2);
+          std::cout << "  - original attitude: " << reference_trajectory.states[i].attitude.transpose() << std::endl;
+          reference_trajectory.states[i].attitude =
+              AirsimClient::quatMultiplication(reference_trajectory.states[i].attitude, disturbance_att);
+          std::cout << "  - modified attitude: " << reference_trajectory.states[i].attitude.transpose() << std::endl;
+        }
         first_segment.states.push_back(reference_trajectory.states[i]);
         airsim_client->setPose(reference_trajectory.states[i].position, reference_trajectory.states[i].attitude);
         ros::Duration(0.1).sleep();
