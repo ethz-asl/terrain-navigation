@@ -256,12 +256,78 @@ class Primitive {
   Primitive(Trajectory &trajectory) { segment = trajectory; };
   virtual ~Primitive(){};
   std::vector<std::shared_ptr<Primitive>> child_primitives;
-  void expandPrimitives(std::shared_ptr<Primitive> primitive);
   Eigen::Vector3d getEndofSegmentPosition() { return segment.states.back().position; }
   Eigen::Vector3d getEndofSegmentVelocity() { return segment.states.back().velocity; }
   bool valid() { return validity; }
   bool has_child() { return !child_primitives.empty(); }
+  bool has_expandable_child() {
+    if (!has_child()) {
+      return true;
+    } else {
+      for (auto &child : child_primitives) {
+        if (child->visits < 1) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  std::vector<TrajectorySegments> getMotionPrimitives() {
+    std::vector<TrajectorySegments> all_primitives;
+    if (has_child()) {
+      std::vector<TrajectorySegments> extended_primitives;
+      for (auto &child : child_primitives) {
+        extended_primitives = child->getMotionPrimitives();
+        // Append current segment
+        for (auto &primitive : extended_primitives) {
+          if (primitive.valid()) {
+            primitive.prependSegment(segment);
+            all_primitives.push_back(primitive);
+          }
+        }
+      }
+      return all_primitives;
+    } else {  // Append primitive segments
+      TrajectorySegments trajectory_segments;
+      trajectory_segments.appendSegment(segment);
+      trajectory_segments.validity = validity;
+      all_primitives.push_back(trajectory_segments);
+    }
+    return all_primitives;
+  }
+
+  std::shared_ptr<Primitive> getBestChild() {
+    int best_idx{0};
+    double best_ucb{-1};
+    double c{0.0001};
+    for (size_t i = 0; i < child_primitives.size(); i++) {
+      std::shared_ptr<Primitive> child = child_primitives[i];
+      if (child->visits < 1) continue;
+      double upper_confidence_bound =
+          child->utility / child->visits + c * std::sqrt(2.0 * std::log(visits) / child->visits);
+      if (upper_confidence_bound > best_ucb) {
+        best_idx = i;
+        best_ucb = upper_confidence_bound;
+      }
+    }
+
+    /// TODO: Safe guard against empty child
+    return child_primitives[best_idx];
+  }
+
+  std::shared_ptr<Primitive> getRandomChild() {
+    int num_child = child_primitives.size();
+    /// TODO: Safe guard against empty child
+    return child_primitives[std::rand() % num_child];
+  }
+  std::shared_ptr<Primitive> getUnvisitedChild() {
+    int num_child = child_primitives.size();
+    for (auto &child : child_primitives) {
+      if (child->visits < 1) return child;
+    }
+  }
   double utility{0.0};
+  int visits{0};
   // A primitive is not valid if none of the child primitives are valid
   bool validity{false};
   bool evaluation{false};

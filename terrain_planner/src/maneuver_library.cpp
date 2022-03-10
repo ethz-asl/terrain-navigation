@@ -88,30 +88,9 @@ std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const
   double horizon = 2 * M_PI / emergency_rates[0](2);
   expandPrimitives(motion_primitive_tree_, emergency_rates, horizon);
 
-  /// TODO: Copy motion primitive tree into motion primitives
   motion_primitives_.clear();
-  std::vector<TrajectorySegments> first_segment;
+  motion_primitives_ = motion_primitive_tree_->getMotionPrimitives();
 
-  for (auto rate : primitive_rates_) {
-    TrajectorySegments trajectory_segments;
-    Trajectory trajectory;
-    if (!current_path.segments.empty()) {
-      trajectory_segments.appendSegment(current_segment);
-      trajectory = generateArcTrajectory(rate, planning_horizon_, current_segment.states.back().position,
-                                         current_segment.states.back().velocity);
-    } else {
-      trajectory = generateArcTrajectory(rate, planning_horizon_, current_pos, current_vel);
-    }
-    trajectory_segments.appendSegment(trajectory);
-    first_segment.push_back(trajectory_segments);
-  }
-
-  // Append second segment for each primitive
-  std::vector<TrajectorySegments> second_segment = AppendSegment(first_segment, primitive_rates_, planning_horizon_);
-  std::vector<TrajectorySegments> third_segment = AppendSegment(second_segment, primitive_rates_, planning_horizon_);
-  std::vector<TrajectorySegments> fourth_segment = AppendSegment(third_segment, emergency_rates, horizon);
-
-  motion_primitives_ = fourth_segment;
   return motion_primitives_;
 }
 
@@ -133,7 +112,82 @@ bool ManeuverLibrary::Solve() {
   return true;
 }
 
-void ManeuverLibrary::expandPrimitives(std::shared_ptr<Primitive> primitive, std::vector<Eigen::Vector3d> rates,
+TrajectorySegments ManeuverLibrary::SolveMCTS(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
+                                              const Eigen::Vector4d current_att, TrajectorySegments &current_path) {
+  TrajectorySegments best_primitive;
+
+  Trajectory current_segment;
+  if (!current_path.segments.empty()) {
+    current_segment = current_path.getCurrentSegment(current_pos);
+  } else {
+    State state_vector;
+    state_vector.position = current_pos;
+    state_vector.velocity = current_vel.normalized();
+    state_vector.attitude = current_att;
+    current_segment.states.push_back(state_vector);
+  }
+  // root
+  motion_primitive_tree_ = std::make_shared<Primitive>(current_segment);
+
+  /// TODO: switch max iterations to time
+  int iter{0};
+  int max_iter{0};
+  while (true) {
+    if (iter > max_iter) break;
+    int num_rollouts{100};
+    // Roll out
+    for (size_t i = 0; i < num_rollouts; i++) {
+      // vd ← Selection(v0)
+      std::shared_ptr<Primitive> leaf = motion_primitive_tree_;
+      std::vector<std::shared_ptr<Primitive>> path;
+      path.push_back(leaf);
+      while (true) {
+        if (leaf->has_expandable_child()) {
+          if (!leaf->has_child()) {
+            expandPrimitives(leaf, primitive_rates_, planning_horizon_);
+            leaf = leaf->getRandomChild();
+          } else {
+            leaf = leaf->getUnvisitedChild();
+          }
+          path.push_back(leaf);
+          break;
+        } else {
+          // vd+1 ← Expansion(vd)
+          leaf = leaf->getBestChild();
+          path.push_back(leaf);
+        }
+      }
+
+      /// ∆ ← Simulation(vd+1)
+      /// TODO: Run collision checks
+      /// TODO: Add emergency maneuvers for ICS checks
+      Eigen::Vector3d end_pos = leaf->getEndofSegmentPosition();
+      Eigen::Vector3d distance_vector = end_pos - Eigen::Vector3d(goal_pos_(0), goal_pos_(1), goal_pos_(2));
+      double utility = 1 / distance_vector.norm();
+
+      /// Backup(vd+1, ∆)
+      for (auto &node : path) {
+        node->utility += utility;
+        node->visits++;
+        node->validity = true;
+      }
+    }
+    iter++;
+  }
+  // Copy all candidate motion primitives for visualization
+  motion_primitives_.clear();
+  motion_primitives_ = motion_primitive_tree_->getMotionPrimitives();
+  std::cout << "MotionPrimitiveSize: " << motion_primitives_.size() << std::endl;
+
+  // Get Best Motion Primitives
+  best_primitive.appendSegment(motion_primitive_tree_->segment);
+  std::shared_ptr<Primitive> best_child = motion_primitive_tree_->getBestChild();
+  best_primitive.appendSegment(best_child->segment);
+
+  return best_primitive;
+}
+
+void ManeuverLibrary::expandPrimitives(std::shared_ptr<Primitive> &primitive, std::vector<Eigen::Vector3d> rates,
                                        double horizon) {
   if (primitive->child_primitives.empty()) {
     Eigen::Vector3d current_pos = primitive->getEndofSegmentPosition();
@@ -163,7 +217,7 @@ bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> primitive,
 
   if (valid_trajectory) {
     if (primitive->has_child()) {
-      //If the primitive segment is valid and has a child it needs to have at least one child that is valid
+      // If the primitive segment is valid and has a child it needs to have at least one child that is valid
       bool has_valid_child{false};
       for (auto &child : primitive->child_primitives) {
         std::vector<TrajectorySegments> child_segments;

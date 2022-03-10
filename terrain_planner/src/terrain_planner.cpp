@@ -173,30 +173,24 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     reference_primitive_.segments.clear();
   }
   // Only run planner in offboard mode
-  maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, vehicle_attitude_,
-                                              reference_primitive_);
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
-  bool result = maneuver_library_->Solve();
-
-  if (result) {
-    planner_mode_ = PLANNER_MODE::GOAL;
-  } else {
-    planner_mode_ = PLANNER_MODE::RANDOM;
-  }
-
-  planner_mode_ = PLANNER_MODE::GOAL;
 
   switch (planner_mode_) {
-    case PLANNER_MODE::VIEW_UTILITY:
-      /// TODO: Implement DFS/BFS and MCTS for searching best view utility paths
-      break;
-    case PLANNER_MODE::GOAL:
-      /// TODO: Get Best Primitive with BFS
+    case PLANNER_MODE::EXHAUSTIVE:
+      maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, vehicle_attitude_,
+                                                  reference_primitive_);
+      maneuver_library_->Solve();
       reference_primitive_ = maneuver_library_->getBestPrimitive();
+      break;
+    case PLANNER_MODE::MCTS:
+      reference_primitive_ =
+          maneuver_library_->SolveMCTS(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
       break;
     case PLANNER_MODE::RANDOM:
     default:
+      maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, vehicle_attitude_,
+                                                  reference_primitive_);
       /// TODO: Take failsafe action when no valid primitive is found
       std::cout << "[TerrainPlanner] Unable to found a valid motion primitive: using a random primitive" << std::endl;
       reference_primitive_ = maneuver_library_->getRandomPrimitive();
@@ -279,7 +273,7 @@ void TerrainPlanner::publishCandidateManeuvers(const std::vector<TrajectorySegme
 
   std::vector<visualization_msgs::Marker> maneuver_library_vector;
   int i = 0;
-  bool visualize_invalid_trajectories = false;
+  bool visualize_invalid_trajectories = true;
   for (auto maneuver : candidate_maneuvers) {
     if (maneuver.valid() || visualize_invalid_trajectories) {
       maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));

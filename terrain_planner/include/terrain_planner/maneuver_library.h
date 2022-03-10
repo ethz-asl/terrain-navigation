@@ -77,11 +77,13 @@ class ManeuverLibrary {
   void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
   Eigen::Vector3d getGoalPosition() { return goal_pos_; };
   bool Solve();
+  TrajectorySegments SolveMCTS(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
+                               const Eigen::Vector4d current_att, TrajectorySegments& current_path);
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
   std::shared_ptr<TerrainMap>& getTerrainMap() { return terrain_map_; };
   std::shared_ptr<ViewUtilityMap>& getViewUtilityMap() { return viewutility_map_; };
   double getTimeStep() { return dt_; }
-  void expandPrimitives(std::shared_ptr<Primitive> primitive, std::vector<Eigen::Vector3d> rates, double horizon);
+  void expandPrimitives(std::shared_ptr<Primitive>& primitive, std::vector<Eigen::Vector3d> rates, double horizon);
 
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
