@@ -7,6 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 find_package(GDAL)
 find_package(OpenCV REQUIRED)
 find_package(GeographicLib REQUIRED)
+find_package(ompl REQUIRED)
 include(CheckGeographicLibDatasets)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -39,6 +40,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
   ${GeographicLib_INCLUDE_DIRS}
+  ${OMPL_INCLUDE_DIR}
 )
 
 add_library(${PROJECT_NAME}
@@ -46,9 +48,10 @@ add_library(${PROJECT_NAME}
   src/terrain_planner.cpp
   src/mcts_planner.cpp
   src/primitive_planner.cpp
+  src/terrain_ompl_rrt.cpp
 )
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES} ${OMPL_LIBRARIES})
 
 ############
 # BINARIES #
@@ -76,6 +79,11 @@ add_executable(test_mcts
 )
 add_dependencies(test_mcts terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_mcts ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
+add_executable(test_rrt_node
+  src/test_rrt_node.cpp
+)
+add_dependencies(test_rrt_node terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(test_rrt_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
 
 
 ##########
