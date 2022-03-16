@@ -63,22 +63,11 @@ struct CellInfo {
   double max_cramerrao_bounds{limit_cramerrao_bounds};
 };
 
-struct GeometricPrior {
-  double triangulation{0.0};
-  double resolution{0.0};
-  double incident{0.0};
-  double sample_distance{0.0};
-  double joint{0.0};
-};
-
 struct GeometricPriorSettings {
   double reference_view_distance{100.0};
   double sigma_k{45.0 / 180.0 * M_PI};
   double min_triangulation_angle{0.083 * M_PI};
 };
-
-// TODO: Implement different geometric priors as child class
-enum class ViewUtilityType { GEOMETRIC_PRIOR, SPHERICAL_COVERAGE, FISHER_INFORMATION };
 
 class ViewUtilityMap {
  public:
@@ -90,24 +79,10 @@ class ViewUtilityMap {
   void setGeometricPriorSettings(const GeometricPriorSettings &settings) { settings_ = settings; }
   grid_map::GridMap &getGridMap() { return grid_map_; };
   std::vector<CellInfo> getCellInfo() { return cell_information_; };
-  void UpdateUtility(ViewPoint &viewpoint);
+  void UpdateUtility(ViewPoint &viewpoint) { CalculateViewUtility(viewpoint, true, cell_information_, grid_map_); };
   void OutputMapData(const std::string path);
   double CalculateViewUtility(std::vector<ViewPoint> &viewpoint_set, bool update_utility_map);
 
-  /**
-   * @brief Get the Geometric Prior object
-   *
-   * @param settings Geometric prior configuration
-   * @param view_vector_query Unit vector that is queried for calculating the geometric prior
-   * @param view_distance Distance of the viewpoint
-   * @param cell_normal Unit vector of cell normal
-   * @param cell_info List containing view information of each cell
-   * @return std::vector<GeometricPrior>
-   */
-  static std::vector<GeometricPrior> getGeometricPrior(const GeometricPriorSettings &settings,
-                                                       const Eigen::Vector3d &view_vector_query,
-                                                       const double &view_distance, const Eigen::Vector3d &cell_normal,
-                                                       const Eigen::Vector3d &center_ray, CellInfo &cell_info);
   /**
    * @brief Calculate Incident Prior
    *
@@ -121,17 +96,6 @@ class ViewUtilityMap {
                                  double sigma_k);
 
   /**
-   * @brief Calculate Groundsample prior
-   *
-   * @param bearing_vector
-   * @param optical_center
-   * @param reference_view_distance
-   * @return double
-   */
-  static double getGroundSamplePrior(const Eigen::Vector3d &bearing_vector, const Eigen::Vector3d &optical_center,
-                                     const double reference_view_distance);
-
-  /**
    * @brief Calculate Fisher information matrix of a single view
    *
    * @param bearing_vector Bearing vector of a landmark from camera
@@ -141,9 +105,6 @@ class ViewUtilityMap {
    */
   static Eigen::Matrix3d getFisherInformationMatrix(const Eigen::Vector3d &bearing_vector, const double &view_distance,
                                                     const double sigma);
-  static double getBestJointPrior(const std::vector<GeometricPrior> &prior_list);
-  static GeometricPrior getBestGeometricPrior(const std::vector<GeometricPrior> &prior_list);
-  static double getBestGroundSampleDistance(const std::vector<GeometricPrior> &prior_list);
   void initializeFromGridmap();
 
   /**
@@ -157,24 +118,6 @@ class ViewUtilityMap {
   bool initializeFromMesh(const std::string &path, const double res = 10.0);
 
   /**
-   * @brief Helper function to evaluate coverage with hemisphere radials
-   *
-   * @param view unit vector of view point
-   * @param sample unit vector of hemisphere sample
-   * @param distance distance to view point
-   * @return true inside hemisphere cover
-   * @return false not inside hemisphere cover
-   */
-  bool hemisphereInside(const Eigen::Vector3d &view, const Eigen::Vector3d &sample, const double distance) {
-    double theta_max{0.5 * 0.25 * M_PI};
-    double t0 = 100.0;
-    double t_half = 30.0;
-    double angle = std::acos(sample.dot(view));  // Angle between view sample and sample
-    double radius = theta_max * std::pow(2.0, -std::max(distance - t0, 0.0) / t_half);
-    return bool(angle < radius);  // Sample is inside the radius of a view
-  }
-
-  /**
    * @brief Initialize Empty ViewUtility Map
    *
    * @return true successfully loaded meshfile
@@ -186,15 +129,17 @@ class ViewUtilityMap {
   double CalculatePrecision(const std::vector<double> &error_vector, const double threshold);
   void TransformMap(const Eigen::Vector3d &translation);
 
- private:
-  std::vector<double> calculateErrors(grid_map::GridMap &groundtruth_map, const grid_map::GridMap &reference_map);
+ protected:
   double CalculateViewUtility(ViewPoint &viewpoint, bool update_utility_map, std::vector<CellInfo> &cell_information,
                               grid_map::GridMap &grid_map);
   grid_map::Polygon getVisibilityPolygon(ViewPoint &viewpoint, grid_map::GridMap &grid_map);
+
   grid_map::GridMap &grid_map_;
-  std::vector<CellInfo> cell_information_;
-  GeometricPriorSettings settings_;
   double max_prior_{0.5};
-  ViewUtilityType utility_type_{ViewUtilityType::FISHER_INFORMATION};
+  GeometricPriorSettings settings_;
+
+ private:
+  std::vector<double> calculateErrors(grid_map::GridMap &groundtruth_map, const grid_map::GridMap &reference_map);
+  std::vector<CellInfo> cell_information_;
 };
 #endif

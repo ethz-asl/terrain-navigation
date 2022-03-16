@@ -76,41 +76,6 @@ ViewUtilityMap::ViewUtilityMap(grid_map::GridMap &grid_map) : grid_map_(grid_map
 
 ViewUtilityMap::~ViewUtilityMap() {}
 
-double ViewUtilityMap::getBestJointPrior(const std::vector<GeometricPrior> &prior_list) {
-  double best_prior{0.0};
-
-  // Iterate through the list of priors to get the maximum geometric_prior
-  for (auto prior : prior_list) {
-    if (prior.joint > best_prior) best_prior = prior.joint;
-  }
-  return best_prior;
-}
-
-GeometricPrior ViewUtilityMap::getBestGeometricPrior(const std::vector<GeometricPrior> &prior_list) {
-  double best_prior{0.0};
-  GeometricPrior best_prior_info;
-
-  // Iterate through the list of priors to get the maximum geometric_prior
-  for (auto &prior : prior_list) {
-    if (prior.joint > best_prior) {
-      best_prior = prior.joint;
-      best_prior_info = prior;
-    }
-  }
-  return best_prior_info;
-}
-
-double ViewUtilityMap::getBestGroundSampleDistance(const std::vector<GeometricPrior> &prior_list) {
-  double best_sample_distance{std::numeric_limits<double>::infinity()};
-
-  // Iterate through the list of priors to get the maximum geometric_prior
-  for (auto prior : prior_list) {
-    if ((prior.sample_distance < best_sample_distance) && (best_sample_distance > 0))
-      best_sample_distance = prior.sample_distance;
-  }
-  return best_sample_distance;
-}
-
 double ViewUtilityMap::CalculateViewUtility(std::vector<ViewPoint> &viewpoint_set, bool update_utility_map) {
   double view_utility = 0.0;
   // Copy cell information to append list with candidate views
@@ -203,135 +168,44 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
       Eigen::Vector3d optical_center = viewpoint.getCenterRayVector();
       double cell_area = std::pow(grid_map_.getResolution(), 2);
 
-      switch (utility_type_) {
-        case ViewUtilityType::GEOMETRIC_PRIOR: {
-          std::vector<GeometricPrior> geometric_prior = getGeometricPrior(
-              settings_, view_vector_u, view_distance, cell_normal, optical_center, cell_information[idx]);
+      double sigma_k{30.0 / 180.0 * M_PI};
+      double incident_prior = getIncidentPrior(view_vector_u, cell_normal, sigma_k);
 
-          double best_prior = getBestJointPrior(geometric_prior);
-          GeometricPrior best_geometric_prior = getBestGeometricPrior(geometric_prior);
-          double best_sample_distance = getBestGroundSampleDistance(geometric_prior);
-          bool prior_updated = false;
-          /// TODO: This results in over estimation of view utility since it does not account for view
-          if (best_prior > layer_geometricprior(index(0), index(1))) {
-            prior_updated = true;
-            if (best_prior < max_prior_) {
-              // TODO: Why are we dividing to 100.0? where does 100 come from?
-              view_utility += best_prior - layer_geometricprior(index(0), index(1)) * cell_area / 100.0;
-            }
-          }
+      Eigen::Matrix3d cell_fim = cell_information[idx].fisher_information;
 
-          // Register view into the view utility map
-          ViewInfo viewinfo;
-          viewinfo.view_vector = view_vector_u;
-          viewinfo.view_distance = view_distance;
-          viewinfo.view_index = view_index;
-          cell_information[idx].view_info.push_back(viewinfo);
+      // Calculate fisher information of each bearing vector observation
+      double reference_view_distance = 100;
+      Eigen::Vector3d bearing_vector = -view_vector;
+      // double gsd_prior = getGroundSamplePrior(bearing_vector, optical_center, reference_view_distance);
+      double pixel_res = viewpoint.getPixelResolution();
+      double sigma = std::sin(pixel_res);
+      Eigen::Matrix3d fim = getFisherInformationMatrix(bearing_vector, view_distance, sigma);
+      Eigen::Matrix3d accumulated_fim = cell_fim + (incident_prior * fim);
 
-          if (update_utility_map) {
-            // Update Geometric Prior
-            if (prior_updated) {
-              layer_geometricprior(index(0), index(1)) = best_prior;
-              layer_sample_distance(index(0), index(1)) = best_sample_distance;
-              layer_utility(index(0), index(1)) = std::min(best_prior, max_prior_) / max_prior_;
-              layer_sample_distance(index(0), index(1)) = best_geometric_prior.resolution;
-              layer_incident_prior(index(0), index(1)) = best_geometric_prior.incident;
-              layer_triangulation_prior(index(0), index(1)) = best_geometric_prior.triangulation;
-            }
-          }
-          break;
-        }
-        case ViewUtilityType::SPHERICAL_COVERAGE: {
-          /// Generate discrete samples
-          /// Roberts 2017 generate samples through http://blog.marmakoide.org/?p=1
-          const int K = 256;
-          std::vector<Eigen::Vector3d> hemisphere_samples(K);
-          double golden_angle = M_PI * (3.0 - std::sqrt(5.0));
-          for (int i = 0; i < hemisphere_samples.size(); i++) {
-            double theta = golden_angle * i;
-            double z = std::abs((1.0 - 1.0 / double(K)) * (1.0 - 2.0 * i / (double(K) - 1.0)));
-            double radius = sqrt(1.0 - std::pow(z, 2));
-            hemisphere_samples[i](0) = radius * std::cos(theta);
-            hemisphere_samples[i](1) = radius * std::sin(theta);
-            hemisphere_samples[i](2) = z;
-          }
+      // Compute Cramer Rao Bounds
+      /// TODO: Catch if fim is singular
+      Eigen::Matrix3d covariance_matrix = accumulated_fim.inverse();
+      double max_cramer_rao_bound = std::sqrt(covariance_matrix.diagonal().maxCoeff());
+      double cell_bounds = cell_information[idx].max_cramerrao_bounds;
+      if (!std::isfinite(max_cramer_rao_bound) || (max_cramer_rao_bound > limit_cramerrao_bounds))
+        max_cramer_rao_bound = limit_cramerrao_bounds;
 
-          double F_c{0.0};
-          for (auto &sample : hemisphere_samples) {
-            double w_h = sample.dot(cell_normal);
-            double vj = 0.0;  // Coverage indicator function
-            for (auto view : cell_information[idx].view_info) {
-              if (hemisphereInside(view.view_vector, sample, view.view_distance)) {
-                vj = 1.0;
-                break;  // If the sample is in the covered region, no need to iterate
-              }
-            }
-            vj = hemisphereInside(view_vector_u, sample, view_distance) ? 1.0 : vj;
-            vj = (w_h < 0.0) ? 0.0 : vj;
-            F_c += (2 * M_PI / static_cast<double>(K)) * w_h * vj;
-          }
-          if (F_c > layer_geometricprior(index(0), index(1))) {
-            // This condition should be redundant, but numerically unstable
-            /// TODO: Investigate why this is numerically unstable
-            view_utility += F_c - layer_geometricprior(index(0), index(1));
-          }
-
-          ViewInfo viewinfo;
-          viewinfo.view_vector = view_vector_u;
-          viewinfo.view_distance = view_distance;
-          viewinfo.view_index = view_index;
-          cell_information[idx].view_info.push_back(viewinfo);
-
-          if (update_utility_map) {
-            layer_geometricprior(index(0), index(1)) = F_c;
-            layer_utility(index(0), index(1)) = F_c;
-          }
-
-          break;
-        }
-        case ViewUtilityType::FISHER_INFORMATION: {
-          double sigma_k{30.0 / 180.0 * M_PI};
-          double incident_prior = getIncidentPrior(view_vector_u, cell_normal, sigma_k);
-
-          Eigen::Matrix3d cell_fim = cell_information[idx].fisher_information;
-
-          // Calculate fisher information of each bearing vector observation
-          double reference_view_distance = 100;
-          Eigen::Vector3d bearing_vector = -view_vector;
-          // double gsd_prior = getGroundSamplePrior(bearing_vector, optical_center, reference_view_distance);
-          double pixel_res = viewpoint.getPixelResolution();
-          double sigma = std::sin(pixel_res);
-          Eigen::Matrix3d fim = getFisherInformationMatrix(bearing_vector, view_distance, sigma);
-          Eigen::Matrix3d accumulated_fim = cell_fim + (incident_prior * fim);
-
-          // Compute Cramer Rao Bounds
-          /// TODO: Catch if fim is singular
-          Eigen::Matrix3d covariance_matrix = accumulated_fim.inverse();
-          double max_cramer_rao_bound = std::sqrt(covariance_matrix.diagonal().maxCoeff());
-          double cell_bounds = cell_information[idx].max_cramerrao_bounds;
-          if (!std::isfinite(max_cramer_rao_bound) || (max_cramer_rao_bound > limit_cramerrao_bounds))
-            max_cramer_rao_bound = limit_cramerrao_bounds;
-
-          double min_cramer_rao_bound = 0.1;
-          double utility = (max_cramer_rao_bound < min_cramer_rao_bound) ? 0.0 : cell_bounds - max_cramer_rao_bound;
-          view_utility += utility;
-          // Register view into the view utility map
-          ViewInfo viewinfo;
-          viewinfo.view_vector = view_vector_u;
-          viewinfo.view_distance = view_distance;
-          viewinfo.view_index = view_index;
-          cell_information[idx].view_info.push_back(viewinfo);
-          cell_information[idx].fisher_information = accumulated_fim;
-          cell_information[idx].max_cramerrao_bounds = max_cramer_rao_bound;
-          if (update_utility_map) {
-            layer_geometricprior(index(0), index(1)) = max_cramer_rao_bound;
-            // layer_sample_distance(index(0), index(1)) = gsd_prior;
-            layer_incident_prior(index(0), index(1)) = incident_prior;
-            layer_utility(index(0), index(1)) = max_cramer_rao_bound / min_cramer_rao_bound;
-          }
-
-          break;
-        }
+      double min_cramer_rao_bound = 0.1;
+      double utility = (max_cramer_rao_bound < min_cramer_rao_bound) ? 0.0 : cell_bounds - max_cramer_rao_bound;
+      view_utility += utility;
+      // Register view into the view utility map
+      ViewInfo viewinfo;
+      viewinfo.view_vector = view_vector_u;
+      viewinfo.view_distance = view_distance;
+      viewinfo.view_index = view_index;
+      cell_information[idx].view_info.push_back(viewinfo);
+      cell_information[idx].fisher_information = accumulated_fim;
+      cell_information[idx].max_cramerrao_bounds = max_cramer_rao_bound;
+      if (update_utility_map) {
+        layer_geometricprior(index(0), index(1)) = max_cramer_rao_bound;
+        // layer_sample_distance(index(0), index(1)) = gsd_prior;
+        layer_incident_prior(index(0), index(1)) = incident_prior;
+        layer_utility(index(0), index(1)) = max_cramer_rao_bound / min_cramer_rao_bound;
       }
 
       if (update_utility_map) {
@@ -345,19 +219,6 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
   }
 
   return view_utility;
-}
-
-void ViewUtilityMap::UpdateUtility(ViewPoint &viewpoint) {
-  CalculateViewUtility(viewpoint, true, cell_information_, grid_map_);
-}
-
-double ViewUtilityMap::getGroundSamplePrior(const Eigen::Vector3d &bearing_vector,
-                                            const Eigen::Vector3d &optical_center,
-                                            const double reference_view_distance) {
-  double projected_distance = (bearing_vector).dot(optical_center);
-  double relative_gsd = std::pow(reference_view_distance / projected_distance, 2);
-  double gsd_prior = std::min(relative_gsd, 1 / relative_gsd);
-  return gsd_prior;
 }
 
 double ViewUtilityMap::getIncidentPrior(const Eigen::Vector3d &unit_view_vector, const Eigen::Vector3d &cell_normal,
@@ -374,51 +235,6 @@ Eigen::Matrix3d ViewUtilityMap::getFisherInformationMatrix(const Eigen::Vector3d
                              std::pow(inverse_depth, 3) * bearing_vector * bearing_vector.transpose();
   Eigen::Matrix3d fim = std::pow(1 / sigma, 2) * jacobian * jacobian.transpose();
   return fim;
-}
-
-std::vector<GeometricPrior> ViewUtilityMap::getGeometricPrior(const GeometricPriorSettings &settings,
-                                                              const Eigen::Vector3d &view_vector_query,
-                                                              const double &view_distance,
-                                                              const Eigen::Vector3d &cell_normal,
-                                                              const Eigen::Vector3d &center_ray, CellInfo &cell_info) {
-  std::vector<GeometricPrior> prior;
-  /// Calculate incidence prior
-  double min_angle = settings.min_triangulation_angle;
-
-  double sigma_k = settings.sigma_k;
-  double incident_prior = getIncidentPrior(view_vector_query, cell_normal, sigma_k);
-
-  /// Calculate ground sample distance prior
-  double reference_view_distance = settings.reference_view_distance;
-  Eigen::Vector3d bearing_vector = -view_distance * view_vector_query;
-  double gsd_prior = getGroundSamplePrior(bearing_vector, center_ray, reference_view_distance);
-
-  // Calculate pairwise priors
-  int i = 0;
-  for (auto view : cell_info.view_info) {
-    /// Calculate resolution prior
-    /// TODO: Experiment with pairwise resolution prior and resolution vs GSD
-    double relative_area = std::pow(view_distance / view.view_distance, 2);
-    double resolution_prior = std::min(relative_area, 1 / relative_area);
-
-    // Calculate triangulation prior
-    double angle = std::abs(
-        std::acos(view_vector_query.dot(view.view_vector)));  /// TODO: Make sure the vectors are all normalized
-    double triangulation_prior =
-        1.0 - (std::pow((std::min(angle, min_angle) - min_angle), 2) / (min_angle * min_angle));
-
-    GeometricPrior geometric_prior;
-    geometric_prior.incident = incident_prior;
-    geometric_prior.resolution = resolution_prior;
-    geometric_prior.triangulation = triangulation_prior;
-    geometric_prior.sample_distance = gsd_prior;
-    double joint_geometric_prior = incident_prior * resolution_prior * gsd_prior * triangulation_prior;
-    geometric_prior.joint = joint_geometric_prior;
-
-    prior.push_back(geometric_prior);
-    i++;
-  }
-  return prior;
 }
 
 void ViewUtilityMap::initializeFromGridmap() {
