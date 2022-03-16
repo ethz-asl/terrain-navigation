@@ -405,6 +405,7 @@ TrajectorySegments ManeuverLibrary::getRandomPrimitive() {
   TrajectorySegments primitive;
 
   std::shared_ptr<Primitive> primitives = motion_primitive_tree_;
+  primitive.appendSegment(primitives->segment);
   while (primitives->has_child()) {
     int i = std::rand() % primitives->child_primitives.size();
     primitives = primitives->child_primitives[i];
