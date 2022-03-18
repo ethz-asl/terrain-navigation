@@ -13,20 +13,18 @@
 #ifndef FW_PLANNING_PLANNING__SPACES__DUBINS_AIRPLANE2_HPP_
 #define FW_PLANNING_PLANNING__SPACES__DUBINS_AIRPLANE2_HPP_
 
-
 #include <chrono>
 #include <ratio>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include <Eigen/Dense>
 #include <ompl/base/State.h>
 #include <ompl/base/StateSpace.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
+#include <Eigen/Dense>
 
-#include "fw_planning_planning/spaces/DubinsPath.hpp"
-#include "fw_planning_planning/base/MeteoGridClass.hpp"
+#include "terrain_planner/DubinsPath.hpp"
 
 namespace ob = ompl::base;
 
@@ -51,7 +49,8 @@ namespace spaces {
  *
  *
  * ******************************************************************************************
- * DUBINS AIRPLANE STATE SPACE for geometric planning with Dubins Curves (Extension to OMPL DubinsStateSpace for 2D Dubins Car)
+ * DUBINS AIRPLANE STATE SPACE for geometric planning with Dubins Curves (Extension to OMPL DubinsStateSpace for 2D
+ *Dubins Car)
  * ******************************************************************************************
  * States
  *  x0 = x       (position)
@@ -75,8 +74,8 @@ namespace spaces {
  * Assuming bounded climb angle u0_max, we get a maximum climb/ sink rate:
  * u_{z,max} = tan(u0_max)*V
  *
- * Assuming bounded roll angle u1_max, we get a maximum yaw rate theta_dot_max or correspondingly a minimum turning radius
- * r_min = rho = 1/tan(u1_max)*V^2/g
+ * Assuming bounded roll angle u1_max, we get a maximum yaw rate theta_dot_max or correspondingly a minimum turning
+ *radius r_min = rho = 1/tan(u1_max)*V^2/g
  *
  * For the computation of (non-optimal) Dubins airplane paths, it is sufficient to know
  *  - the maximum climb/sink rate phi_max
@@ -84,9 +83,11 @@ namespace spaces {
  *
  *
  * TODO:
- *  - Check if condition for long path case is correct (if absolute values for sin/cos inside the square root should be taken or not)
- *  - Check if classification is correct, sometimes calcDubPathWithClassification and calcDubPathWithoutClassification do not give the
- *    same results for the long path case, current guess is that this happens due to floating point inaccuracies.
+ *  - Check if condition for long path case is correct (if absolute values for sin/cos inside the square root should be
+ *taken or not)
+ *  - Check if classification is correct, sometimes calcDubPathWithClassification and calcDubPathWithoutClassification
+ *do not give the same results for the long path case, current guess is that this happens due to floating point
+ *inaccuracies.
  */
 class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
  private:
@@ -109,10 +110,10 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   const int MAX_ITER = 12;
 
   /** MAX_WIND_DRIFT_MULTI
-   * Maximum multiplication factor of the wind-drift-adjustment. 
-   * 
-   * @note: Too big numbers could take the path to completely different parts 
-   * of the wind-field and also result in way longer paths. 
+   * Maximum multiplication factor of the wind-drift-adjustment.
+   *
+   * @note: Too big numbers could take the path to completely different parts
+   * of the wind-field and also result in way longer paths.
    */
   const double MAX_WIND_DRIFT_MULTI = 2.0;
 
@@ -214,19 +215,16 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
     };
 
     std::array<Start, 6> segmentStarts;
-    SegmentStarts() : segmentStarts {{Start(), Start(), Start(), Start(), Start(), Start()}} {}
+    SegmentStarts() : segmentStarts{{Start(), Start(), Start(), Start(), Start(), Start()}} {}
     SegmentStarts(const SegmentStarts& that) : segmentStarts(that.segmentStarts) {}
   };
-
 
   /** \brief Constructor
    * @param[in] turningRadius: The minimal turning radius of the airplane
    * @param[in] gam: The maximum climb angle of the airplane.
    * @param[in] useEuclDist: If true the euclidian distance is used, else the dubins airplane distance.
    */
-  DubinsAirplane2StateSpace(double turningRadius = 25.0,
-                            double gam = 0.15,
-                            bool useEuclDist = false);
+  DubinsAirplane2StateSpace(double turningRadius = 25.0, double gam = 0.15, bool useEuclDist = false);
 
   /** \brief Destructor */
   virtual ~DubinsAirplane2StateSpace();
@@ -277,8 +275,8 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief interpolate
    * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the \a path.
    *
-   * This function is called by virtual void interpolate(const ob::State *from, const ob::State *to, const double t, ob::State *state) const;
-   * and is used in the DubinsMotionValidator for more efficient state validation
+   * This function is called by virtual void interpolate(const ob::State *from, const ob::State *to, const double t,
+   * ob::State *state) const; and is used in the DubinsMotionValidator for more efficient state validation
    *
    * @param[in] from: Start state
    * @param[in] to: End state
@@ -364,12 +362,12 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief setMeteoGrid
    * Set the meteo grid.
    */
-  void setMeteoGrid(const std::shared_ptr<base::MeteoGridClass>& meteoGrid);
+  // void setMeteoGrid(const std::shared_ptr<base::MeteoGridClass>& meteoGrid);
 
   /** \brief getMeteoGrid
    * Return the meteo grid.
    */
-  std::shared_ptr<base::MeteoGridClass> getMeteoGrid() const;
+  // std::shared_ptr<base::MeteoGridClass> getMeteoGrid() const;
 
   /** \brief isMetricSpace
    * Return if the state space is metric.
@@ -452,14 +450,11 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
     double y;
     double z;
 
-    WindDrift() : x(0.0), y(0.0), z(0.0) {
-    }
+    WindDrift() : x(0.0), y(0.0), z(0.0) {}
 
-    WindDrift(double x_in, double y_in, double z_in) : x(x_in), y(y_in), z(z_in) {
-    }
+    WindDrift(double x_in, double y_in, double z_in) : x(x_in), y(y_in), z(z_in) {}
 
-    WindDrift(const WindDrift& that) : x(that.x), y(that.y), z(that.z) {
-    }
+    WindDrift(const WindDrift& that) : x(that.x), y(that.y), z(that.z) {}
 
     WindDrift& operator=(WindDrift that) {
       this->x = that.x;
@@ -506,10 +501,11 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * Compute the dubins airplane path with path classification.
    *
    * TODO Currently, classifies only samples that far enough from each other ("long paths")!
-   *    Does not work properly when OPTIMAL Dubins AIRPLANE State Space is used! For intermediate case, there are cases with d > ... and still CCC may be optimal (not 100% sure)
-   *    Bigger parts of work:
+   *    Does not work properly when OPTIMAL Dubins AIRPLANE State Space is used! For intermediate case, there are cases
+   * with d > ... and still CCC may be optimal (not 100% sure) Bigger parts of work:
    *      - Implement classification for short path case (see "Classification of the Dubins set, Shkel & Lumelsky, 2001)
-   *      - Implement fast and fully optimal Dubins state space. Note that classification of the Dubins set will not be correct anymore for some cases. *
+   *      - Implement fast and fully optimal Dubins state space. Note that classification of the Dubins set will not be
+   * correct anymore for some cases. *
    *
    * @param[out] path: The computed dubins path.
    * @param[in] d: euclidean distance between start and goal state
@@ -520,8 +516,8 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * @param[in] ca: Precomputed cos(alpha)
    * @param[in] cb: Precomputed cos(beta)
    */
-  void calcDubPathWithClassification(DubinsPath& path, double d, double alpha,
-                                     double beta, double sa, double sb, double ca, double cb) const;
+  void calcDubPathWithClassification(DubinsPath& path, double d, double alpha, double beta, double sa, double sb,
+                                     double ca, double cb) const;
 
   /** \brief calcDubPathWithoutClassification
    * Compute the dubins airplane path without path classification.
@@ -538,8 +534,8 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * @param[in] ca: Precomputed cos(alpha)
    * @param[in] cb: Precomputed cos(beta)
    */
-  void calcDubPathWithoutClassification(DubinsPath& path, double d, double alpha,
-                                        double beta, double sa, double sb, double ca, double cb) const;
+  void calcDubPathWithoutClassification(DubinsPath& path, double d, double alpha, double beta, double sa, double sb,
+                                        double ca, double cb) const;
 
   /** \brief additionalManeuver
    * Calculates an additional maneuver such that in the intermediate altitude case an optimal path is returned.
@@ -548,11 +544,11 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    *      Implementing Dubins Airplane Paths on Fixed-wing UAVs, Beard, McLain, 2013
    *
    * WARNING: This function does not yet work properly and hence does not yet find an optimal path in all cases.
-   * Deviations in z-direction of the temporary goal and the final state of the calculated intermediate Dubins airplane path are possible!
+   * Deviations in z-direction of the temporary goal and the final state of the calculated intermediate Dubins airplane
+   * path are possible!
    * TODO: fix this function
    */
-  std::tuple<double, bool, double, double, double> additionalManeuver(const DubinsPath& dp,
-                                                                      double& L_2D,
+  std::tuple<double, bool, double, double, double> additionalManeuver(const DubinsPath& dp, double& L_2D,
                                                                       const ob::State* state1,
                                                                       const ob::State* state2) const;
 
@@ -575,18 +571,20 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   double computeOptRratio(double fabsHdist, double L, double fabsTanGamma, int k) const;
 
   /** \brief interpolate
-   * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the known (non-optimal) Dubins airplane path \a path.
+   * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the known
+   * (non-optimal) Dubins airplane path \a path.
    *
    * @param[in] path: Known dubins airplane path.
    * @param[in] segmentStarts: Known starts of the segments of the dubins airplane path.
    * @param[in] t: Fraction of the length of the path.
    * @param[out] state: Interpolated state.
    */
-  virtual void interpolate(const DubinsPath& path, const SegmentStarts& segmentStarts, double t, ob::State* state) const;
+  virtual void interpolate(const DubinsPath& path, const SegmentStarts& segmentStarts, double t,
+                           ob::State* state) const;
 
   /** \brief interpolateWithWind
-   * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the known (non-optimal) Dubins airplane path \a path
-   * with wind.
+   * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the known
+   * (non-optimal) Dubins airplane path \a path with wind.
    *
    * @param[in] from: Start state of the path.
    * @param[in] path: Known dubins airplane path.
@@ -594,7 +592,8 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * @param[in] t: Fraction of the length of the path.
    * @param[out] state: Interpolated state.
    */
-  virtual void interpolateWithWind(const ob::State* from, const DubinsPath& path, const SegmentStarts& segmentStarts, double t, ob::State* state) const;
+  virtual void interpolateWithWind(const ob::State* from, const DubinsPath& path, const SegmentStarts& segmentStarts,
+                                   double t, ob::State* state) const;
 
   /** \brief calculateSegmentStarts
    * Calculates the segment starts of the input
@@ -609,16 +608,13 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * Calculates a \a state on a circle with radius rho_ after \a t degrees.
    * This function assumes, that the plane is flying with minimum radius rho_ and maximum climbing rate gammaMax_
    */
-  void getStateOnCircle(const ob::State* from,
-                        int rl /* right (0), left (1)*/,
-                        int ud /* up(0), down(1) */,
-                        double t,
-                        ob::State *state) const;
+  void getStateOnCircle(const ob::State* from, int rl /* right (0), left (1)*/, int ud /* up(0), down(1) */, double t,
+                        ob::State* state) const;
 
   /** \brief convert_idx
    * Converts the input segment index (0-5) to the corresponding path segment index (0-2).
    */
-  unsigned int convert_idx(unsigned int i) const ;
+  unsigned int convert_idx(unsigned int i) const;
 
   /** \brief calculateWindDrift
    * Calculates the wind drift of a certain point in the dubins path.
@@ -628,80 +624,69 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * @param[in] dp: The dubins path.
    * @return: The computed wind drift.
    */
-  WindDrift calculateWindDrift(const ob::State* from, double t, const DubinsPath& dp, const SegmentStarts& segmentStarts) const;
+  WindDrift calculateWindDrift(const ob::State* from, double t, const DubinsPath& dp,
+                               const SegmentStarts& segmentStarts) const;
 
   // TODO: Check if it makes sense to use mutable class variables for the following functions to speed it up.
   /** \brief t_lsr
    * Function to compute a value for classifying the dubins curve.
    */
-  double t_lsr(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double t_lsr(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief p_lsr
    * Function to compute a value for classifying the dubins curve.
    */
-  double p_lsr(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double p_lsr(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief q_lsr
    * Function to compute a value for classifying the dubins curve.
    */
-  double q_lsr(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double q_lsr(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief t_rsl
    * Function to compute a value for classifying the dubins curve.
    */
-  double t_rsl(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double t_rsl(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief p_rsl
    * Function to compute a value for classifying the dubins curve.
    */
-  double p_rsl(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double p_rsl(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief q_rsl
    * Function to compute a value for classifying the dubins curve.
    */
-  double q_rsl(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double q_rsl(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief t_rsr
    * Function to compute a value for classifying the dubins curve.
    */
-  double t_rsr(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double t_rsr(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief p_rsr
    * Function to compute a value for classifying the dubins curve.
    */
-  double p_rsr(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double p_rsr(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief q_rsr
    * Function to compute a value for classifying the dubins curve.
    */
-  double q_rsr(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double q_rsr(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief t_lsl
    * Function to compute a value for classifying the dubins curve.
    */
-  double t_lsl(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double t_lsl(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief p_lsl
    * Function to compute a value for classifying the dubins curve.
    */
-  double p_lsl(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double p_lsl(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief q_lsl
    * Function to compute a value for classifying the dubins curve.
    */
-  double q_lsl(double d, double alpha, double beta,
-               double sa, double sb, double ca, double cb) const;
+  double q_lsl(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief dubinsLSL
    * Compute the dubins LSL path.
@@ -711,8 +696,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief dubinsLSL
    * Overloaded dubinsLSL function to compute the LSL path with precompute sine and cosine values.
    */
-  DubinsPath dubinsLSL(double d, double alpha, double beta, double sa,
-                       double sb, double ca, double cb) const;
+  DubinsPath dubinsLSL(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief dubinsRSR
    * Compute the dubins RSR path.
@@ -722,8 +706,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief dubinsRSR
    * Overloaded dubinsRSR function to compute the RSR path with precompute sine and cosine values.
    */
-  DubinsPath dubinsRSR(double d, double alpha, double beta, double sa,
-                       double sb, double ca, double cb) const;
+  DubinsPath dubinsRSR(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief dubinsRSL
    * Compute the dubins RSL path.
@@ -733,8 +716,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief dubinsRSL
    * Overloaded dubinsRSL function to compute the RSL path with precompute sine and cosine values.
    */
-  DubinsPath dubinsRSL(double d, double alpha, double beta, double sa,
-                       double sb, double ca, double cb) const;
+  DubinsPath dubinsRSL(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief dubinsLSR
    * Compute the dubins LSR path.
@@ -744,8 +726,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief dubinsLSR
    * Overloaded dubinsLSR function to compute the LSR path with precompute sine and cosine values.
    */
-  DubinsPath dubinsLSR(double d, double alpha, double beta, double sa,
-                       double sb, double ca, double cb) const;
+  DubinsPath dubinsLSR(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief dubinsRLR
    * Compute the dubins RLR path.
@@ -755,8 +736,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief dubinsRLR
    * Overloaded dubinsRLR function to compute the RLR path with precompute sine and cosine values.
    */
-  DubinsPath dubinsRLR(double d, double alpha, double beta, double sa,
-                       double sb, double ca, double cb) const;
+  DubinsPath dubinsRLR(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief dubinsLRL
    * Compute the dubins LRL path.
@@ -766,8 +746,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief dubinsLRL
    * Overloaded dubinsLRL function to compute the LRL path with precompute sine and cosine values.
    */
-  DubinsPath dubinsLRL(double d, double alpha, double beta, double sa,
-                       double sb, double ca, double cb) const;
+  DubinsPath dubinsLRL(double d, double alpha, double beta, double sa, double sb, double ca, double cb) const;
 
   /** \brief rho_
    * Minimum turning radius */
@@ -810,12 +789,13 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   double vAirInv_;
 
   /** \brief dubinsWindPrintXthError_
-   * Print a error message if the dubins path with wind failed to compute a multiple of dubinsWindPrintXthError_ times.*/
+   * Print a error message if the dubins path with wind failed to compute a multiple of dubinsWindPrintXthError_
+   * times.*/
   int dubinsWindPrintXthError_;
 
   /** \brief meteoGrid_
    * Shared pointer of the meteo grid. */
-  std::shared_ptr<base::MeteoGridClass> meteoGrid_;
+  // std::shared_ptr<base::MeteoGridClass> meteoGrid_;
 
   /** \brief dp_
    * (Non-optimal) Dubins airplane path used for distance computations, for savings in computational cost   */
@@ -883,7 +863,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
 
   /** \brief CWD_meteoData_
    * Variable to store an intermediate result (meteo data) in the compute wind drift function.*/
-  mutable fw_planning_comm::MeteoData CWD_meteoData_;
+  // mutable fw_planning_comm::MeteoData CWD_meteoData_;
 
   /** \brief duration_distance_
    * Duration spent computing the distance between two states.
@@ -912,8 +892,8 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   mutable double interpol_tmp_;
 };
 
-} // namespace spaces
+}  // namespace spaces
 
-} // namespace fw_planning
+}  // namespace fw_planning
 
 #endif /* FW_PLANNING_PLANNING__SPACES__DUBINS_AIRPLANE2_HPP_ */

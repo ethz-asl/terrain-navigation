@@ -95,7 +95,6 @@ void publishTree(ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerData> p
   std::vector<unsigned int> edge_list;
   int edge_id = 0;
   int num_vertices = planner_data->numVertices();
-  std::cout << "Number of vertices" << num_vertices << std::endl;
 
   // fill common variables of the marker message
 

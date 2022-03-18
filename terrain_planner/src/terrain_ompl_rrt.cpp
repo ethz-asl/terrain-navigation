@@ -24,7 +24,8 @@ void TerrainOmplRrt::setupProblem() {
   bounds.setHigh(2, upper_bound_.z());
 
   // Define start and goal positions.
-  problem_setup_.getGeometricComponentStateSpace()->as<ompl::base::RealVectorStateSpace>()->setBounds(bounds);
+  problem_setup_.getGeometricComponentStateSpace()->as<fw_planning::spaces::DubinsAirplane2StateSpace>()->setBounds(
+      bounds);
 
   problem_setup_.setStateValidityCheckingResolution(0.001);
 
@@ -33,23 +34,28 @@ void TerrainOmplRrt::setupProblem() {
 
 bool TerrainOmplRrt::Solve(const Eigen::Vector3d& start, const Eigen::Vector3d& goal,
                            std::vector<Eigen::Vector3d>& path) {
+  std::cout << "[TerrainOmplRrt] start solve" << std::endl;
   problem_setup_.clear();
   path.clear();
 
-  ompl::base::ScopedState<ompl::base::RealVectorStateSpace> start_ompl(problem_setup_.getSpaceInformation());
-  ompl::base::ScopedState<ompl::base::RealVectorStateSpace> goal_ompl(problem_setup_.getSpaceInformation());
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> start_ompl(
+      problem_setup_.getSpaceInformation());
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> goal_ompl(
+      problem_setup_.getSpaceInformation());
 
-  start_ompl->values[0] = start(0);
-  start_ompl->values[1] = start(1);
-  start_ompl->values[2] = start(2);
+  start_ompl->setX(start(0));
+  start_ompl->setY(start(1));
+  start_ompl->setZ(start(2));
 
-  goal_ompl->values[0] = goal(0);
-  goal_ompl->values[1] = goal(1);
-  goal_ompl->values[2] = goal(2);
+  goal_ompl->setX(goal(0));
+  goal_ompl->setY(goal(1));
+  goal_ompl->setZ(goal(2));
+  std::cout << "[TerrainOmplRrt] Problem Setup" << std::endl;
   problem_setup_.setStartAndGoalStates(start_ompl, goal_ompl);
+  std::cout << "[TerrainOmplRrt] setStartAndGoalStates" << std::endl;
   problem_setup_.setup();
-
-  if (problem_setup_.solve(0.1)) {
+  std::cout << "[TerrainOmplRrt] Solve" << std::endl;
+  if (problem_setup_.solve(10.0)) {
     std::cout << "Found solution:" << std::endl;
     // problem_setup_.getSolutionPath().print(std::cout);
     // problem_setup_.simplifySolution();
@@ -70,14 +76,15 @@ bool TerrainOmplRrt::Solve(const Eigen::Vector3d& start, const Eigen::Vector3d& 
 void TerrainOmplRrt::solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric& path,
                                                     std::vector<Eigen::Vector3d>& trajectory_points) const {
   trajectory_points.clear();
+  path.interpolate();
   // trajectory_points->reserve(path.getStateCount());
 
   std::vector<ompl::base::State*>& state_vector = path.getStates();
 
   for (ompl::base::State* state_ptr : state_vector) {
-    Eigen::Vector3d position(state_ptr->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],
-                             state_ptr->as<ompl::base::RealVectorStateSpace::StateType>()->values[1],
-                             state_ptr->as<ompl::base::RealVectorStateSpace::StateType>()->values[2]);
+    Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
+                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
+                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
 
     trajectory_points.emplace_back(position);
   }

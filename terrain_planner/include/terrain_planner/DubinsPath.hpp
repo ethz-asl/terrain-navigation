@@ -22,13 +22,9 @@ namespace spaces {
  * Complete description of a (non-optimal) Dubins airplane path
  */
 class DubinsPath {
-public:
+ public:
   /** \brief The Dubins car/airplane path segment type.  */
-  enum DubinsPathSegmentType {
-    DUBINS_LEFT = 0,
-    DUBINS_STRAIGHT = 1,
-    DUBINS_RIGHT = 2
-  };
+  enum DubinsPathSegmentType { DUBINS_LEFT = 0, DUBINS_STRAIGHT = 1, DUBINS_RIGHT = 2 };
 
   /** \brief Classification
    * Classification of path according to "Classification of the Dubins Set", Shkel, Lumelsky, 2001
@@ -56,42 +52,29 @@ public:
   /** \brief Index
    * Type of the dubins path.
    */
-  enum Index {
-    TYPE_LSL = 0,
-    TYPE_RSR = 1,
-    TYPE_RSL = 2,
-    TYPE_LSR = 3,
-    TYPE_RLR = 4,
-    TYPE_LRL = 5
-  };
+  enum Index { TYPE_LSL = 0, TYPE_RSR = 1, TYPE_RSL = 2, TYPE_LSR = 3, TYPE_RLR = 4, TYPE_LRL = 5 };
 
   /** \brief AltitudeCase
    * Altitude case of the path.
    */
-  enum AltitudeCase {
-    ALT_CASE_LOW = 0,
-    ALT_CASE_MEDIUM = 1,
-    ALT_CASE_HIGH = 2
-  };
+  enum AltitudeCase { ALT_CASE_LOW = 0, ALT_CASE_MEDIUM = 1, ALT_CASE_HIGH = 2 };
 
   /** \brief Dubins car path types */
   static const DubinsPathSegmentType dubinsPathType[6][3];
 
   /** \brief Constructor */
-  DubinsPath(Index type = TYPE_LSL,
-             double t = 0.0 /* length of first path segment of a 2D Dubins car path */,
-             double p = std::numeric_limits<double>::quiet_NaN() /* length of second path segment of a 2D Dubins car path */,
-             double q = 0.0 /* length of third path segment of a 2D Dubins car path */,
-             double gam = 0.0,
-             unsigned int ks = 0,
-             unsigned int ke = 0,
-             double r = 1.0);
+  DubinsPath(
+      Index type = TYPE_LSL, double t = 0.0 /* length of first path segment of a 2D Dubins car path */,
+      double p = std::numeric_limits<double>::quiet_NaN() /* length of second path segment of a 2D Dubins car path */,
+      double q = 0.0 /* length of third path segment of a 2D Dubins car path */, double gam = 0.0, unsigned int ks = 0,
+      unsigned int ke = 0, double r = 1.0);
 
   /** \brief A function returning the length (normalized by minimum radius rho_) of the projection of the
    * 3D (non-optimal) Dubins airplane path on the x-y plane of the world frame. */
   double length_2D() const;
 
-  /** \brief A function returning the length (normalized by minimum radius) of the 3D (non-optimal) Dubins airplane path. */
+  /** \brief A function returning the length (normalized by minimum radius) of the 3D (non-optimal) Dubins airplane
+   * path. */
   double length_3D() const;
 
   /** \brief Return foundOptimalPath_ */
@@ -148,17 +131,17 @@ public:
   /** \brief Return type_ */
   const DubinsPathSegmentType* getType() const;
 
-private:
+ private:
   /** \brief type_
    * Path segment types
    */
   const DubinsPathSegmentType* type_;
 
   /** \brief length_
-   * On x-y plane projected path segment lengths, normalized by minimum radius rho_ ( (.)*rho_ gives length of projection of path segments in meters)
-   * length_[1,3,4]: length of 2D Dubins car path segments
-   * length_[0,5]: length of start/ end helix for optimality in high altitude case
-   * length_[2]: length of intermediate maneuver (at start) for optimality in intermediate altitude case
+   * On x-y plane projected path segment lengths, normalized by minimum radius rho_ ( (.)*rho_ gives length of
+   * projection of path segments in meters) length_[1,3,4]: length of 2D Dubins car path segments length_[0,5]: length
+   * of start/ end helix for optimality in high altitude case length_[2]: length of intermediate maneuver (at start) for
+   * optimality in intermediate altitude case
    */
   std::array<double, 6> length_;
 
@@ -226,7 +209,6 @@ private:
    */
   Index idx_;
 
-
   /** \brief lmh
    * Altitude case of the path:
    *     low (0)
@@ -247,8 +229,8 @@ private:
   bool foundOptimalPath_;
 };
 
-} // namespace spaces
+}  // namespace spaces
 
-} // namespace fw_planning
+}  // namespace fw_planning
 
 #endif /* FW_PLANNING_PLANNING__SPACES__DUBINS_PATH_HPP_ */

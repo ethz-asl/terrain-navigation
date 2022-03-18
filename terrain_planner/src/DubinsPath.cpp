@@ -8,8 +8,7 @@
  *              Florian Achermann, ASL
  */
 
-
-#include "fw_planning_planning/spaces/DubinsPath.hpp"
+#include "terrain_planner/DubinsPath.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -22,24 +21,16 @@ namespace spaces {
 
 const double TWO_PI = boost::math::constants::two_pi<double>();
 
-const DubinsPath::DubinsPathSegmentType DubinsPath::dubinsPathType[6][3] = { { DUBINS_LEFT,
-      DUBINS_STRAIGHT, DUBINS_LEFT }, { DUBINS_RIGHT, DUBINS_STRAIGHT, DUBINS_RIGHT },
-      { DUBINS_RIGHT, DUBINS_STRAIGHT, DUBINS_LEFT }, { DUBINS_LEFT, DUBINS_STRAIGHT, DUBINS_RIGHT }, { DUBINS_RIGHT, DUBINS_LEFT,
-          DUBINS_RIGHT }, { DUBINS_LEFT, DUBINS_RIGHT, DUBINS_LEFT } };
+const DubinsPath::DubinsPathSegmentType DubinsPath::dubinsPathType[6][3] = {
+    {DUBINS_LEFT, DUBINS_STRAIGHT, DUBINS_LEFT},  {DUBINS_RIGHT, DUBINS_STRAIGHT, DUBINS_RIGHT},
+    {DUBINS_RIGHT, DUBINS_STRAIGHT, DUBINS_LEFT}, {DUBINS_LEFT, DUBINS_STRAIGHT, DUBINS_RIGHT},
+    {DUBINS_RIGHT, DUBINS_LEFT, DUBINS_RIGHT},    {DUBINS_LEFT, DUBINS_RIGHT, DUBINS_LEFT}};
 
-
-DubinsPath::DubinsPath(Index type,
-           double t,
-           double p,
-           double q,
-           double gam,
-           unsigned int ks,
-           unsigned int ke,
-           double r)
+DubinsPath::DubinsPath(Index type, double t, double p, double q, double gam, unsigned int ks, unsigned int ke, double r)
     : k_start_(ks),
       k_end_(ke),
-      radiusRatio_ {{ r, r, r, r, r, r }},
-      radiusRatioInverse_ {{ 1.0/r, 1.0/r, 1.0/r, 1.0/r, 1.0/r, 1.0/r }},
+      radiusRatio_{{r, r, r, r, r, r}},
+      radiusRatioInverse_{{1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r}},
       gamma_(gam),
       one_div_cos_abs_gamma_(1.0 / cosf(fabs(gamma_))),
       lmh_(DubinsPath::ALT_CASE_LOW),
@@ -47,78 +38,44 @@ DubinsPath::DubinsPath(Index type,
       idx_(type),
       foundOptimalPath_(true),
       classification_(NOT_ASSIGNED),
-      length_ {{ 0, t, 0, p, q, 0 }},
-      length_2D_(t + p + q){
+      length_{{0, t, 0, p, q, 0}},
+      length_2D_(t + p + q) {
   // only 6 different types available
   assert(type < 6u);
   type_ = dubinsPathType[type];
 
   /* by minimum radius (rho_) normalized length of projection of helix at the start on x-y plane
-   * by minimum radius (rho_) normalized length of projection of first segment on x-y plane (first Dubins car path segment)
-   * by minimum radius (rho_) normalized length of projection of intermediate segment on x-y plane
-   * by minimum radius (rho_) normalized length of projection of second segment on x-y plane (second Dubins car path segment)
-   * by minimum radius (rho_) normalized length of projection of third segment on x-y plane (third Dubins car path segment)
+   * by minimum radius (rho_) normalized length of projection of first segment on x-y plane (first Dubins car path
+   * segment) by minimum radius (rho_) normalized length of projection of intermediate segment on x-y plane by minimum
+   * radius (rho_) normalized length of projection of second segment on x-y plane (second Dubins car path segment) by
+   * minimum radius (rho_) normalized length of projection of third segment on x-y plane (third Dubins car path segment)
    * by minimum radius (rho_) normalized length of projection of helix at the end on x-y plane */
   assert(t >= 0.0);
   assert(p >= 0.0 || isnan(p));
   assert(q >= 0.0);
 }
 
+double DubinsPath::length_2D() const { return length_2D_; }
 
-double DubinsPath::length_2D() const {
-  return length_2D_;
-}
+double DubinsPath::length_3D() const { return length_2D() * one_div_cos_abs_gamma_; }
 
+bool DubinsPath::getFoundOptimalPath() const { return foundOptimalPath_; }
 
-double DubinsPath::length_3D() const {
-  return length_2D() * one_div_cos_abs_gamma_;
-}
+void DubinsPath::setFoundOptimalPath(bool found_optimal_path) { foundOptimalPath_ = found_optimal_path; }
 
+bool DubinsPath::getAdditionalManeuver() const { return additionalManeuver_; }
 
-bool DubinsPath::getFoundOptimalPath() const {
-  return foundOptimalPath_;
-}
+void DubinsPath::setAdditionalManeuver(bool additional_maneuver) { additionalManeuver_ = additional_maneuver; }
 
+DubinsPath::AltitudeCase DubinsPath::getAltitudeCase() const { return lmh_; }
 
-void DubinsPath::setFoundOptimalPath(bool found_optimal_path) {
-  foundOptimalPath_ = found_optimal_path;
-}
+void DubinsPath::setAltitudeCase(DubinsPath::AltitudeCase altitude_case) { lmh_ = altitude_case; }
 
+DubinsPath::Index DubinsPath::getIdx() const { return idx_; }
 
-bool DubinsPath::getAdditionalManeuver() const {
-  return additionalManeuver_;
-}
+void DubinsPath::setClassification(DubinsPath::Classification classification) { classification_ = classification; }
 
-
-void DubinsPath::setAdditionalManeuver(bool additional_maneuver) {
-  additionalManeuver_ = additional_maneuver;
-}
-
-
-DubinsPath::AltitudeCase DubinsPath::getAltitudeCase() const {
-  return lmh_;
-}
-
-
-void DubinsPath::setAltitudeCase(DubinsPath::AltitudeCase altitude_case) {
-  lmh_ = altitude_case;
-}
-
-
-DubinsPath::Index DubinsPath::getIdx() const {
-  return idx_;
-}
-
-
-void DubinsPath::setClassification(DubinsPath::Classification classification) {
-  classification_ = classification;
-}
-
-
-DubinsPath::Classification DubinsPath::getClassification() const {
-  return classification_;
-}
-
+DubinsPath::Classification DubinsPath::getClassification() const { return classification_; }
 
 void DubinsPath::setStartHelix(unsigned int num_helix, double radius_ratio) {
   k_start_ = num_helix;
@@ -128,7 +85,6 @@ void DubinsPath::setStartHelix(unsigned int num_helix, double radius_ratio) {
   length_2D_ = length_[0] + length_[1] + length_[2] + length_[3] + length_[4] + length_[5];
 }
 
-
 void DubinsPath::setEndHelix(unsigned int num_helix, double radius_ratio) {
   k_end_ = num_helix;
   radiusRatio_[5] = radius_ratio;
@@ -137,43 +93,26 @@ void DubinsPath::setEndHelix(unsigned int num_helix, double radius_ratio) {
   length_2D_ = length_[0] + length_[1] + length_[2] + length_[3] + length_[4] + length_[5];
 }
 
-
 void DubinsPath::setGamma(double gamma) {
   gamma_ = gamma;
   one_div_cos_abs_gamma_ = 1.0 / cosf(fabs(gamma_));
 }
 
+double DubinsPath::getGamma() const { return gamma_; }
 
-double DubinsPath::getGamma() const {
-  return gamma_;
-}
+double DubinsPath::getRadiusRatio(unsigned int idx) const { return radiusRatio_[idx]; }
 
+double DubinsPath::getInverseRadiusRatio(unsigned int idx) const { return radiusRatioInverse_[idx]; }
 
-double DubinsPath::getRadiusRatio(unsigned int idx) const {
-  return radiusRatio_[idx];
-}
-
-
-double DubinsPath::getInverseRadiusRatio(unsigned int idx) const {
-  return radiusRatioInverse_[idx];
-}
-
-
-double DubinsPath::getSegmentLength(unsigned int idx) const {
-  return length_[idx];
-}
-
+double DubinsPath::getSegmentLength(unsigned int idx) const { return length_[idx]; }
 
 void DubinsPath::setSegmentLength(double length, unsigned int idx) {
   length_[idx] = length;
   length_2D_ = length_[0] + length_[1] + length_[2] + length_[3] + length_[4] + length_[5];
 }
 
+const DubinsPath::DubinsPathSegmentType* DubinsPath::getType() const { return type_; }
 
-const DubinsPath::DubinsPathSegmentType* DubinsPath::getType() const {
-  return type_;
-}
+}  // namespace spaces
 
-} // namespace spaces
-
-} // namespace fw_planning
+}  // namespace fw_planning

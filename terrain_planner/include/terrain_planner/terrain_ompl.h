@@ -2,6 +2,9 @@
 #define TERRAIN_OMPL_H
 
 #include <ompl/base/StateValidityChecker.h>
+#include <ompl/base/spaces/SE3StateSpace.h>
+
+#include "terrain_planner/DubinsAirplane2.hpp"
 
 #include <grid_map_core/GridMap.hpp>
 
@@ -12,9 +15,9 @@ class TerrainValidityChecker : public base::StateValidityChecker {
   TerrainValidityChecker(const base::SpaceInformationPtr& space_info, grid_map::GridMap& map)
       : base::StateValidityChecker(space_info), map_(map) {}
   virtual bool isValid(const base::State* state) const {
-    Eigen::Vector3d position(state->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],
-                             state->as<ompl::base::RealVectorStateSpace::StateType>()->values[1],
-                             state->as<ompl::base::RealVectorStateSpace::StateType>()->values[2]);
+    Eigen::Vector3d position(state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
+                             state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
+                             state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
     bool collision = checkCollision(position);
     if (collision)
       return false;

@@ -1,6 +1,9 @@
 #ifndef OMPL_SETUP_H
 #define OMPL_SETUP_H
 
+#include "terrain_planner/DubinsAirplane2.hpp"
+#include "terrain_planner/terrain_ompl.h"
+
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
 
 #include <ompl/base/spaces/SE3StateSpace.h>
@@ -8,13 +11,11 @@
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include "ompl/base/SpaceInformation.h"
 
-#include <terrain_planner/terrain_ompl.h>
-
 namespace ompl {
 
 class OmplSetup : public geometric::SimpleSetup {
  public:
-  OmplSetup() : geometric::SimpleSetup(base::StateSpacePtr(new base::RealVectorStateSpace(3))) {}
+  OmplSetup() : geometric::SimpleSetup(base::StateSpacePtr(new fw_planning::spaces::DubinsAirplane2StateSpace())) {}
 
   void setDefaultObjective() {
     getProblemDefinition()->setOptimizationObjective(
