@@ -46,6 +46,18 @@ TerrainMap::TerrainMap() {}
 
 TerrainMap::~TerrainMap() {}
 
+bool TerrainMap::Load(const std::string &map_path, bool algin_terrain, const std::string color_map_path) {
+  bool loaded = initializeFromGeotiff(map_path, algin_terrain);
+  if (!color_map_path.empty()) {  // Load color layer if the color path is nonempty
+    bool color_loaded = addColorFromGeotiff(color_map_path);
+  }
+  if (!loaded) return false;
+  AddLayerDistanceTransform("distance_surface");
+  // viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
+  // viewutility_map_->initializeFromGridmap();
+  return true;
+}
+
 bool TerrainMap::isInCollision(const std::string &layer, const Eigen::Vector3d &position, bool is_above) {
   Eigen::Vector2d position_2d(position(0), position(1));
   if (grid_map_.isInside(position_2d)) {

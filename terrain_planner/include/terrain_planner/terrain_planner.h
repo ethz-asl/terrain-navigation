@@ -132,7 +132,7 @@ class TerrainPlanner {
   PLANNER_MODE planner_mode_{PLANNER_MODE::MCTS};
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
-
+  std::shared_ptr<TerrainMap> terrain_map_;
   std::shared_ptr<Profiler> planner_profiler_;
   TrajectorySegments reference_primitive_;
   mavros_msgs::State current_state_;

@@ -55,6 +55,17 @@ class TerrainMap {
  public:
   TerrainMap();
   virtual ~TerrainMap();
+
+  /**
+   * @brief Helper function for loading terrain from path
+   * 
+   * @param map_path Path to dsm path (Supported formats are *.tif *.obj)
+   * @param algin_terrain Geo align terrain
+   * @param color_map_path  Path to color raster files to visualize terrain texture (Supported formats are *.tif)
+   * @return true Successfully loaded terrain
+   * @return false Failed to load terrain
+   */
+  bool Load(const std::string& map_path, bool algin_terrain, const std::string color_map_path = "");
   bool initializeFromGeotiff(const std::string& path, bool align_terrain = true);
   bool addColorFromGeotiff(const std::string& path);
   bool AddLayerDistanceTransform(const std::string& string);

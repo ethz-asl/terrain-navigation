@@ -60,22 +60,18 @@ class ManeuverLibrary {
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
                                    Eigen::Vector3d current_vel);
   double getPlanningHorizon() { return planning_horizon_; };
+  Eigen::Vector3d getGoalPosition() { return goal_pos_; };
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
-  bool setTerrainMap(const std::string& map_path, bool algin_terrain, const std::string color_map_path = "") {
-    bool loaded = terrain_map_->initializeFromGeotiff(map_path, algin_terrain);
-    if (!color_map_path.empty()) {  // Load color layer if the color path is nonempty
-      bool color_loaded = terrain_map_->addColorFromGeotiff(color_map_path);
-    }
-    if (!loaded) return false;
-    terrain_map_->AddLayerDistanceTransform("distance_surface");
-    viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
-    viewutility_map_->initializeFromGridmap();
-    return true;
-  };
+
+  /**
+   * @brief Set the Terrain Map object for collision checking
+   *
+   * @param map terrain map pointer
+   */
+  void setTerrainMap(std::shared_ptr<TerrainMap> map) { terrain_map_ = map; };
   void setTerrainRelativeGoalPosition(const Eigen::Vector3d& pos);
   void setMaxAltitudeConstraint(bool max_altitude_constraint) { check_max_altitude_ = max_altitude_constraint; }
   void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
-  Eigen::Vector3d getGoalPosition() { return goal_pos_; };
   bool Solve();
   TrajectorySegments SolveMCTS(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
                                const Eigen::Vector4d current_att, TrajectorySegments& current_path);

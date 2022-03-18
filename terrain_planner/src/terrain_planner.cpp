@@ -93,6 +93,10 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(4.0);
 
+  terrain_map_ = std::make_shared<TerrainMap>();
+
+  maneuver_library_->setTerrainMap(terrain_map_);
+
   planner_profiler_ = std::make_shared<Profiler>("planner");
 }
 TerrainPlanner::~TerrainPlanner() {
@@ -152,9 +156,13 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   if (local_origin_received_ && !map_initialized_) {
-    std::cout << "Local origin received, loading map" << std::endl;
-    maneuver_library_->setTerrainMap(map_path_, true, map_color_path_);
-    map_initialized_ = true;
+    std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
+    map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
+    if (map_initialized_) {
+      std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
+    } else {
+      std::cout << "[TerrainPlanner]   - Failed to load map: " << map_path_ << std::endl;
+    }
     return;
   }
   if (!local_origin_received_) {
@@ -477,7 +485,7 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   /// TODO: Add location from the new set location service
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
-  bool result = maneuver_library_->setTerrainMap(map_path_, align_location, map_color_path_);
+  bool result = terrain_map_->Load(map_path_, align_location, map_color_path_);
 
   res.success = result;
   return true;
