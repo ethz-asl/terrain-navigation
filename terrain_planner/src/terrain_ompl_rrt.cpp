@@ -5,7 +5,7 @@
 using namespace Eigen;
 using namespace std;
 // Constructor
-TerrainOmplRrt::TerrainOmplRrt(grid_map::GridMap& map) : map_(map) {}
+TerrainOmplRrt::TerrainOmplRrt() {}
 TerrainOmplRrt::~TerrainOmplRrt() {
   // Destructor
 }
@@ -13,7 +13,7 @@ TerrainOmplRrt::~TerrainOmplRrt() {
 void TerrainOmplRrt::setupProblem() {
   problem_setup_.setDefaultPlanner();
   problem_setup_.setDefaultObjective();
-  problem_setup_.setOctomapCollisionChecking(map_);
+  problem_setup_.setOctomapCollisionChecking(map_->getGridMap());
   ompl::base::RealVectorBounds bounds(3);
   bounds.setLow(0, lower_bound_.x());
   bounds.setLow(1, lower_bound_.y());

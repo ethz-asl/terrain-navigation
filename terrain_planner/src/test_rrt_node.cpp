@@ -195,7 +195,8 @@ int main(int argc, char** argv) {
   }
   terrain_map_->AddLayerDistanceTransform("distance_surface");
 
-  std::shared_ptr<TerrainOmplRrt> planner = std::make_shared<TerrainOmplRrt>(terrain_map_->getGridMap());
+  std::shared_ptr<TerrainOmplRrt> planner = std::make_shared<TerrainOmplRrt>();
+  planner->setMap(terrain_map_);
   /// TODO: Get bounds from gridmap
   grid_map::GridMap& map = terrain_map_->getGridMap();
   const Eigen::Vector2d map_pos = map.getPosition();

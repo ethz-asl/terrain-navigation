@@ -12,7 +12,7 @@ namespace ompl {
 
 class TerrainValidityChecker : public base::StateValidityChecker {
  public:
-  TerrainValidityChecker(const base::SpaceInformationPtr& space_info, grid_map::GridMap& map)
+  TerrainValidityChecker(const base::SpaceInformationPtr& space_info, const grid_map::GridMap& map)
       : base::StateValidityChecker(space_info), map_(map) {}
   virtual bool isValid(const base::State* state) const {
     Eigen::Vector3d position(state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
@@ -50,7 +50,7 @@ class TerrainValidityChecker : public base::StateValidityChecker {
   }
 
  protected:
-  grid_map::GridMap& map_;
+  const grid_map::GridMap& map_;
 };
 }  // namespace ompl
 
