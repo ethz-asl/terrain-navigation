@@ -58,7 +58,7 @@ class TerrainMap {
 
   /**
    * @brief Helper function for loading terrain from path
-   * 
+   *
    * @param map_path Path to dsm path (Supported formats are *.tif *.obj)
    * @param algin_terrain Geo align terrain
    * @param color_map_path  Path to color raster files to visualize terrain texture (Supported formats are *.tif)

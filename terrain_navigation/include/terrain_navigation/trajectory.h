@@ -280,10 +280,8 @@ class Primitive {
         extended_primitives = child->getMotionPrimitives();
         // Append current segment
         for (auto &primitive : extended_primitives) {
-          if (primitive.valid()) {
-            primitive.prependSegment(segment);
-            all_primitives.push_back(primitive);
-          }
+          primitive.prependSegment(segment);
+          all_primitives.push_back(primitive);
         }
       }
       return all_primitives;

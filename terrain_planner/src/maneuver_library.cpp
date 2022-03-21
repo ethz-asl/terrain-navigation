@@ -98,7 +98,7 @@ bool ManeuverLibrary::Solve() {
   bool valid_primitives = checkCollisions();
   bool use_viewutility = false;
 
-  if (valid_primitives) {
+  if (use_viewutility) {
     checkViewUtilityTree(motion_primitive_tree_);
   }
 

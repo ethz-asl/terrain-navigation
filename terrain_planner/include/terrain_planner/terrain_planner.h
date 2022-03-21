@@ -129,7 +129,7 @@ class TerrainPlanner {
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
   SETPOINT_MODE setpoint_mode_{SETPOINT_MODE::STATE};
-  PLANNER_MODE planner_mode_{PLANNER_MODE::MCTS};
+  PLANNER_MODE planner_mode_{PLANNER_MODE::EXHAUSTIVE};
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
   std::shared_ptr<TerrainMap> terrain_map_;
