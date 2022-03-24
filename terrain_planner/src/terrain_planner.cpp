@@ -183,17 +183,21 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // Only run planner in offboard mode
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
-
+  planner_mode_ = PLANNER_MODE::MCTS;
   switch (planner_mode_) {
+    case PLANNER_MODE::MCTS: {
+      TrajectorySegments candidate_primitive =
+          maneuver_library_->SolveMCTS(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
+      if (candidate_primitive.valid()) {
+        reference_primitive_ = candidate_primitive;
+        break;
+      }
+    }
     case PLANNER_MODE::EXHAUSTIVE:
       maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, vehicle_attitude_,
                                                   reference_primitive_);
       maneuver_library_->Solve();
       reference_primitive_ = maneuver_library_->getBestPrimitive();
-      break;
-    case PLANNER_MODE::MCTS:
-      reference_primitive_ =
-          maneuver_library_->SolveMCTS(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
       break;
     case PLANNER_MODE::RANDOM:
     default:
@@ -281,7 +285,7 @@ void TerrainPlanner::publishCandidateManeuvers(const std::vector<TrajectorySegme
 
   std::vector<visualization_msgs::Marker> maneuver_library_vector;
   int i = 0;
-  bool visualize_invalid_trajectories = true;
+  bool visualize_invalid_trajectories = false;
   for (auto maneuver : candidate_maneuvers) {
     if (maneuver.valid() || visualize_invalid_trajectories) {
       maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));

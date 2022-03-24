@@ -87,7 +87,18 @@ class ManeuverLibrary {
                                                 const std::vector<Eigen::Vector3d>& rates, const double horizon);
   bool checkCollisions();
   std::vector<TrajectorySegments> checkRelaxedCollisions();
-  bool checkCollisionsTree(std::shared_ptr<Primitive> primitive, std::vector<TrajectorySegments>& valid_primitives);
+
+  /**
+   * @brief Check collision of the current segment and child nodes
+   *
+   * @param primitive
+   * @param valid_primitives
+   * @param check_valid_child
+   * @return true
+   * @return false
+   */
+  bool checkCollisionsTree(std::shared_ptr<Primitive> primitive, std::vector<TrajectorySegments>& valid_primitives,
+                           bool check_valid_child = true);
   bool checkViewUtilityTree(std::shared_ptr<Primitive> primitive);
   bool checkTrajectoryCollision(Trajectory& trajectory, const std::string& layer, bool is_above = true);
   bool checkTrajectoryCollision(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);

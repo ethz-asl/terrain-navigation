@@ -129,6 +129,12 @@ TrajectorySegments ManeuverLibrary::SolveMCTS(const Eigen::Vector3d current_pos,
   // root
   motion_primitive_tree_ = std::make_shared<Primitive>(current_segment);
 
+  // Terminate MCTS when the current segment is in collision
+  std::vector<TrajectorySegments> valid_primitives;
+  checkCollisionsTree(motion_primitive_tree_, valid_primitives, false);
+  if (!motion_primitive_tree_->valid()) {
+    return best_primitive;
+  }
   /// TODO: switch max iterations to time
   int iter{0};
   int max_iter{0};
@@ -140,16 +146,21 @@ TrajectorySegments ManeuverLibrary::SolveMCTS(const Eigen::Vector3d current_pos,
       // vd ← Selection(v0)
       std::shared_ptr<Primitive> leaf = motion_primitive_tree_;
       std::vector<std::shared_ptr<Primitive>> path;
-      path.push_back(leaf);
       while (true) {
+        path.push_back(leaf);
         if (leaf->has_expandable_child()) {
-          if (!leaf->has_child()) {
+          if (!leaf->has_child() && leaf->valid()) {
             expandPrimitives(leaf, primitive_rates_, planning_horizon_);
-            leaf = leaf->getRandomChild();
+            checkCollisionsTree(leaf, valid_primitives);
+            if (leaf->has_validchild()) {
+              leaf = leaf->getValidChild();
+              path.push_back(leaf);
+            }
           } else {
+            /// TODO: get valid random child
             leaf = leaf->getUnvisitedChild();
+            path.push_back(leaf);
           }
-          path.push_back(leaf);
           break;
         } else {
           // vd+1 ← Expansion(vd)
@@ -161,15 +172,20 @@ TrajectorySegments ManeuverLibrary::SolveMCTS(const Eigen::Vector3d current_pos,
       /// ∆ ← Simulation(vd+1)
       /// TODO: Run collision checks
       /// TODO: Add emergency maneuvers for ICS checks
-      Eigen::Vector3d end_pos = leaf->getEndofSegmentPosition();
-      Eigen::Vector3d distance_vector = end_pos - Eigen::Vector3d(goal_pos_(0), goal_pos_(1), goal_pos_(2));
-      double utility = 1 / distance_vector.norm();
+      double utility{0.0};
+      if (leaf->has_validchild()) {
+        Eigen::Vector3d end_pos = leaf->getEndofSegmentPosition();
+        Eigen::Vector3d distance_vector = end_pos - Eigen::Vector3d(goal_pos_(0), goal_pos_(1), goal_pos_(2));
+        distance_vector(2) = 0.0;
+        utility = 1 / distance_vector.norm();
+      } else {
+        utility = -1.0;
+      }
 
       /// Backup(vd+1, ∆)
       for (auto &node : path) {
         node->utility += utility;
         node->visits++;
-        node->validity = true;
       }
     }
     iter++;
@@ -183,7 +199,9 @@ TrajectorySegments ManeuverLibrary::SolveMCTS(const Eigen::Vector3d current_pos,
   best_primitive.appendSegment(motion_primitive_tree_->segment);
   std::shared_ptr<Primitive> best_child = motion_primitive_tree_->getBestChild();
   best_primitive.appendSegment(best_child->segment);
-
+  /// TODO: Check validity of best primitive more systematically
+  best_primitive.validity = motion_primitive_tree_->valid() && best_child->valid();
+  std::cout << "  Best Primitive Validity: " << best_primitive.validity << std::endl;
   return best_primitive;
 }
 
@@ -204,19 +222,19 @@ void ManeuverLibrary::expandPrimitives(std::shared_ptr<Primitive> &primitive, st
 }
 
 bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> primitive,
-                                          std::vector<TrajectorySegments> &valid_primitives) {
-  bool valid_trajectory{true};
+                                          std::vector<TrajectorySegments> &valid_primitives, bool check_valid_child) {
+  bool valid_segment{true};
   // Check collision with terrain
   Trajectory &current_trajectory = primitive->segment;
 
-  valid_trajectory &= checkTrajectoryCollision(current_trajectory, "distance_surface", true);
+  valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "distance_surface", true);
   // Check collision with maximum terrain altitude
   if (check_max_altitude_) {
-    valid_trajectory &= checkTrajectoryCollision(current_trajectory, "max_elevation", false);
+    valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "max_elevation", false);
   }
-
-  if (valid_trajectory) {
-    if (primitive->has_child()) {
+  primitive->validity = valid_segment;
+  if (valid_segment) {
+    if (primitive->has_child() && check_valid_child) {
       // If the primitive segment is valid and has a child it needs to have at least one child that is valid
       bool has_valid_child{false};
       for (auto &child : primitive->child_primitives) {
@@ -235,8 +253,6 @@ bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> primitive,
       TrajectorySegments valid_segments;
       valid_segments.appendSegment(current_trajectory);
     }
-  } else {
-    primitive->validity = false;
   }
 
   return primitive->validity;

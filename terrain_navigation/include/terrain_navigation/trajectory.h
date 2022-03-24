@@ -260,6 +260,16 @@ class Primitive {
   Eigen::Vector3d getEndofSegmentVelocity() { return segment.states.back().velocity; }
   bool valid() { return validity; }
   bool has_child() { return !child_primitives.empty(); }
+  bool has_validchild() {
+    if (!has_child()) {
+      return true;
+    } else {
+      for (auto &child : child_primitives) {
+        if (child->valid()) return true;
+      }
+      return false;
+    }
+  }
   bool has_expandable_child() {
     if (!has_child()) {
       return true;
@@ -317,6 +327,12 @@ class Primitive {
     int num_child = child_primitives.size();
     /// TODO: Safe guard against empty child
     return child_primitives[std::rand() % num_child];
+  }
+  std::shared_ptr<Primitive> getValidChild() {
+    int num_child = child_primitives.size();
+    for (auto &child : child_primitives) {
+      if (child->valid()) return child;
+    }
   }
   std::shared_ptr<Primitive> getUnvisitedChild() {
     int num_child = child_primitives.size();
