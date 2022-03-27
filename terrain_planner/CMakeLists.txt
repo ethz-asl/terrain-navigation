@@ -81,10 +81,7 @@ target_link_libraries(test_dubins_planner ${PROJECT_NAME} ${catkin_LIBRARIES} ${
 
 if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
-    catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
-                                          test/test_example.cpp
-                                          test/test_terrain_map.cpp
-                                          test/test_maneuver_library.cpp)
+    catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp)
 
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
