@@ -47,6 +47,50 @@ class TerrainValidityChecker : public base::StateValidityChecker {
  protected:
   const grid_map::GridMap& map_;
 };
+
+class TerrainStateSampler : public base::StateSampler {
+ public:
+  TerrainStateSampler(const ompl::base::StateSpace* si, const grid_map::GridMap& map) : StateSampler(si), map_(map) {
+    // name_ = "my sampler";
+  }
+
+  void sampleUniform(ompl::base::State* state) override {
+    /// TODO: We don't need to querry this everytime we sample
+
+    const Eigen::Vector2d map_pos = map_.getPosition();
+    const double map_width_x = map_.getLength().x();
+    const double map_width_y = map_.getLength().y();
+    double min_altitude = 50.0;
+    double max_altitude = 150.0;
+
+    double x = rng_.uniformReal(map_pos(0) - 0.5 * map_width_x, map_pos(1) + 0.5 * map_width_x);
+    double y = rng_.uniformReal(map_pos(1) - 0.5 * map_width_y, map_pos(1) + 0.5 * map_width_y);
+    double yaw = rng_.uniformReal(-M_PI, M_PI);
+
+    double terrain_elevation = map_.atPosition("elevation", Eigen::Vector2d(x, y));
+    double z = rng_.uniformReal(min_altitude, max_altitude) + terrain_elevation;
+
+    state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(x);
+    state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(y);
+    state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(z);
+    state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(yaw);
+    assert(si_->isValid(state));
+    return;
+  }
+  void sampleUniformNear(ompl::base::State* /*state*/, const ompl::base::State* /*near*/,
+                         const double /*distance*/) override {
+    std::cout << "Sample Near" << std::endl;
+    return;
+  }
+  void sampleGaussian(ompl::base::State* state, const ompl::base::State* mean, double stdDev) override {
+    std::cout << "Sample Gaussian" << std::endl;
+    return;
+  }
+
+ protected:
+  ompl::RNG rng_;
+  const grid_map::GridMap& map_;
+};
 }  // namespace ompl
 
 #endif

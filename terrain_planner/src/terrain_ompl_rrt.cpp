@@ -15,6 +15,9 @@ void TerrainOmplRrt::setupProblem() {
   problem_setup_->setDefaultObjective();
   assert(map);
   problem_setup_->setOctomapCollisionChecking(map_->getGridMap());
+  problem_setup_->getStateSpace()->setStateSamplerAllocator(
+      std::bind(&TerrainOmplRrt::allocTerrainStateSampler, this, std::placeholders::_1));
+  problem_setup_->getStateSpace()->allocStateSampler();
   ompl::base::RealVectorBounds bounds(3);
   bounds.setLow(0, lower_bound_.x());
   bounds.setLow(1, lower_bound_.y());
@@ -92,6 +95,7 @@ bool TerrainOmplRrt::solve(const double time_budget, const Eigen::Vector3d& star
     problem_setup_->getSolutionPath().print(std::cout);
 
     problem_setup_->getPlannerData(*planner_data_);
+    solve_duration_ = problem_setup_->getLastPlanComputationTime();
 
   } else {
     std::cout << "Solution Not found" << std::endl;

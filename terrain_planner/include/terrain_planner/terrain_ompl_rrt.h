@@ -32,6 +32,10 @@ class TerrainOmplRrt {
                                       std::vector<Eigen::Vector3d>& trajectory_points) const;
   std::shared_ptr<ompl::base::PlannerData> getPlannerData() { return planner_data_; };
   std::shared_ptr<ompl::OmplSetup> getProblemSetup() { return problem_setup_; };
+  ompl::base::StateSamplerPtr allocTerrainStateSampler(const ompl::base::StateSpace* space) {
+    return std::make_shared<ompl::TerrainStateSampler>(space, map_->getGridMap());
+  }
+  double getSolutionTime() { return solve_duration_; };
 
  private:
   std::shared_ptr<ompl::OmplSetup> problem_setup_;
@@ -39,6 +43,7 @@ class TerrainOmplRrt {
   std::shared_ptr<ompl::base::PlannerData> planner_data_;
   Eigen::Vector3d lower_bound_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d upper_bound_{Eigen::Vector3d::Zero()};
+  double solve_duration_{0.0};
 };
 
 #endif
