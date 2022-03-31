@@ -334,7 +334,7 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   marker.pose.position.x = position(0);
   marker.pose.position.y = position(1);
   marker.pose.position.z = position(2);
-  double yaw = std::atan2(velocity(1), velocity(0));
+  double yaw = std::atan2(velocity.y(), velocity.x());
   marker.pose.orientation.w = std::cos(0.5 * yaw);
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;

@@ -58,10 +58,10 @@ bool TerrainMap::Load(const std::string &map_path, bool algin_terrain, const std
   return true;
 }
 
-bool TerrainMap::isInCollision(const std::string &layer, const Eigen::Vector3d &position, bool is_above) {
-  Eigen::Vector2d position_2d(position(0), position(1));
+bool TerrainMap::isInCollision(const std::string &layer, const Eigen::Vector3d &position, const bool is_above) {
+  const Eigen::Vector2d position_2d(position(0), position(1));
   if (grid_map_.isInside(position_2d)) {
-    double elevation = grid_map_.atPosition(layer, position_2d);
+    const double elevation = grid_map_.atPosition(layer, position_2d);
     if (is_above) {
       if (elevation > position(2)) {
         return true;

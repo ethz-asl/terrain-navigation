@@ -1,5 +1,5 @@
-#ifndef OMPL_SETUP_H
-#define OMPL_SETUP_H
+#ifndef TERRAIN_PLANNER_OMPL_SETUP_H_
+#define TERRAIN_PLANNER_OMPL_SETUP_H_
 
 #include "terrain_planner/DubinsAirplane2.hpp"
 #include "terrain_planner/terrain_ompl.h"
@@ -33,7 +33,7 @@ class OmplSetup : public geometric::SimpleSetup {
     si_->setStateValidityCheckingResolution(resolution);
   }
 
-  void setOctomapCollisionChecking(grid_map::GridMap& map) {
+  void setOctomapCollisionChecking(const grid_map::GridMap& map) {
     std::shared_ptr<TerrainValidityChecker> validity_checker(new TerrainValidityChecker(getSpaceInformation(), map));
 
     setStateValidityChecker(base::StateValidityCheckerPtr(validity_checker));

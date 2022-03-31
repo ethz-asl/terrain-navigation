@@ -37,17 +37,20 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_navigation/terrain_map.h"
+#include <geometry_msgs/Point.h>
+#include <ros/ros.h>
+#include <terrain_navigation/terrain_map.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <grid_map_ros/GridMapRosConverter.hpp>
+
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
 
-#include <grid_map_ros/GridMapRosConverter.hpp>
-
-#include <geometry_msgs/Point.h>
-#include <ros/ros.h>
-#include <visualization_msgs/MarkerArray.h>
-
-void publishPositionSetpoints(ros::Publisher& pub, const Eigen::Vector3d& position, const Eigen::Vector3d& velocity) {
+void publishPositionSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position,
+                              const Eigen::Vector3d& velocity) {
   visualization_msgs::Marker marker;
   marker.header.stamp = ros::Time::now();
   marker.type = visualization_msgs::Marker::ARROW;
@@ -65,44 +68,29 @@ void publishPositionSetpoints(ros::Publisher& pub, const Eigen::Vector3d& positi
   marker.color.r = 0.0;
   marker.color.g = 0.0;
   marker.color.b = 1.0;
-  marker.pose.position.x = position(0);
-  marker.pose.position.y = position(1);
-  marker.pose.position.z = position(2);
-  double yaw = std::atan2(velocity(1), velocity(0));
-  marker.pose.orientation.w = std::cos(0.5 * yaw);
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = std::sin(0.5 * yaw);
+  marker.pose.position = tf2::toMsg(position);
+  tf2::Quaternion q;
+  q.setRPY(0, 0, std::atan2(velocity.y(), velocity.x()));
+  marker.pose.orientation = tf2::toMsg(q);
   visualization_msgs::MarkerArray msg;
 
   pub.publish(marker);
 }
 
-geometry_msgs::Point toPoint(const Eigen::Vector3d& p) {
-  geometry_msgs::Point position;
-  position.x = p(0);
-  position.y = p(1);
-  position.z = p(2);
-  return position;
-}
-
-void publishTree(ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerData> planner_data,
-                 ompl::OmplSetup& problem_setup) {
+void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerData> planner_data,
+                 std::shared_ptr<ompl::OmplSetup> problem_setup) {
   visualization_msgs::MarkerArray marker_array;
   planner_data->decoupleFromPlanner();
 
   // allocate variables
   std::vector<unsigned int> edge_list;
   int edge_id = 0;
-  int num_vertices = planner_data->numVertices();
-
-  // fill common variables of the marker message
 
   // Create states, a marker and a list to store edges
-  ompl::base::ScopedState<ompl::base::RealVectorStateSpace> vertex(problem_setup.getSpaceInformation());
-  ompl::base::ScopedState<ompl::base::RealVectorStateSpace> neighbor_vertex(problem_setup.getSpaceInformation());
+  ompl::base::ScopedState<ompl::base::RealVectorStateSpace> vertex(problem_setup->getSpaceInformation());
+  ompl::base::ScopedState<ompl::base::RealVectorStateSpace> neighbor_vertex(problem_setup->getSpaceInformation());
   int marker_idx{0};
-  for (int i = 0; i < num_vertices; i++) {
+  for (int i = 0; i < planner_data->numVertices(); i++) {
     visualization_msgs::Marker marker;
     marker.header.stamp = ros::Time().now();
     marker.header.frame_id = "map";
@@ -138,8 +126,8 @@ void publishTree(ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerData> p
       std::vector<geometry_msgs::Point> points;
       for (unsigned int edge : edge_list) {
         neighbor_vertex = planner_data->getVertex(edge).getState();
-        points.push_back(toPoint(Eigen::Vector3d(vertex[0], vertex[1], vertex[2])));
-        points.push_back(toPoint(Eigen::Vector3d(neighbor_vertex[0], neighbor_vertex[1], neighbor_vertex[2])));
+        points.push_back(toMsg(Eigen::Vector3d(vertex[0], vertex[1], vertex[2])));
+        points.push_back(toMsg(Eigen::Vector3d(neighbor_vertex[0], neighbor_vertex[1], neighbor_vertex[2])));
       }
       edge_marker.points = points;
       edge_marker.action = visualization_msgs::Marker::ADD;
@@ -178,55 +166,52 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
-  ros::Publisher start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
-  ros::Publisher goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
-  ros::Publisher path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
-  ros::Publisher grid_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
-  ros::Publisher trajectory_pub_ = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
+  // Initialize ROS related publishers for visualization
+  auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
+  auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
+  auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
+  auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
+  auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
 
   std::string map_path, color_file_path;
   nh_private.param<std::string>("map_path", map_path, "");
   nh_private.param<std::string>("color_file_path", color_file_path, "");
 
-  std::shared_ptr<TerrainMap> terrain_map_ = std::make_shared<TerrainMap>();
-  bool loaded = terrain_map_->initializeFromGeotiff(map_path, false);
+  // Load terrain map from defined tif paths
+  auto terrain_map = std::make_shared<TerrainMap>();
+  terrain_map->initializeFromGeotiff(map_path, false);
   if (!color_file_path.empty()) {  // Load color layer if the color path is nonempty
-    bool color_loaded = terrain_map_->addColorFromGeotiff(color_file_path);
+    terrain_map->addColorFromGeotiff(color_file_path);
   }
-  terrain_map_->AddLayerDistanceTransform("distance_surface");
+  terrain_map->AddLayerDistanceTransform("distance_surface");
 
-  std::shared_ptr<TerrainOmplRrt> planner = std::make_shared<TerrainOmplRrt>();
-  planner->setMap(terrain_map_);
+  // Initialize planner with loaded terrain map
+  auto planner = std::make_shared<TerrainOmplRrt>();
+  planner->setMap(terrain_map);
   /// TODO: Get bounds from gridmap
-  grid_map::GridMap& map = terrain_map_->getGridMap();
-  const Eigen::Vector2d map_pos = map.getPosition();
-  const double map_width_x = map.getLength().x();
-  const double map_width_y = map.getLength().y();
-  double roi_ratio = 0.5;
-  Eigen::Vector3d lower_bounds{
-      Eigen::Vector3d(-map_pos(0) - roi_ratio * map_width_x, map_pos(1) - roi_ratio * map_width_y, -100.0)};
-  Eigen::Vector3d upper_bounds{
-      Eigen::Vector3d(map_pos(0) + roi_ratio * map_width_x, map_pos(1) + roi_ratio * map_width_y, 800.0)};
-  planner->setBounds(lower_bounds, upper_bounds);
+  grid_map::GridMap& map = terrain_map->getGridMap();
+  planner->setBoundsFromMap(terrain_map->getGridMap());
   planner->setupProblem();
   std::vector<Eigen::Vector3d> path;
   double terrain_altitude{100.0};
 
-  Eigen::Vector3d start{Eigen::Vector3d(-200.0, -200.0, 0.0)};
-  start(2) = terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
-  Eigen::Vector3d goal{Eigen::Vector3d(300.0, 300.0, 0.0)};
-  goal(2) = terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
-  planner->Solve(start, goal, path);
+  // Find a path using the RRT planner
+  Eigen::Vector3d start(-200.0, -200.0, 0.0);
+  start(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
+  Eigen::Vector3d goal(300.0, 300.0, 0.0);
+  goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
+  planner->solve(1.0, start, goal, path);
 
+  // Repeatedly publish results
   while (true) {
-    terrain_map_->getGridMap().setTimestamp(ros::Time::now().toNSec());
+    terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
     grid_map_msgs::GridMap message;
-    grid_map::GridMapRosConverter::toMessage(terrain_map_->getGridMap(), message);
-    grid_map_pub_.publish(message);
+    grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
+    grid_map_pub.publish(message);
     publishTrajectory(path_pub, path);
-    publishPositionSetpoints(start_pos_pub, start, Eigen::Vector3d(15.0, 0.0, 0.0));
-    publishPositionSetpoints(goal_pos_pub, goal, Eigen::Vector3d(15.0, 0.0, 0.0));
-    publishTree(trajectory_pub_, planner->getPlannerData(), planner->getProblemSetup());
+    publishPositionSetpoints(start_pos_pub, start, {15.0, 0.0, 0.0});
+    publishPositionSetpoints(goal_pos_pub, goal, {15.0, 0.0, 0.0});
+    publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
     ros::Duration(1.0).sleep();
   }
   ros::spin();
