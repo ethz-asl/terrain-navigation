@@ -185,14 +185,14 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   plan_time_ = ros::Time::now();
   planner_mode_ = PLANNER_MODE::MCTS;
   switch (planner_mode_) {
-    case PLANNER_MODE::MCTS: {
-      TrajectorySegments candidate_primitive =
-          maneuver_library_->SolveMCTS(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
-      if (candidate_primitive.valid()) {
-        reference_primitive_ = candidate_primitive;
-        break;
-      }
-    }
+    // case PLANNER_MODE::MCTS: {
+    //   TrajectorySegments candidate_primitive =
+    //       maneuver_library_->SolveMCTS(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
+    //   if (candidate_primitive.valid()) {
+    //     reference_primitive_ = candidate_primitive;
+    //     break;
+    //   }
+    // }
     case PLANNER_MODE::EXHAUSTIVE:
       maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, vehicle_attitude_,
                                                   reference_primitive_);

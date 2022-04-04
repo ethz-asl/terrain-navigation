@@ -30,8 +30,8 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${
 if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
-                                          test/test_trajectory.cpp
-                                          test/test_terrain_map.cpp)
+                                          test/test_trajectory.cpp)
+                                          # test/test_terrain_map.cpp)
 
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}

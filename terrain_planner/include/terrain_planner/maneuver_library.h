@@ -60,6 +60,13 @@ class ManeuverLibrary {
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
                                    Eigen::Vector3d current_vel);
   double getPlanningHorizon() { return planning_horizon_; };
+
+  /**
+   * @brief Get the Primitive Rates of the maneuver library
+   *
+   * @return std::vector<Eigen::Vector3d>
+   */
+  std::vector<Eigen::Vector3d> getPrimitiveRates() const { return primitive_rates_; };
   Eigen::Vector3d getGoalPosition() { return goal_pos_; };
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
 
@@ -73,20 +80,11 @@ class ManeuverLibrary {
   void setMaxAltitudeConstraint(bool max_altitude_constraint) { check_max_altitude_ = max_altitude_constraint; }
   void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
   bool Solve();
-  TrajectorySegments SolveMCTS(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
-                               const Eigen::Vector4d current_att, TrajectorySegments& current_path);
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
   std::shared_ptr<TerrainMap>& getTerrainMap() { return terrain_map_; };
   std::shared_ptr<ViewUtilityMap>& getViewUtilityMap() { return viewutility_map_; };
-  double getTimeStep() { return dt_; }
-  void expandPrimitives(std::shared_ptr<Primitive>& primitive, std::vector<Eigen::Vector3d> rates, double horizon);
-
- private:
-  static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
-  std::vector<TrajectorySegments> AppendSegment(std::vector<TrajectorySegments>& first_segment,
-                                                const std::vector<Eigen::Vector3d>& rates, const double horizon);
-  bool checkCollisions();
-  std::vector<TrajectorySegments> checkRelaxedCollisions();
+  double getTimeStep() const { return dt_; }
+  void expandPrimitives(std::shared_ptr<Primitive> primitive, std::vector<Eigen::Vector3d> rates, double horizon);
 
   /**
    * @brief Check collision of the current segment and child nodes
@@ -99,6 +97,14 @@ class ManeuverLibrary {
    */
   bool checkCollisionsTree(std::shared_ptr<Primitive> primitive, std::vector<TrajectorySegments>& valid_primitives,
                            bool check_valid_child = true);
+
+ private:
+  static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
+  std::vector<TrajectorySegments> AppendSegment(std::vector<TrajectorySegments>& first_segment,
+                                                const std::vector<Eigen::Vector3d>& rates, const double horizon);
+  bool checkCollisions();
+  std::vector<TrajectorySegments> checkRelaxedCollisions();
+
   bool checkViewUtilityTree(std::shared_ptr<Primitive> primitive);
   bool checkTrajectoryCollision(Trajectory& trajectory, const std::string& layer, bool is_above = true);
   bool checkTrajectoryCollision(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);

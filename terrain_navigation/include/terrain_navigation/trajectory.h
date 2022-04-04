@@ -270,18 +270,6 @@ class Primitive {
       return false;
     }
   }
-  bool has_expandable_child() {
-    if (!has_child()) {
-      return true;
-    } else {
-      for (auto &child : child_primitives) {
-        if (child->visits < 1) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
   std::vector<TrajectorySegments> getMotionPrimitives() {
     std::vector<TrajectorySegments> all_primitives;
     if (has_child()) {
@@ -334,16 +322,10 @@ class Primitive {
       if (child->valid()) return child;
     }
   }
-  std::shared_ptr<Primitive> getUnvisitedChild() {
-    int num_child = child_primitives.size();
-    for (auto &child : child_primitives) {
-      if (child->visits < 1) return child;
-    }
-  }
   double utility{0.0};
   int visits{0};
   // A primitive is not valid if none of the child primitives are valid
-  bool validity{false};
+  bool validity{true};
   bool evaluation{false};
   Trajectory segment;
 

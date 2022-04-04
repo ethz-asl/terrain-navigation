@@ -44,6 +44,7 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/maneuver_library.cpp
   src/terrain_planner.cpp
+  src/mcts_planner.cpp
 )
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES})
@@ -69,6 +70,12 @@ add_executable(test_dubins_planner
 add_dependencies(test_dubins_planner terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_dubins_planner ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
 
+add_executable(test_mcts
+  src/test_mcts.cpp
+)
+add_dependencies(test_mcts terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(test_mcts ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
+
 
 ##########
 # EXPORT #
@@ -81,7 +88,9 @@ target_link_libraries(test_dubins_planner ${PROJECT_NAME} ${catkin_LIBRARIES} ${
 
 if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
-    catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp)
+    catkin_add_gtest(${PROJECT_NAME}-test 
+      test/main.cpp
+      test/test_mcts_planner.cpp)
 
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
