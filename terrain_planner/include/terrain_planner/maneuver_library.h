@@ -36,6 +36,9 @@
  *
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
+#ifndef TERRAIN_PLANNER_MANEUVER_LIBRARY_H
+#define TERRAIN_PLANNER_MANEUVER_LIBRARY_H
+
 #include "adaptive_viewutility/viewutility_map.h"
 #include "terrain_navigation/terrain_map.h"
 #include "terrain_navigation/trajectory.h"
@@ -76,7 +79,7 @@ class ManeuverLibrary {
    * @param map terrain map pointer
    */
   void setTerrainMap(std::shared_ptr<TerrainMap> map) { terrain_map_ = map; };
-  void setTerrainRelativeGoalPosition(const Eigen::Vector3d& pos);
+  Eigen::Vector3d setTerrainRelativeGoalPosition(const Eigen::Vector3d& pos);
   void setMaxAltitudeConstraint(bool max_altitude_constraint) { check_max_altitude_ = max_altitude_constraint; }
   void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
   bool Solve();
@@ -128,3 +131,4 @@ class ManeuverLibrary {
   double cruise_speed_{20.0};
   double goal_terrain_altitude_{100.0};
 };
+#endif

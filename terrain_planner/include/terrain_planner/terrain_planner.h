@@ -41,9 +41,12 @@
 #ifndef TERRAIN_PLANNER_H
 #define TERRAIN_PLANNER_H
 
-#include "terrain_navigation/profiler.h"
+#include <terrain_navigation/profiler.h>
+
 #include "terrain_planner/common.h"
 #include "terrain_planner/maneuver_library.h"
+#include "terrain_planner/mcts_planner.h"
+#include "terrain_planner/primitive_planner.h"
 
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
@@ -132,6 +135,8 @@ class TerrainPlanner {
   PLANNER_MODE planner_mode_{PLANNER_MODE::EXHAUSTIVE};
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
+  std::shared_ptr<MctsPlanner> mcts_planner_;
+  std::shared_ptr<PrimitivePlanner> primitive_planner_;
   std::shared_ptr<TerrainMap> terrain_map_;
   std::shared_ptr<Profiler> planner_profiler_;
   TrajectorySegments reference_primitive_;

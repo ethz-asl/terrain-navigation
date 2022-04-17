@@ -2,6 +2,28 @@
 
 TrajectorySegments MctsPlanner::solve(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
                                       const Eigen::Vector4d current_att, TrajectorySegments &current_path) {
+  int iter{0};
+  int max_iter{100};
+  while (true) {
+    if (iter > max_iter) break;
+    rollout(current_pos, current_vel, current_att, current_path);
+    iter++;
+  }
+
+  /// TODO: Return best next child with current segment
+
+  // Get Best Motion Primitives
+  TrajectorySegments best_primitive;
+  best_primitive.appendSegment(tree_->segment);
+  std::shared_ptr<Primitive> best_child = tree_->getBestChild();
+  best_primitive.appendSegment(best_child->segment);
+  /// TODO: Check validity of best primitive more systematically
+  best_primitive.validity = tree_->valid() && best_child->valid();
+  return best_primitive;
+}
+
+TrajectorySegments MctsPlanner::rollout(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
+                                        const Eigen::Vector4d current_att, TrajectorySegments &current_path) {
   std::vector<std::shared_ptr<Primitive>> path;
   Trajectory current_segment;
   State state_vector;
@@ -24,7 +46,7 @@ TrajectorySegments MctsPlanner::solve(const Eigen::Vector3d current_pos, const E
   // Get Best Motion Primitives
   TrajectorySegments path_primitive;
 
-  for (auto& node : path) {
+  for (auto &node : path) {
     path_primitive.appendSegment(node->segment);
   }
   return path_primitive;
@@ -60,11 +82,12 @@ std::shared_ptr<Primitive> MctsPlanner::treePolicy(std::shared_ptr<Primitive> le
 }
 
 double MctsPlanner::defaultPolicy(std::shared_ptr<Primitive> leaf) {
+  /// TODO: Keep track of tree depth
+  /// TODO: Execute random until depth limit
   /// TODO: link active mapping utility function here
-  Eigen::Vector3d goal_pos{Eigen::Vector3d(200.0, 200.0, 0.0)};
   Eigen::Vector3d end_pos = leaf->segment.position().back();
 
-  double utility = 1 / ((goal_pos - end_pos).norm() + 0.01);
+  double utility = 1 / ((goal_ - end_pos).norm() + 0.01);
   return utility;
 }
 

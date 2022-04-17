@@ -25,6 +25,17 @@ class MctsPlanner : public Planner {
                                    const Eigen::Vector4d current_att, TrajectorySegments &current_path) override;
 
   /**
+   * @brief Solve MCTS with a given time budget
+   *
+   * @param current_pos
+   * @param current_vel
+   * @param current_att
+   * @param current_path
+   */
+  TrajectorySegments rollout(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
+                             const Eigen::Vector4d current_att, TrajectorySegments &current_path);
+
+  /**
    * @brief Tree policy of
    *
    * @return std::shared_ptr<Primitive>

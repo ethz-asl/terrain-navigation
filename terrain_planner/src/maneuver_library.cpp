@@ -338,7 +338,7 @@ TrajectorySegments ManeuverLibrary::getRandomPrimitive() {
   return primitive;
 }
 
-void ManeuverLibrary::setTerrainRelativeGoalPosition(const Eigen::Vector3d &pos) {
+Eigen::Vector3d ManeuverLibrary::setTerrainRelativeGoalPosition(const Eigen::Vector3d &pos) {
   Eigen::Vector3d new_goal = pos;
   double terrain_altitude = terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(pos(0), pos(1)));
 
@@ -349,6 +349,7 @@ void ManeuverLibrary::setTerrainRelativeGoalPosition(const Eigen::Vector3d &pos)
   new_goal(2) = terrain_altitude + goal_terrain_altitude_;
 
   setGoalPosition(new_goal);
+  return new_goal;
 }
 
 Eigen::Vector4d ManeuverLibrary::rpy2quaternion(double roll, double pitch, double yaw) {

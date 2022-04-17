@@ -92,10 +92,12 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   nh_private.param<std::string>("meshresource_path", mesh_resource_path_, "../resources/believer.dae");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(4.0);
-
+  mcts_planner_ = std::make_shared<MctsPlanner>();
+  primitive_planner_ = std::make_shared<PrimitivePlanner>();
   terrain_map_ = std::make_shared<TerrainMap>();
 
   maneuver_library_->setTerrainMap(terrain_map_);
+  primitive_planner_->setTerrainMap(terrain_map_);
 
   planner_profiler_ = std::make_shared<Profiler>("planner");
 }
@@ -185,19 +187,17 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   plan_time_ = ros::Time::now();
   planner_mode_ = PLANNER_MODE::MCTS;
   switch (planner_mode_) {
-    // case PLANNER_MODE::MCTS: {
-    //   TrajectorySegments candidate_primitive =
-    //       maneuver_library_->SolveMCTS(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
-    //   if (candidate_primitive.valid()) {
-    //     reference_primitive_ = candidate_primitive;
-    //     break;
-    //   }
-    // }
+    case PLANNER_MODE::MCTS: {
+      TrajectorySegments candidate_primitive =
+          mcts_planner_->solve(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
+      if (candidate_primitive.valid()) {
+        reference_primitive_ = candidate_primitive;
+        break;
+      }
+    }
     case PLANNER_MODE::EXHAUSTIVE:
-      maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, vehicle_attitude_,
-                                                  reference_primitive_);
-      maneuver_library_->Solve();
-      reference_primitive_ = maneuver_library_->getBestPrimitive();
+      reference_primitive_ =
+          primitive_planner_->solve(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
       break;
     case PLANNER_MODE::RANDOM:
     default:
@@ -506,7 +506,8 @@ bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &re
 
 bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
   Eigen::Vector3d new_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
-  maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
+  new_goal = maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
+  mcts_planner_->setGoal(new_goal);
 
   res.success = true;
   return true;

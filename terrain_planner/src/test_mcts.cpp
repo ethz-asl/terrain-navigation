@@ -128,8 +128,9 @@ int main(int argc, char **argv) {
   Eigen::Vector3d goal_pos{Eigen::Vector3d(200.0, 200.0, 0.0)};
   Eigen::Vector3d goal_vel{Eigen::Vector3d(15.0, 0.0, 0.0)};
   while (true) {
+    // Run a single rollout of MCTS and visualize
     TrajectorySegments current_path;
-    TrajectorySegments path = planner->solve(start_pos, start_vel, start_att, current_path);
+    TrajectorySegments path = planner->rollout(start_pos, start_vel, start_att, current_path);
     publishPositionSetpoints(start_pos_pub, start_pos, start_vel);
     publishPositionSetpoints(goal_pos_pub, goal_pos, goal_vel);
     publishTrajectory(path_pub, path.position());
