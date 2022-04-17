@@ -185,7 +185,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // Only run planner in offboard mode
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
-  planner_mode_ = PLANNER_MODE::MCTS;
+  planner_mode_ = PLANNER_MODE::EXHAUSTIVE;
   switch (planner_mode_) {
     case PLANNER_MODE::MCTS: {
       TrajectorySegments candidate_primitive =
