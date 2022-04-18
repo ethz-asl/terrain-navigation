@@ -95,7 +95,7 @@ std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const
 }
 
 bool ManeuverLibrary::Solve() {
-  bool valid_primitives = checkCollisions();
+  checkCollisions();
   bool use_viewutility = false;
 
   if (use_viewutility) {
@@ -312,7 +312,7 @@ TrajectorySegments ManeuverLibrary::getBestPrimitive() {
   double best_utility{-std::numeric_limits<double>::infinity()};
   int best_index{0};
   if (valid_primitives_.size() > 0) {
-    for (int k = 0; k < valid_primitives_.size(); k++) {
+    for (size_t k = 0; k < valid_primitives_.size(); k++) {
       if (valid_primitives_[k].utility > best_utility) {
         best_utility = valid_primitives_[k].utility;
         best_index = k;
@@ -372,7 +372,6 @@ Eigen::Vector4d ManeuverLibrary::rpy2quaternion(double roll, double pitch, doubl
 }
 
 std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectorySegment(TrajectorySegments &segment) {
-  double horizon = 4.0;
   std::vector<ViewPoint> viewpoint_vector;
   double sample_freq = 1.0;
   std::vector<Eigen::Vector3d> pos_vector = segment.position();
@@ -394,7 +393,6 @@ std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectorySegment(Tra
 }
 
 std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectory(Trajectory &segment) {
-  double horizon = 4.0;
   std::vector<ViewPoint> viewpoint_vector;
   double sample_freq = 1.0;
   std::vector<Eigen::Vector3d> pos_vector = segment.position();

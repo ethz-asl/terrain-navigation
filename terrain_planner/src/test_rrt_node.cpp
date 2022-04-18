@@ -84,13 +84,12 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
 
   // allocate variables
   std::vector<unsigned int> edge_list;
-  int edge_id = 0;
 
   // Create states, a marker and a list to store edges
   ompl::base::ScopedState<ompl::base::RealVectorStateSpace> vertex(problem_setup->getSpaceInformation());
   ompl::base::ScopedState<ompl::base::RealVectorStateSpace> neighbor_vertex(problem_setup->getSpaceInformation());
-  int marker_idx{0};
-  for (int i = 0; i < planner_data->numVertices(); i++) {
+  size_t marker_idx{0};
+  for (size_t i = 0; i < planner_data->numVertices(); i++) {
     visualization_msgs::Marker marker;
     marker.header.stamp = ros::Time().now();
     marker.header.frame_id = "map";
@@ -189,7 +188,6 @@ int main(int argc, char** argv) {
   auto planner = std::make_shared<TerrainOmplRrt>();
   planner->setMap(terrain_map);
   /// TODO: Get bounds from gridmap
-  grid_map::GridMap& map = terrain_map->getGridMap();
   planner->setBoundsFromMap(terrain_map->getGridMap());
   planner->setupProblem();
   std::vector<Eigen::Vector3d> path;

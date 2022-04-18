@@ -236,8 +236,6 @@ double StringToGeoReference(std::string &exif_tag) {
 }
 
 bool parseAttitudeFromText(std::string text_path, std::string image_file, Eigen::Vector4d &attitude) {
-  bool parse_result;
-
   std::ifstream file(text_path);
   std::string str;
 

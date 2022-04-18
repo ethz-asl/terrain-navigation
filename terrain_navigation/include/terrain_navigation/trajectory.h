@@ -317,7 +317,6 @@ class Primitive {
     return child_primitives[std::rand() % num_child];
   }
   std::shared_ptr<Primitive> getValidChild() {
-    int num_child = child_primitives.size();
     for (auto &child : child_primitives) {
       if (child->valid()) return child;
     }

@@ -125,7 +125,6 @@ void TerrainPlanner::Init() {
 void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
   if (!map_initialized_) return;
 
-  double time_since_start = (ros::Time::now() - plan_time_).toSec();
   switch (setpoint_mode_) {
     case SETPOINT_MODE::STATE: {
       Eigen::Vector3d reference_position;
@@ -258,7 +257,7 @@ void TerrainPlanner::MapPublishOnce() {
 
 void TerrainPlanner::publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
                                             std::vector<geometry_msgs::PoseStamped> &history_vector) {
-  int posehistory_window_ = 20000;
+  unsigned int posehistory_window_ = 20000;
   Eigen::Vector4d vehicle_attitude(1.0, 0.0, 0.0, 0.0);
   history_vector.insert(history_vector.begin(), vector3d2PoseStampedMsg(position, vehicle_attitude));
   if (history_vector.size() > posehistory_window_) {
@@ -456,9 +455,6 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   GeographicLib::Geocentric earth(GeographicLib::Constants::WGS84_a(), GeographicLib::Constants::WGS84_f());
   double lat, lon, alt;
   earth.Reverse(X, Y, Z, lat, lon, alt);
-  double origin_wgs84_lat_ = lat;
-  double origin_wgs84_lon_ = lon;
-  double origin_wgs84_alt_ = alt;
 
   // Depending on Gdal versions, lon lat order are reversed
 #if GDAL_VERSION_MAJOR > 2
