@@ -80,11 +80,18 @@ double ViewUtilityMap::CalculateViewUtility(std::vector<ViewPoint> &viewpoint_se
   double view_utility = 0.0;
   // Copy cell information to append list with candidate views
   /// TODO: making deep copies of this map is not a good idea, but works for now
-  std::vector<CellInfo> candidate_cell_information = cell_information_;
-  grid_map::GridMap candidate_grid_map = grid_map_;
-  for (auto &viewpoint : viewpoint_set) {
-    double utility = CalculateViewUtility(viewpoint, true, candidate_cell_information, candidate_grid_map);
-    view_utility += utility;
+  if (!update_utility_map) {
+    std::vector<CellInfo> candidate_cell_information = cell_information_;
+    grid_map::GridMap candidate_grid_map = grid_map_;
+    for (auto &viewpoint : viewpoint_set) {
+      double utility = CalculateViewUtility(viewpoint, true, candidate_cell_information, candidate_grid_map);
+      view_utility += utility;
+    }
+  } else {
+    for (auto &viewpoint : viewpoint_set) {
+      double utility = CalculateViewUtility(viewpoint, true, cell_information_, grid_map_);
+      view_utility += utility;
+    }
   }
   return view_utility;
 }
@@ -271,7 +278,7 @@ void ViewUtilityMap::initializeFromGridmap() {
   }
   grid_map_["visibility"].setConstant(0);
   grid_map_["geometric_prior"].setConstant(limit_cramerrao_bounds);
-  grid_map_["roi"].setConstant(0.0);
+  grid_map_["roi"].setConstant(1.0);
   grid_map_["normalized_prior"].setConstant(0);
 }
 

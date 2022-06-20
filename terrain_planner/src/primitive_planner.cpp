@@ -8,3 +8,21 @@ TrajectorySegments PrimitivePlanner::solve(const Eigen::Vector3d current_pos, co
   TrajectorySegments best_primitive = maneuver_library_->getBestPrimitive();
   return best_primitive;
 }
+
+bool PrimitivePlanner::checkViewUtilityTree(std::shared_ptr<Primitive> primitive) {
+  if (primitive->valid()) {
+    std::vector<ViewPoint> primitive_viewpoints = maneuver_library_->sampleViewPointFromTrajectory(primitive->segment);
+    double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
+    primitive->utility = view_utility;
+  } else {
+    primitive->utility = 0.0;
+  }
+
+  if (primitive->has_child()) {
+    for (auto &child : primitive->child_primitives) {
+      checkViewUtilityTree(child);
+    }
+  }
+
+  return true;
+}

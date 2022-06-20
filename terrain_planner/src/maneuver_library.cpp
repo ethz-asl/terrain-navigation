@@ -96,11 +96,6 @@ std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const
 
 bool ManeuverLibrary::Solve() {
   checkCollisions();
-  bool use_viewutility = false;
-
-  if (use_viewutility) {
-    checkViewUtilityTree(motion_primitive_tree_);
-  }
 
   if (valid_primitives_.size() < 1) {
     // Try to see if relaxing max altitude fixes the problem
@@ -120,6 +115,7 @@ void ManeuverLibrary::expandPrimitives(std::shared_ptr<Primitive> primitive, std
     for (auto rate : rates) {
       Trajectory trajectory = generateArcTrajectory(rate, horizon, current_pos, current_vel);
       primitive->child_primitives.push_back(std::make_shared<Primitive>(trajectory));
+      primitive->child_primitives.back()->depth = primitive->depth + 1;
     }
   } else {
     for (auto &child : primitive->child_primitives) {
@@ -163,24 +159,6 @@ bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> primitive,
   }
 
   return primitive->validity;
-}
-
-bool ManeuverLibrary::checkViewUtilityTree(std::shared_ptr<Primitive> primitive) {
-  if (primitive->valid()) {
-    std::vector<ViewPoint> primitive_viewpoints = sampleViewPointFromTrajectory(primitive->segment);
-    double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
-    primitive->utility = view_utility;
-  } else {
-    primitive->utility = 0.0;
-  }
-
-  if (primitive->has_child()) {
-    for (auto &child : primitive->child_primitives) {
-      checkViewUtilityTree(child);
-    }
-  }
-
-  return true;
 }
 
 bool ManeuverLibrary::checkCollisions() {
@@ -336,6 +314,11 @@ TrajectorySegments ManeuverLibrary::getRandomPrimitive() {
   }
 
   return primitive;
+}
+
+Eigen::Vector3d ManeuverLibrary::getRandomPrimitiveRate() const {
+  int i = std::rand() % primitive_rates_.size();
+  return primitive_rates_[i];
 }
 
 Eigen::Vector3d ManeuverLibrary::setTerrainRelativeGoalPosition(const Eigen::Vector3d &pos) {

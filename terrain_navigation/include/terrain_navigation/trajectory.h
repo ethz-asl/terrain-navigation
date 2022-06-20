@@ -122,6 +122,7 @@ class Trajectory {
     }
 
     double theta = angle_pos / psi;
+    /// TODO: Handle cases with -1 < theta cases
     return theta;
   }
 
@@ -169,11 +170,15 @@ class TrajectorySegments {
   Trajectory lastSegment() { return segments.back(); }
   void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
                        double &curvature) {
-    double theta{-10.0};
-    for (auto segment : segments) {
+    double theta{-std::numeric_limits<double>::infinity()};
+    closest_point = segments.front().states.front().position;
+    for (auto &segment : segments) {
       Eigen::Vector3d segment_start = segment.states.front().position;
       Eigen::Vector3d segment_end = segment.states.back().position;
-      if (std::abs(segment.curvature) < 0.0001) {
+      if (segment.states.size() == 1) {
+        // Segment only contains a single state, meaning that it is nor a line or a arc
+        theta = 1.0;
+      } else if (std::abs(segment.curvature) < 0.0001) {
         // Compute closest point on a line segment
         // Get Path Progress
         theta = segment.getLineProgress(position, segment_start, segment_end);
@@ -199,8 +204,8 @@ class TrajectorySegments {
           std::min(std::max(altitude_correction - segment.climb_rate, max_climb_rate_control_), max_sink_rate_control_);
       curvature = segment.curvature;
       if (theta < 0.0) {
-        closest_point = segment_start;
-        return;
+        /// theta can be negative on the start of the next segment
+        continue;
       } else if ((theta < 1.0)) {
         return;
       }
@@ -215,11 +220,14 @@ class TrajectorySegments {
   }
 
   Trajectory &getCurrentSegment(const Eigen::Vector3d &position) {
-    double theta{-10.0};
+    double theta{-std::numeric_limits<double>::infinity()};
     for (auto &segment : segments) {
       Eigen::Vector3d segment_start = segment.states.front().position;
       Eigen::Vector3d segment_end = segment.states.back().position;
-      if (std::abs(segment.curvature) < 0.0001) {
+      if (segment.states.size() == 1) {
+        // Segment only contains a single state, meaning that it is nor a line or a arc
+        theta = 1.0;
+      } else if (std::abs(segment.curvature) < 0.0001) {
         // Compute closest point on a line segment
         // Get Path Progress
         theta = segment.getLineProgress(position, segment_start, segment_end);
@@ -232,12 +240,15 @@ class TrajectorySegments {
         theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
       }
       if (theta < 0.0) {
-        return segments[0];
+        continue;
       } else if ((theta < 1.0)) {
         return segment;
       }
     }
-    return segments.back();
+    if (theta > 1.0)
+      return segments.back();
+    else
+      return segments.front();
   }
 
   bool valid() { return validity; }
@@ -287,6 +298,7 @@ class Primitive {
       TrajectorySegments trajectory_segments;
       trajectory_segments.appendSegment(segment);
       trajectory_segments.validity = validity;
+      trajectory_segments.utility = (visits < 1) ? 0.0 : utility / visits;
       all_primitives.push_back(trajectory_segments);
     }
     return all_primitives;
@@ -321,6 +333,7 @@ class Primitive {
       if (child->valid()) return child;
     }
   }
+  int depth{0};
   double utility{0.0};
   int visits{0};
   // A primitive is not valid if none of the child primitives are valid

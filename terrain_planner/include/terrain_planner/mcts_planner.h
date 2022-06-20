@@ -1,6 +1,8 @@
 #ifndef TERRAIN_PLANNER_MCTS_PLANNER_H
 #define TERRAIN_PLANNER_MCTS_PLANNER_H
 
+#include <adaptive_viewutility/viewutility_map.h>
+
 #include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/planner.h"
 
@@ -33,7 +35,7 @@ class MctsPlanner : public Planner {
    * @param current_path
    */
   TrajectorySegments rollout(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
-                             const Eigen::Vector4d current_att, TrajectorySegments &current_path);
+                             const Eigen::Vector4d current_att);
 
   /**
    * @brief Tree policy of
@@ -56,9 +58,16 @@ class MctsPlanner : public Planner {
    * @param leaf
    * @return double
    */
-  double defaultPolicy(std::shared_ptr<Primitive> leaf);
+  double defaultPolicy(std::shared_ptr<Primitive> node, const std::vector<std::shared_ptr<Primitive>> path);
 
+  /**
+   * @brief Get the Motion Primitives object
+   *
+   * @return std::vector<TrajectorySegments> Motion primitive tree as a vector of trajectories
+   */
   std::vector<TrajectorySegments> getMotionPrimitives() { return tree_->getMotionPrimitives(); };
+
+  void setViewUtilityMap(std::shared_ptr<ViewUtilityMap> map) { viewutility_map_ = map; };
 
  private:
   /**
@@ -68,6 +77,15 @@ class MctsPlanner : public Planner {
    * @return std::shared_ptr<Primitive> best child
    */
   std::shared_ptr<Primitive> getBestChild(std::shared_ptr<Primitive> node);
+
+  /**
+   * @brief Check if primitive node is in terminal state
+   *
+   * @param node
+   * @return true Is terminal state (tree depth exceeds limit)
+   * @return false Not a terminal state (tree depth exceeds limit)
+   */
+  bool is_terminal(std::shared_ptr<Primitive> node);
 
   /**
    * @brief Return true if the node is not fully expanded
@@ -87,6 +105,9 @@ class MctsPlanner : public Planner {
 
   std::shared_ptr<Primitive> tree_;
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
+  std::shared_ptr<ViewUtilityMap> viewutility_map_;
+
+  int max_tree_depth_{5};
 };
 
 #endif

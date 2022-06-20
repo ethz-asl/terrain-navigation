@@ -1,6 +1,8 @@
 #ifndef TERRAIN_PLANNER_PRIMITIVE_PLANNER_H
 #define TERRAIN_PLANNER_PRIMITIVE_PLANNER_H
 
+#include <adaptive_viewutility/viewutility_map.h>
+
 #include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/planner.h"
 
@@ -29,10 +31,12 @@ class PrimitivePlanner : public Planner {
                                    const Eigen::Vector4d current_att, TrajectorySegments &current_path) override;
 
   std::vector<TrajectorySegments> getMotionPrimitives() { return tree_->getMotionPrimitives(); };
+  bool checkViewUtilityTree(std::shared_ptr<Primitive> primitive);
 
  private:
   std::shared_ptr<Primitive> tree_;
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
+  std::shared_ptr<ViewUtilityMap> viewutility_map_;
 };
 
 #endif

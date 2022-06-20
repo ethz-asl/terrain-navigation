@@ -3,10 +3,24 @@
 TrajectorySegments MctsPlanner::solve(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
                                       const Eigen::Vector4d current_att, TrajectorySegments &current_path) {
   int iter{0};
-  int max_iter{100};
+  int max_iter{10};
+
+  Trajectory current_segment;
+  if (!current_path.segments.empty()) {
+    current_segment = current_path.getCurrentSegment(current_pos);
+  } else {
+    State state_vector;
+    state_vector.position = current_pos;
+    state_vector.velocity = current_vel.normalized();
+    state_vector.attitude = current_att;
+    current_segment.states.push_back(state_vector);
+  }
+  tree_.reset();
+  tree_ = std::make_shared<Primitive>(current_segment);
+
   while (true) {
     if (iter > max_iter) break;
-    rollout(current_pos, current_vel, current_att, current_path);
+    rollout(current_pos, current_vel, current_att);
     iter++;
   }
 
@@ -23,27 +37,28 @@ TrajectorySegments MctsPlanner::solve(const Eigen::Vector3d current_pos, const E
 }
 
 TrajectorySegments MctsPlanner::rollout(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
-                                        const Eigen::Vector4d current_att, TrajectorySegments &current_path) {
+                                        const Eigen::Vector4d current_att) {
   std::vector<std::shared_ptr<Primitive>> path;
-  Trajectory current_segment;
-  State state_vector;
-  state_vector.position = current_pos;
-  state_vector.velocity = current_vel.normalized();
-  state_vector.attitude = current_att;
-  current_segment.states.push_back(state_vector);
   // root
-  if (!tree_) tree_ = std::make_shared<Primitive>(current_segment);
+  if (!tree_) {
+    Trajectory current_segment;
+    State state_vector;
+    state_vector.position = current_pos;
+    state_vector.velocity = current_vel.normalized();
+    state_vector.attitude = current_att;
+    current_segment.states.push_back(state_vector);
+    tree_ = std::make_shared<Primitive>(current_segment);
+  }
 
   /// Traverse Tree
   auto leaf = treePolicy(tree_, path);
   assert(!leaf);
   /// Default policy
-  double utility = defaultPolicy(leaf);
+  double utility = defaultPolicy(leaf, path);
 
   /// Backup(vd+1, ∆)
   backup(path, utility);
-
-  // Get Best Motion Primitives
+  // Get Best Motion Primitivef
   TrajectorySegments path_primitive;
 
   for (auto &node : path) {
@@ -55,7 +70,7 @@ TrajectorySegments MctsPlanner::rollout(const Eigen::Vector3d current_pos, const
 std::shared_ptr<Primitive> MctsPlanner::treePolicy(std::shared_ptr<Primitive> leaf,
                                                    std::vector<std::shared_ptr<Primitive>> &path) {
   double planning_horizon{10.0};
-  while (true) {
+  while (!is_terminal(leaf)) {
     path.push_back(leaf);
     if (has_expandable_child(leaf)) {
       if (!leaf->has_child() && leaf->valid()) {
@@ -81,13 +96,39 @@ std::shared_ptr<Primitive> MctsPlanner::treePolicy(std::shared_ptr<Primitive> le
   return leaf;
 }
 
-double MctsPlanner::defaultPolicy(std::shared_ptr<Primitive> leaf) {
-  /// TODO: Keep track of tree depth
-  /// TODO: Execute random until depth limit
+double MctsPlanner::defaultPolicy(std::shared_ptr<Primitive> node, const std::vector<std::shared_ptr<Primitive>> path) {
   /// TODO: link active mapping utility function here
-  Eigen::Vector3d end_pos = leaf->segment.position().back();
+  double planning_horizon{10.0};
+  std::vector<std::shared_ptr<Primitive>> rollout_path;
+  std::shared_ptr<Primitive> leaf = std::make_shared<Primitive>(*node);
+  while (!is_terminal(leaf)) {
+    rollout_path.push_back(leaf);
+    std::vector<Eigen::Vector3d> rates;
+    rates.push_back(maneuver_library_->getRandomPrimitiveRate());
+    maneuver_library_->expandPrimitives(leaf, rates, planning_horizon);
+    leaf = leaf->child_primitives[0];
+  }
 
-  double utility = 1 / ((goal_ - end_pos).norm() + 0.01);
+  TrajectorySegments candidate_trajectory;
+  for (auto &primitive : path) {
+    candidate_trajectory.appendSegment(primitive->segment);
+  }
+  for (auto &primitive : rollout_path) {
+    candidate_trajectory.appendSegment(primitive->segment);
+  }
+
+  double utility{0.0};
+  if (viewutility_map_) {
+    std::vector<ViewPoint> view_point_list =
+        ManeuverLibrary::sampleViewPointFromTrajectorySegment(candidate_trajectory);
+    utility = viewutility_map_->CalculateViewUtility(view_point_list, false);
+  } else {
+    /// TODO: Remove this case and handle null utility maps differently
+    // Calculate goal utility
+    Eigen::Vector3d end_pos = leaf->segment.position().back();
+    utility = 1 / ((goal_ - end_pos).norm() + 0.01);
+  }
+
   return utility;
 }
 
@@ -117,6 +158,8 @@ std::shared_ptr<Primitive> MctsPlanner::getBestChild(std::shared_ptr<Primitive> 
   /// TODO: Safe guard against empty child
   return node->child_primitives[best_idx];
 }
+
+bool MctsPlanner::is_terminal(std::shared_ptr<Primitive> node) { return bool(node->depth >= max_tree_depth_); }
 
 bool MctsPlanner::has_expandable_child(std::shared_ptr<Primitive> node) {
   if (!node->has_child()) {

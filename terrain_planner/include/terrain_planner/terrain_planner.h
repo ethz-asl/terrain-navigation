@@ -41,13 +41,6 @@
 #ifndef TERRAIN_PLANNER_H
 #define TERRAIN_PLANNER_H
 
-#include <terrain_navigation/profiler.h>
-
-#include "terrain_planner/common.h"
-#include "terrain_planner/maneuver_library.h"
-#include "terrain_planner/mcts_planner.h"
-#include "terrain_planner/primitive_planner.h"
-
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 
@@ -62,6 +55,13 @@
 #include <visualization_msgs/Marker.h>
 
 #include <Eigen/Dense>
+
+#include <terrain_navigation/profiler.h>
+
+#include "terrain_planner/common.h"
+#include "terrain_planner/maneuver_library.h"
+#include "terrain_planner/mcts_planner.h"
+#include "terrain_planner/primitive_planner.h"
 
 enum class SETPOINT_MODE { STATE, PATH };
 
@@ -124,6 +124,7 @@ class TerrainPlanner {
 
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;
+  ros::Time last_triggered_time_;
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
   Eigen::Vector3d tracking_error_{Eigen::Vector3d::Zero()};
   ros::CallbackQueue statusloop_queue_;
@@ -138,11 +139,13 @@ class TerrainPlanner {
   std::shared_ptr<MctsPlanner> mcts_planner_;
   std::shared_ptr<PrimitivePlanner> primitive_planner_;
   std::shared_ptr<TerrainMap> terrain_map_;
+  std::shared_ptr<ViewUtilityMap> viewutility_map_;
   std::shared_ptr<Profiler> planner_profiler_;
   TrajectorySegments reference_primitive_;
   mavros_msgs::State current_state_;
 
   std::vector<Eigen::Vector3d> vehicle_position_history_;
+  std::vector<ViewPoint> added_viewpoint_list;
   std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
   std::vector<geometry_msgs::PoseStamped> referencehistory_vector_;
   std::vector<ViewPoint> viewpoints_;

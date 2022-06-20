@@ -39,7 +39,6 @@
 #ifndef TERRAIN_PLANNER_MANEUVER_LIBRARY_H
 #define TERRAIN_PLANNER_MANEUVER_LIBRARY_H
 
-#include "adaptive_viewutility/viewutility_map.h"
 #include "terrain_navigation/terrain_map.h"
 #include "terrain_navigation/trajectory.h"
 #include "terrain_navigation/viewpoint.h"
@@ -70,6 +69,7 @@ class ManeuverLibrary {
    * @return std::vector<Eigen::Vector3d>
    */
   std::vector<Eigen::Vector3d> getPrimitiveRates() const { return primitive_rates_; };
+  Eigen::Vector3d getRandomPrimitiveRate() const;
   Eigen::Vector3d getGoalPosition() { return goal_pos_; };
   void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
 
@@ -85,7 +85,6 @@ class ManeuverLibrary {
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
   std::shared_ptr<TerrainMap>& getTerrainMap() { return terrain_map_; };
-  std::shared_ptr<ViewUtilityMap>& getViewUtilityMap() { return viewutility_map_; };
   double getTimeStep() const { return dt_; }
   void expandPrimitives(std::shared_ptr<Primitive> primitive, std::vector<Eigen::Vector3d> rates, double horizon);
 
@@ -101,6 +100,9 @@ class ManeuverLibrary {
   bool checkCollisionsTree(std::shared_ptr<Primitive> primitive, std::vector<TrajectorySegments>& valid_primitives,
                            bool check_valid_child = true);
 
+  static std::vector<ViewPoint> sampleViewPointFromTrajectorySegment(TrajectorySegments& segment);
+  static std::vector<ViewPoint> sampleViewPointFromTrajectory(Trajectory& segment);
+
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
   std::vector<TrajectorySegments> AppendSegment(std::vector<TrajectorySegments>& first_segment,
@@ -108,15 +110,11 @@ class ManeuverLibrary {
   bool checkCollisions();
   std::vector<TrajectorySegments> checkRelaxedCollisions();
 
-  bool checkViewUtilityTree(std::shared_ptr<Primitive> primitive);
   bool checkTrajectoryCollision(Trajectory& trajectory, const std::string& layer, bool is_above = true);
   bool checkTrajectoryCollision(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
   double getTrajectoryCollisionCost(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
-  std::vector<ViewPoint> sampleViewPointFromTrajectorySegment(TrajectorySegments& segment);
-  std::vector<ViewPoint> sampleViewPointFromTrajectory(Trajectory& segment);
 
   std::shared_ptr<TerrainMap> terrain_map_;
-  std::shared_ptr<ViewUtilityMap> viewutility_map_;
 
   // Planner configurations
   std::vector<TrajectorySegments> motion_primitives_;

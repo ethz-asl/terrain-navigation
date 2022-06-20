@@ -92,12 +92,16 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   nh_private.param<std::string>("meshresource_path", mesh_resource_path_, "../resources/believer.dae");
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(4.0);
-  mcts_planner_ = std::make_shared<MctsPlanner>();
+
   primitive_planner_ = std::make_shared<PrimitivePlanner>();
   terrain_map_ = std::make_shared<TerrainMap>();
+  viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
 
   maneuver_library_->setTerrainMap(terrain_map_);
   primitive_planner_->setTerrainMap(terrain_map_);
+
+  mcts_planner_ = std::make_shared<MctsPlanner>();
+  mcts_planner_->setViewUtilityMap(viewutility_map_);
 
   planner_profiler_ = std::make_shared<Profiler>("planner");
 }
@@ -139,6 +143,15 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         publishPositionHistory(referencehistory_pub_, reference_position, referencehistory_vector_);
         tracking_error_ = reference_position - vehicle_position_;
         planner_enabled_ = true;
+
+        // Trigger and keep track of viewpoints
+        if ((ros::Time::now() - last_triggered_time_).toSec() > 1.0) {
+          const int id = viewpoints_.size() + added_viewpoint_list.size();
+          ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
+          added_viewpoint_list.push_back(viewpoint);
+          last_triggered_time_ = ros::Time::now();
+        }
+
       } else {
         tracking_error_ = Eigen::Vector3d::Zero();
         planner_enabled_ = false;
@@ -161,6 +174,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
     if (map_initialized_) {
       std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
+      viewutility_map_->initializeFromGridmap();
     } else {
       std::cout << "[TerrainPlanner]   - Failed to load map: " << map_path_ << std::endl;
     }
@@ -184,15 +198,18 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // Only run planner in offboard mode
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
-  planner_mode_ = PLANNER_MODE::EXHAUSTIVE;
+  planner_mode_ = PLANNER_MODE::MCTS;
   switch (planner_mode_) {
     case PLANNER_MODE::MCTS: {
+      double utility = viewutility_map_->CalculateViewUtility(added_viewpoint_list, true);
+      viewpoints_.insert(viewpoints_.end(), added_viewpoint_list.begin(), added_viewpoint_list.end());
+      added_viewpoint_list.clear();
       TrajectorySegments candidate_primitive =
           mcts_planner_->solve(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
       if (candidate_primitive.valid()) {
         reference_primitive_ = candidate_primitive;
-        break;
       }
+      break;
     }
     case PLANNER_MODE::EXHAUSTIVE:
       reference_primitive_ =
@@ -220,6 +237,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   msg.tracking_error = toVector3(tracking_error_);
   msg.enabled = planner_enabled_;
   planner_status_pub_.publish(msg);
+  publishViewpoints(viewpoints_);
 }
 
 void TerrainPlanner::publishTrajectory(std::vector<Eigen::Vector3d> trajectory) {
@@ -467,10 +485,10 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
 
 void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg) {
   // Publish recorded viewpoints
-  // TODO: Transform image tag into local position
+  /// TODO: Transform image tag into local position
   int id = viewpoints_.size();
   ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
-  maneuver_library_->getViewUtilityMap()->UpdateUtility(viewpoint);
+  if (viewutility_map_) viewutility_map_->UpdateUtility(viewpoint);
   viewpoints_.push_back(viewpoint);
   publishViewpoints(viewpoints_);
 }

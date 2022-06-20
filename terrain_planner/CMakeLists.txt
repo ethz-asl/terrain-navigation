@@ -82,6 +82,13 @@ add_executable(test_mcts
 )
 add_dependencies(test_mcts terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_mcts ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
+
+add_executable(test_mcts_mapping
+  src/test_mcts_mapping.cpp
+)
+add_dependencies(test_mcts_mapping terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(test_mcts_mapping ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
+
 add_executable(test_rrt_node
   src/test_rrt_node.cpp
 )

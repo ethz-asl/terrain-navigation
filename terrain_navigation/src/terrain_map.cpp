@@ -53,8 +53,6 @@ bool TerrainMap::Load(const std::string &map_path, bool algin_terrain, const std
   }
   if (!loaded) return false;
   AddLayerDistanceTransform("distance_surface");
-  // viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
-  // viewutility_map_->initializeFromGridmap();
   return true;
 }
 
