@@ -34,9 +34,7 @@
 #ifndef TERRAIN_MAP_H
 #define TERRAIN_MAP_H
 
-enum class ESPG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21781 };
-
-// #include <grid_map_msgs/GridMap.h>
+#include <grid_map_geo/grid_map_geo.h>
 #include <grid_map_core/GridMap.hpp>
 #include <grid_map_core/iterators/GridMapIterator.hpp>
 
@@ -46,73 +44,17 @@ enum class ESPG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21
 #include <gdal/ogr_p.h>
 #include <gdal/ogr_spatialref.h>
 #include <iostream>
-struct Location {
-  ESPG espg{ESPG::WGS84};
-  Eigen::Vector3d position{Eigen::Vector3d::Zero()};
-};
+#include <memory>
 
-class TerrainMap {
+class TerrainMap : public GridMapGeo {
  public:
   TerrainMap();
   virtual ~TerrainMap();
 
-  /**
-   * @brief Helper function for loading terrain from path
-   *
-   * @param map_path Path to dsm path (Supported formats are *.tif *.obj)
-   * @param algin_terrain Geo align terrain
-   * @param color_map_path  Path to color raster files to visualize terrain texture (Supported formats are *.tif)
-   * @return true Successfully loaded terrain
-   * @return false Failed to load terrain
-   */
-  bool Load(const std::string& map_path, bool algin_terrain, const std::string color_map_path = "");
-  bool initializeFromGeotiff(const std::string& path, bool align_terrain = true);
-  bool addColorFromGeotiff(const std::string& path);
-  bool AddLayerDistanceTransform(const std::string& string);
-  grid_map::GridMap& getGridMap() { return grid_map_; }
   bool isInCollision(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
   double getCollisionDepth(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
-  void setGlobalOrigin(ESPG src_coord, const Eigen::Vector3d origin);
-  void setAltitudeOrigin(const double altitude) { localorigin_altitude_ = altitude; };
-  static Eigen::Vector3d transformCoordinates(ESPG src_coord, ESPG tgt_coord,
-                                              const Eigen::Vector3d source_coordinates) {
-    OGRSpatialReference source, target;
-    source.importFromEPSG(static_cast<int>(src_coord));
-    target.importFromEPSG(static_cast<int>(tgt_coord));
 
-    OGRPoint p;
-    p.setX(source_coordinates(0));
-    p.setY(source_coordinates(1));
-    p.setZ(source_coordinates(2));
-    p.assignSpatialReference(&source);
-
-    p.transformTo(&target);
-    Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
-    return target_coordinates;
-  }
-  static Eigen::Vector3d transformCoordinates(ESPG src_coord, const std::string wkt,
-                                              const Eigen::Vector3d source_coordinates) {
-    OGRSpatialReference source, target;
-    char* wkt_string = const_cast<char*>(wkt.c_str());
-    source.importFromEPSG(static_cast<int>(src_coord));
-    target.importFromWkt(&wkt_string);
-
-    OGRPoint p;
-    p.setX(source_coordinates(0));
-    p.setY(source_coordinates(1));
-    p.setZ(source_coordinates(2));
-    p.assignSpatialReference(&source);
-
-    p.transformTo(&target);
-    Eigen::Vector3d target_coordinates(p.getX(), p.getY(), p.getZ());
-    return target_coordinates;
-  }
-
+ protected:
  private:
-  grid_map::GridMap grid_map_;
-  double localorigin_e_{789823.93};  // duerrboden berghaus
-  double localorigin_n_{177416.56};
-  double localorigin_altitude_{0.0};
-  Location localorigin_wgs84_;
 };
 #endif

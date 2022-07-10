@@ -5,6 +5,7 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
     eigen_catkin
     grid_map_core
+    grid_map_geo
 )
 
 catkin_package(
@@ -13,9 +14,9 @@ catkin_package(
 )
 
 include_directories(
+  ${catkin_INCLUDE_DIRS}
   include
   ${Boost_INCLUDE_DIR}
-  ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
   ${GeographicLib_INCLUDE_DIRS}
 )
