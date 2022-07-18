@@ -1,0 +1,13 @@
+<launch>
+    <arg name="visualization" default="true"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+
+    <node pkg="terrain_planner" type="test_ompl_dubins" name="test_ompl_dubins" output="screen">
+        <param name="map_path" value="$(find terrain_planner)/../resources/sertig.tif"/>
+        <param name="color_file_path" value="$(find terrain_planner)/../resources/sertig_color.tif"/>
+    </node>
+    <group if="$(arg visualization)">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config_ompl.rviz" />
+    </group>
+</launch>
