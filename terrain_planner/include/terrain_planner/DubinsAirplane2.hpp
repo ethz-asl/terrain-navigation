@@ -473,19 +473,6 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    */
   void dubins(const ob::State* state1, const ob::State* state2, DubinsPath& dp) const;
 
-  /** \brief dubins_with_wind
-   * Compute the (non-optimal) Dubins airplane path with wind from SE(2)xR3 state state1 to SE(2)xR3 state state2
-   *
-   * Note that the dubins path is the one the airplane is actually flying in the air!! Use
-   * interpolateWithWind to get the ground coordinates.
-   *
-   * @param[in] state1: Start state
-   * @param[in] state2: Goal state
-   * @param[out] dp: Computed dubins path.
-   * @return: Indicates if successfully a dubins path is computed.
-   */
-  bool dubinsWithWind(const ob::State* state1, const ob::State* state2, DubinsPath& dp) const;
-
   /** \brief dubins
    * Compute the 2D dubins path using path classification for the long distance case and
    * no classification for the short distance case.
@@ -779,14 +766,6 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief optimalStSp_
    * Use optimal State Space. Optimal State Space is not working properly yet */
   bool optimalStSp_;
-
-  /** \brief useWind_
-   * Use the wind for the path computation. */
-  bool useWind_;
-
-  /** \brief vAirInv_
-   * Inverse of the airplane airspeed.*/
-  double vAirInv_;
 
   /** \brief dubinsWindPrintXthError_
    * Print a error message if the dubins path with wind failed to compute a multiple of dubinsWindPrintXthError_

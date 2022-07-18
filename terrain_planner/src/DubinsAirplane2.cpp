@@ -28,8 +28,6 @@
 #include <ompl/util/RandomNumbers.h>
 #include <boost/math/constants/constants.hpp>
 
-#include "terrain_planner/params.hpp"
-
 namespace ob = ompl::base;
 
 namespace fw_planning {
@@ -141,8 +139,6 @@ DubinsAirplane2StateSpace::DubinsAirplane2StateSpace(double turningRadius, doubl
       sin_gammaMax_(sin(gam)),
       one_div_sin_gammaMax_(1.0 / sin(gam)),
       optimalStSp_(false),
-      useWind_(false),
-      vAirInv_(1.0 / params::v_air_param),
       dubinsWindPrintXthError_(1000000),
       dp_(),
       useEuclideanDistance_(useEuclDist),
@@ -155,12 +151,10 @@ DubinsAirplane2StateSpace::DubinsAirplane2StateSpace(double turningRadius, doubl
       dp_failed_z_wind_ctr_(0),
       dp_success_ctr_(0),
       CWD_windDrift_(),
-      // CWD_meteoData_(),
       duration_distance_(0.0),
       duration_interpolate_(0.0),
       duration_interpolate_motionValidator_(0.0),
       duration_get_wind_drift_(0.0),
-      // meteoGrid_(new base::MeteoGridClass()),
       interpol_seg_(0.0),
       interpol_tanGamma_(0.0),
       interpol_phiStart_(0.0),
@@ -221,28 +215,15 @@ double DubinsAirplane2StateSpace::distance(const ob::State* state1, const ob::St
   if (useEuclideanDistance_) {
     return euclidean_distance(state1, state2);
   } else {
-#if (TIME_ENABLED)
-    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-#endif
-    if (useWind_)
-      dubinsWithWind(state1, state2, dp_);
-    else
-      dubins(state1, state2, dp_);
+    dubins(state1, state2, dp_);
 
     const double dist = rho_ * dp_.length_3D();
 
-#if (TIME_ENABLED)
-    std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-    duration_distance_ += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() * 1e-9;
-#endif
     return dist;
   }
 }
 
 double DubinsAirplane2StateSpace::euclidean_distance(const ob::State* state1, const ob::State* state2) const {
-#if (TIME_ENABLED)
-  std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-#endif
   const DubinsAirplane2StateSpace::StateType* dubinsAirplane2State1 =
       state1->as<DubinsAirplane2StateSpace::StateType>();
   const DubinsAirplane2StateSpace::StateType* dubinsAirplane2State2 =
@@ -259,45 +240,22 @@ double DubinsAirplane2StateSpace::euclidean_distance(const ob::State* state1, co
 
   const double dub_dist = fabs(dubinsAirplane2State1->getZ() - dubinsAirplane2State2->getZ()) * one_div_sin_gammaMax_;
 
-#if (TIME_ENABLED)
-  std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-  duration_distance_ += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() * 1e-9;
-#endif
-  if (useWind_)
-    return eucl_dist;
-  else
-    return std::max(eucl_dist, dub_dist);
+  return std::max(eucl_dist, dub_dist);
 }
 
 void DubinsAirplane2StateSpace::interpolate(const ob::State* from, const ob::State* to, const double t,
                                             ob::State* state) const {
-#if (TIME_ENABLED)
-  std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-#endif
-
   bool firstTime = true;
   DubinsPath path;
   SegmentStarts segmentStarts;
   interpolate(from, to, t, firstTime, path, segmentStarts, state);
-
-#if (TIME_ENABLED)
-  std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-  duration_interpolate_ += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() * 1e-9;
-#endif
 }
 
 void DubinsAirplane2StateSpace::interpolate(const ob::State* from, const ob::State* to, double t, bool& firstTime,
                                             DubinsPath& path, SegmentStarts& segmentStarts, ob::State* state) const {
-#if (TIME_ENABLED)
-  std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-#endif
-
   // compute the path if interpolate is called the first time.
   if (firstTime) {
-    if (useWind_)
-      dubinsWithWind(from, to, path);
-    else
-      dubins(from, to, path);
+    dubins(from, to, path);
 
     // compute the segment starts
     calculateSegmentStarts(from, path, segmentStarts);
@@ -318,16 +276,8 @@ void DubinsAirplane2StateSpace::interpolate(const ob::State* from, const ob::Sta
     state->as<StateType>()->setXYZ(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(),
                                    std::numeric_limits<double>::max());
   } else {
-    if (useWind_)
-      interpolateWithWind(from, path, segmentStarts, t, state);
-    else
-      interpolate(path, segmentStarts, t, state);
+    interpolate(path, segmentStarts, t, state);
   }
-
-#if (TIME_ENABLED)
-  std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-  duration_interpolate_motionValidator_ += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() * 1e-9;
-#endif
 }
 
 void DubinsAirplane2StateSpace::enforceBounds(ob::State* state) const {
@@ -373,22 +323,9 @@ void DubinsAirplane2StateSpace::setUseOptStSp(bool useOptStSp) { optimalStSp_ = 
 
 void DubinsAirplane2StateSpace::setUseEuclideanDistance(bool useEuclDist) { useEuclideanDistance_ = useEuclDist; }
 
-void DubinsAirplane2StateSpace::setUseWind(bool useWind) { useWind_ = useWind; }
-
-bool DubinsAirplane2StateSpace::getUseWind() const { return useWind_; }
-
 void DubinsAirplane2StateSpace::setDubinsWindPrintXthError(int print_xth_error) {
   dubinsWindPrintXthError_ = print_xth_error;
 }
-
-// void DubinsAirplane2StateSpace::setMeteoGrid(const std::shared_ptr<base::MeteoGridClass>& meteoGrid) {
-//   meteoGrid_.reset();
-//   meteoGrid_ = meteoGrid;
-// }
-
-// std::shared_ptr<base::MeteoGridClass> DubinsAirplane2StateSpace::getMeteoGrid() const {
-//   return meteoGrid_;
-// }
 
 bool DubinsAirplane2StateSpace::getUseEuclideanDistance() const { return useEuclideanDistance_; }
 
@@ -405,7 +342,7 @@ void DubinsAirplane2StateSpace::sanityChecks() const {
   flags &= ~STATESPACE_DISTANCE_SYMMETRIC;
   // don't do the sanity check in case of wind as it takes a long time and therefore blocks the benchmarking
   // we know that for our purpose the functionality is given
-  if (!useWind_) StateSpace::sanityChecks(zero, eps, flags);
+  StateSpace::sanityChecks(zero, eps, flags);
 }
 
 void DubinsAirplane2StateSpace::setBounds(const ob::RealVectorBounds& bounds) {
@@ -421,7 +358,6 @@ void DubinsAirplane2StateSpace::printStateSpaceProperties() const {
   std::cout << "  !!! This state space is asymmetric !!!" << std::endl;
   std::cout << "  Airplane speed relative to ground:  9 m/s" << std::endl;
   std::cout << "  Euclidean Distance: " << useEuclideanDistance_ << std::endl;
-  std::cout << "  Use wind: " << useWind_ << std::endl;
   std::cout << "  Minimum turning radius: " << rho_ << " m" << std::endl;
   std::cout << "  Maximum climbing angle: " << gammaMax_ << " radian" << std::endl;
   std::cout << "  Using optimal Dubins airplane paths (not working properly): " << optimalStSp_ << std::endl;
@@ -563,7 +499,7 @@ void DubinsAirplane2StateSpace::dubins(const ob::State* state1, const ob::State*
       auto tuple = additionalManeuver(dp, L, state1, state2);
 
       if (dp.getIdx() < 4) {  // CSC cases
-        double phi_i = std::get<2>(tuple);
+        // double phi_i = std::get<2>(tuple);
         dp.setFoundOptimalPath(std::get<1>(tuple));
         dp.setAdditionalManeuver(true);
         dp.setSegmentLength(std::get<0>(tuple), 1);
@@ -581,7 +517,7 @@ void DubinsAirplane2StateSpace::dubins(const ob::State* state1, const ob::State*
       } else {  // CCC cases (does not find any optimal path yet. Flies 2D Dubins car path with adequate climbing rate
                 // gamma)
 
-        double rad = std::get<0>(tuple);
+        // double rad = std::get<0>(tuple);
         dp.setFoundOptimalPath(std::get<1>(tuple));
         dp.setSegmentLength(std::get<2>(tuple), 1);
         dp.setSegmentLength(std::get<3>(tuple), 3);
@@ -617,161 +553,6 @@ void DubinsAirplane2StateSpace::dubins(const ob::State* state1, const ob::State*
   } else {
     ccc_ctr_ += 1;
   }
-}
-
-bool DubinsAirplane2StateSpace::dubinsWithWind(const ob::State* state1, const ob::State* state2, DubinsPath& dp) const {
-  // if (meteoGrid_->isSet()) {
-  //   const double goal_x = state2->as<StateType>()->getX();
-  //   const double goal_y = state2->as<StateType>()->getY();
-  //   const double goal_z = state2->as<StateType>()->getZ();
-  //   const double d_z = goal_z - state1->as<StateType>()->getZ();
-  //   const double sign_d_z = std::copysign(1.0, d_z);
-  //   SegmentStarts segmentStarts;
-
-  //   // set the start state
-  //   ob::State* shifted_goal = allocState();
-  //   shifted_goal->as<StateType>()->setXYZYaw(
-  //       goal_x,
-  //       goal_y,
-  //       goal_z,
-  //       state2->as<StateType>()->getYaw());
-
-  //   // compute the first path and drift
-  //   dubins(state1, shifted_goal, dp);
-
-  //   if (std::isnan(dp.length_2D())) {
-  //     ++dp_failed_ctr_;
-  //     if (dp_failed_ctr_ % dubinsWindPrintXthError_ == 0)
-  //       ROS_INFO_STREAM("Failed to compute a dubins path with wind " << dp_failed_ctr_ << " times.");
-  //     freeState(shifted_goal);
-  //     return false;
-  //   }
-
-  //   calculateSegmentStarts(state1, dp, segmentStarts);
-
-  //   DubinsAirplane2StateSpace::WindDrift wind_drift = calculateWindDrift(state1, 1.0, dp, segmentStarts);
-
-  //   // prepare variables for adaptive wind-drift step size between iterations
-  //   DubinsAirplane2StateSpace::WindDrift wind_drift_old = wind_drift;
-  //   DubinsAirplane2StateSpace::WindDrift wind_drift_adj;
-  //   Eigen::Vector3d goal_vector_old, goal_vector, difference_vector;
-  //   goal_vector_old << wind_drift.x, wind_drift.y, wind_drift.z;
-  //   double dist_goal_squared = goal_vector_old.squaredNorm();
-
-  //   // preparations for stop conditions
-  //   const double dist_goal_squared_initial = dist_goal_squared;
-  //   double dist_goal_squared_old = dist_goal_squared;
-  //   Eigen::Vector3d start_goal_vec_over_length_squared;
-  //   start_goal_vec_over_length_squared << goal_x - state1->as<StateType>()->getX(),
-  //                                         goal_y - state1->as<StateType>()->getY(),
-  //                                         goal_z - state1->as<StateType>()->getZ();
-  //   start_goal_vec_over_length_squared /= start_goal_vec_over_length_squared.squaredNorm();
-  //   double relative_excessive_progress;
-  //   double relative_excessive_progress_old = start_goal_vec_over_length_squared.dot(goal_vector_old);
-
-  //   double time_inverse = 0.0;
-  //   double wind_drift_multi = 1.0;
-
-  //   // compute shifted state
-  //   shifted_goal->as<StateType>()->addToX(-wind_drift.x);
-  //   shifted_goal->as<StateType>()->addToY(-wind_drift.y);
-
-  //   // Adjust shift in Z-direction to vertical wind speed (to adjust for different path-length in next iteration)
-  //   if (dp.getAltitudeCase() == DubinsPath::ALT_CASE_HIGH && fabs(wind_drift.z - d_z) > 0.2) { // 0.2 to avoid
-  //   diverging
-  //     shifted_goal->as<StateType>()->addToZ(-d_z * wind_drift.z / (d_z + wind_drift.z));
-  //   } else {
-  //     shifted_goal->as<StateType>()->addToZ(-wind_drift.z);
-  //   }
-
-  //   int counter(1);
-  //   while (dist_goal_squared > THRESHOLD_DISTANCE_GOAL_SQUARED) {
-  //     // compute dubins path
-  //     dubins(state1, shifted_goal, dp);
-
-  //     if (std::isnan(dp.length_2D())) {
-  //       ++dp_failed_ctr_;
-  //       if (dp_failed_ctr_ % dubinsWindPrintXthError_ == 0)
-  //         ROS_INFO_STREAM("Failed to compute a dubins path " << dp_failed_ctr_ << " times.");
-  //       freeState(shifted_goal);
-  //       return false;
-  //     }
-
-  //     calculateSegmentStarts(state1, dp, segmentStarts);
-
-  //     // compute the drift
-  //     wind_drift = calculateWindDrift(state1, 1.0, dp, segmentStarts);
-
-  //     // calculate vector to goal-state
-  //     goal_vector <<  shifted_goal->as<StateType>()->getX() + wind_drift.x - goal_x,
-  //                     shifted_goal->as<StateType>()->getY() + wind_drift.y - goal_y,
-  //                     shifted_goal->as<StateType>()->getZ() + wind_drift.z - goal_z;
-  //     dist_goal_squared = goal_vector.squaredNorm();
-
-  //     // difference vector of last goal vector and current one
-  //     difference_vector = goal_vector_old - goal_vector;
-  //     // multiplicator for difference vector to get as close as possible towards goal
-  //     // Max. of 2.0 to avoid fast diverging of path
-  //     if (difference_vector.norm() != 0.0) {
-  //       wind_drift_multi = std::min(MAX_WIND_DRIFT_MULTI, goal_vector_old.norm() / difference_vector.norm());
-  //     } else {
-  //       wind_drift_multi = 1.0;
-  //     }
-
-  //     // shorten/lengthen wind_drift based on multiplicator
-  //     wind_drift_adj.x = wind_drift_multi * wind_drift.x + (1.0 - wind_drift_multi) * wind_drift_old.x;
-  //     wind_drift_adj.y = wind_drift_multi * wind_drift.y + (1.0 - wind_drift_multi) * wind_drift_old.y;
-  //     wind_drift_adj.z = wind_drift_multi * wind_drift.z + (1.0 - wind_drift_multi) * wind_drift_old.z;
-
-  //     // store goal vector and wind drift for next iteration
-  //     goal_vector_old = goal_vector;
-  //     wind_drift_old = wind_drift;
-
-  //     // compute shifted state
-  //     shifted_goal->as<StateType>()->setX(goal_x - wind_drift_adj.x);
-  //     shifted_goal->as<StateType>()->setY(goal_y - wind_drift_adj.y);
-  //     shifted_goal->as<StateType>()->setZ(goal_z - wind_drift_adj.z);
-
-  //     ++counter;
-
-  //     // calculate relative excessive progress along start-goal-vector (still at start: -1, at goal: 0, tailwind: >0)
-  //     relative_excessive_progress = start_goal_vec_over_length_squared.dot(goal_vector);
-
-  //     if (((MAX_ITER <= counter) && (dist_goal_squared > THRESHOLD_DISTANCE_GOAL_SQUARED)) || // maximum number of
-  //     iterations with no solution
-  //         (dist_goal_squared > dist_goal_squared_initial * 4.0) || // diverging goal distance
-  //         (dist_goal_squared > dist_goal_squared_old && ( // while error grows, ...
-  //         (relative_excessive_progress <= relative_excessive_progress_old && relative_excessive_progress_old < -0.3)
-  //         || // ... no progress along euclidean path while still being far away from goal
-  //         (relative_excessive_progress >= relative_excessive_progress_old && relative_excessive_progress_old >
-  //         0.3)))) {
-  //       dp = DubinsPath(DubinsPath::Index::TYPE_LRL);
-
-  //       // update error statistic and free memory
-  //       ++dp_failed_ctr_;
-  //       if ((fabs(wind_drift.x * time_inverse) > params::v_air_param) || // too strong wind in x direction
-  //         (fabs(wind_drift.y * time_inverse) > params::v_air_param))
-  //         ++dp_failed_xy_wind_ctr_;
-  //       if ((std::copysign(1.0, wind_drift.z) != sign_d_z) && // too strong wind in z direction opposite to dz
-  //           fabs(wind_drift.z * time_inverse) > (params::v_air_param * sin_gammaMax_))
-  //         ++dp_failed_z_wind_ctr_;
-  //       if (dp_failed_ctr_ % dubinsWindPrintXthError_ == 0)
-  //         ROS_INFO_STREAM("Failed to compute a dubins path " << dp_failed_ctr_ << " times.");
-
-  //       freeState(shifted_goal);
-  //       return false;
-  //     }
-  //     relative_excessive_progress_old = relative_excessive_progress;
-  //     dist_goal_squared_old = dist_goal_squared;
-  //   }
-
-  //   ++dp_success_ctr_;
-  //   // free memory
-  //   freeState(shifted_goal);
-  // } else {
-  dubins(state1, state2, dp);
-  // }
-  return true;
 }
 
 void DubinsAirplane2StateSpace::dubins(double d, double alpha, double beta, DubinsPath& path) const {
@@ -1325,21 +1106,7 @@ void DubinsAirplane2StateSpace::interpolate(const DubinsPath& path, const Segmen
 void DubinsAirplane2StateSpace::interpolateWithWind(const ob::State* from, const DubinsPath& path,
                                                     const SegmentStarts& segmentStarts, double t,
                                                     ob::State* state) const {
-  // if (meteoGrid_->isSet()) {
-  //   if (std::isnan(path.length_3D())) {
-  //     state->as<StateType>()->setXYZ(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(),
-  //     std::numeric_limits<double>::max());
-  //   } else {
-  //     interpolate(path, segmentStarts, t, state);
-  //     DubinsAirplane2StateSpace::WindDrift drift = calculateWindDrift(from, t, path, segmentStarts);
-
-  //     state->as<StateType>()->addToX(drift.x);
-  //     state->as<StateType>()->addToY(drift.y);
-  //     state->as<StateType>()->addToZ(drift.z);
-  //   }
-  // } else {
   interpolate(path, segmentStarts, t, state);
-  // }
 }
 
 void DubinsAirplane2StateSpace::calculateSegmentStarts(const ob::State* from, const DubinsPath& path,
@@ -1474,213 +1241,6 @@ unsigned int DubinsAirplane2StateSpace::convert_idx(unsigned int i) const {
     }
   }
 }
-
-// DubinsAirplane2StateSpace::WindDrift DubinsAirplane2StateSpace::calculateWindDrift(const ob::State* from, double t,
-//                                                                                    const DubinsPath& dp, const
-//                                                                                    SegmentStarts& segmentStarts)
-//                                                                                    const {
-// #if(TIME_ENABLED)
-//   std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-// #endif
-//   if (std::isnan(dp.length_3D())) {
-//     CWD_windDrift_.x = std::numeric_limits<double>::infinity();
-//     CWD_windDrift_.y = std::numeric_limits<double>::infinity();
-//     CWD_windDrift_.z = std::numeric_limits<double>::infinity();
-//     ROS_ERROR_STREAM("calculateWindDrift: The length of the input path (" << dp.length_3D() <<
-//         ") is nan. Returning infinity wind drift");
-//     return CWD_windDrift_;
-//   } else {
-//     CWD_windDrift_.x = 0.0;
-//     CWD_windDrift_.y = 0.0;
-//     CWD_windDrift_.z = 0.0;
-//   }
-
-//   switch (params::interpolation_approach_param) {
-//     case 0: {
-//       //Fixed step-size start-point integration approach (euler forward)
-
-//       const double dt_max = meteoGrid_->getResolution() * params::fixed_interpolation_stepsize_param / (rho_ *
-//       dp.length_3D()); const double factor = rho_ * dp.length_3D() * vAirInv_; double t_interpol(0.0); double
-//       dt(0.0);
-
-//       while (t_interpol < t) {
-//         // get the current state
-//         interpolate(dp, segmentStarts, t_interpol, stateComputeWindDrift_);
-
-//         // geth the meteo data at the interpolated shifted state
-//         meteoGrid_->getMeteoData(
-//             stateComputeWindDrift_->as<StateType>()->getX() + CWD_windDrift_.x,
-//             stateComputeWindDrift_->as<StateType>()->getY() + CWD_windDrift_.y,
-//             stateComputeWindDrift_->as<StateType>()->getZ() + CWD_windDrift_.z,
-//             CWD_meteoData_);
-
-//         // Choose right dt also for last segment.
-//         dt = std::min(dt_max, t - t_interpol);
-
-//         // update the shift with the current meteo data
-//         CWD_windDrift_.x += dt * factor * CWD_meteoData_.u;
-//         CWD_windDrift_.y += dt * factor * CWD_meteoData_.v;
-//         CWD_windDrift_.z += dt * factor * CWD_meteoData_.w;
-
-//         // update the interpolation time
-//         t_interpol += dt;
-//       }
-//       break;
-//     }
-//     case 1: {
-//       //Fixed step 4th order Runge-Kutta
-
-//       const double h_opt = meteoGrid_->getResolution() * params::fixed_RK4_interpolation_stepsize_param / (rho_ *
-//       dp.length_3D()); const double factor = rho_ * dp.length_3D() * vAirInv_; double t_interpol(0.0); double h(0.0);
-//       Eigen::Vector3d k1, k2, k3, k4;
-
-//       // get the current state
-//       interpolate(dp, segmentStarts, t_interpol, stateComputeWindDrift_);
-
-//       while (t_interpol < t) {
-//         // Choose right dt also for last segment.
-//         h = std::min(h_opt, t - t_interpol);
-
-//         // geth the meteo data at the interpolated shifted state
-//         meteoGrid_->getMeteoData(
-//             stateComputeWindDrift_->as<StateType>()->getX() + CWD_windDrift_.x,
-//             stateComputeWindDrift_->as<StateType>()->getY() + CWD_windDrift_.y,
-//             stateComputeWindDrift_->as<StateType>()->getZ() + CWD_windDrift_.z,
-//             CWD_meteoData_);
-//         k1 << CWD_meteoData_.u, CWD_meteoData_.v, CWD_meteoData_.w;
-
-//         // get the current state
-//         interpolate(dp, segmentStarts, t_interpol + h * 0.5, stateComputeWindDrift_);
-
-//         meteoGrid_->getMeteoData(
-//             stateComputeWindDrift_->as<StateType>()->getX() + CWD_windDrift_.x + k1.x() * h * factor * 0.5,
-//             stateComputeWindDrift_->as<StateType>()->getY() + CWD_windDrift_.y + k1.y() * h * factor * 0.5,
-//             stateComputeWindDrift_->as<StateType>()->getZ() + CWD_windDrift_.z + k1.z() * h * factor * 0.5,
-//             CWD_meteoData_);
-//         k2 << CWD_meteoData_.u, CWD_meteoData_.v, CWD_meteoData_.w;
-
-//         meteoGrid_->getMeteoData(
-//             stateComputeWindDrift_->as<StateType>()->getX() + CWD_windDrift_.x + k2.x() * h * factor * 0.5,
-//             stateComputeWindDrift_->as<StateType>()->getY() + CWD_windDrift_.y + k2.y() * h * factor * 0.5,
-//             stateComputeWindDrift_->as<StateType>()->getZ() + CWD_windDrift_.z + k2.z() * h * factor * 0.5,
-//             CWD_meteoData_);
-//         k3 << CWD_meteoData_.u, CWD_meteoData_.v, CWD_meteoData_.w;
-
-//         // get the current state
-//         interpolate(dp, segmentStarts, t_interpol + h, stateComputeWindDrift_);
-
-//         meteoGrid_->getMeteoData(
-//             stateComputeWindDrift_->as<StateType>()->getX() + CWD_windDrift_.x + k3.x() * h * factor,
-//             stateComputeWindDrift_->as<StateType>()->getY() + CWD_windDrift_.y + k3.y() * h * factor,
-//             stateComputeWindDrift_->as<StateType>()->getZ() + CWD_windDrift_.z + k3.z() * h * factor,
-//             CWD_meteoData_);
-//         k4 << CWD_meteoData_.u, CWD_meteoData_.v, CWD_meteoData_.w;
-
-//         k4 = (k1 + 2.0 * k2 + 2.0 * k3 + k4) / 6.0;
-//         // update the shift with the current meteo data
-//         CWD_windDrift_.x += h * factor * k4.x();
-//         CWD_windDrift_.y += h * factor * k4.y();
-//         CWD_windDrift_.z += h * factor * k4.z();
-
-//         // update the interpolation time
-//         t_interpol += h;
-//       }
-//       break;
-//     }
-//     case 2: {
-//       // Adaptive step 3rd order RK (Bogacki-Shampine)
-
-//       // Parameter 0.5: Minimum 2 iteration steps, even for short paths.
-//       double h = std::min(t, meteoGrid_->getResolution() * params::adaptive_RK3_interpolation_stepsize_param / (rho_
-//       * dp.length_3D())); const double h_min = h * params::adaptive_RK3_interpolation_stepsize_min_param; const
-//       double h_max = std::min(t, h * params::adaptive_RK3_interpolation_stepsize_max_param); const double factor =
-//       rho_ * dp.length_3D() * vAirInv_;
-//       // Path-length dependent tolerance: Long paths require higher accuracy, as allowed goal-offset is constant.
-//       // Minimum tolerance constant for all paths under certain length (second parameter).
-//       const double tolerance = params::adaptive_RK3_interpolation_tolerance_param /
-//           std::max(params::adaptive_RK3_interpolation_tolerance_min_length_param * vAirInv_, factor);
-//       double t_interpol(0.0);
-//       Eigen::Vector3d k1, k2, k3, k4, ynp1, znp1, error;
-
-//       // get the current state
-//       interpolate(dp, segmentStarts, t_interpol, stateComputeWindDrift_);
-//       // geth the meteo data at the interpolated shifted state
-//       meteoGrid_->getMeteoData(
-//           stateComputeWindDrift_->as<StateType>()->getX(),
-//           stateComputeWindDrift_->as<StateType>()->getY(),
-//           stateComputeWindDrift_->as<StateType>()->getZ(),
-//           CWD_meteoData_);
-//       k1 << CWD_meteoData_.u, CWD_meteoData_.v, CWD_meteoData_.w;
-
-//       double error_norm, h_multiplicator;
-//       while (t_interpol < t) {
-//         // get the current state
-//         interpolate(dp, segmentStarts, t_interpol + h * 0.5, stateComputeWindDrift_);
-
-//         meteoGrid_->getMeteoData(
-//             stateComputeWindDrift_->as<StateType>()->getX() + CWD_windDrift_.x + k1.x() * h * factor * 0.5,
-//             stateComputeWindDrift_->as<StateType>()->getY() + CWD_windDrift_.y + k1.y() * h * factor * 0.5,
-//             stateComputeWindDrift_->as<StateType>()->getZ() + CWD_windDrift_.z + k1.z() * h * factor * 0.5,
-//             CWD_meteoData_);
-//         k2 << CWD_meteoData_.u, CWD_meteoData_.v, CWD_meteoData_.w;
-
-//         interpolate(dp, segmentStarts, t_interpol + h * 0.75, stateComputeWindDrift_);
-
-//         meteoGrid_->getMeteoData(
-//             stateComputeWindDrift_->as<StateType>()->getX() + CWD_windDrift_.x + k2.x() * h * factor * 0.75,
-//             stateComputeWindDrift_->as<StateType>()->getY() + CWD_windDrift_.y + k2.y() * h * factor * 0.75,
-//             stateComputeWindDrift_->as<StateType>()->getZ() + CWD_windDrift_.z + k2.z() * h * factor * 0.75,
-//             CWD_meteoData_);
-//         k3 << CWD_meteoData_.u, CWD_meteoData_.v, CWD_meteoData_.w;
-
-//         ynp1 = (2.0 * k1 + 3.0 * k2 + 4.0 * k3) / 9.0;
-
-//         interpolate(dp, segmentStarts, t_interpol + h, stateComputeWindDrift_);
-
-//         meteoGrid_->getMeteoData(
-//             stateComputeWindDrift_->as<StateType>()->getX() + CWD_windDrift_.x + h * factor * ynp1.x(),
-//             stateComputeWindDrift_->as<StateType>()->getY() + CWD_windDrift_.y + h * factor * ynp1.y(),
-//             stateComputeWindDrift_->as<StateType>()->getZ() + CWD_windDrift_.z + h * factor * ynp1.z(),
-//             CWD_meteoData_);
-//         k4 << CWD_meteoData_.u, CWD_meteoData_.v, CWD_meteoData_.w;
-
-//         znp1 = (7.0 * k1 + 6.0 * k2 + 8.0 * k3 + 3.0 * k4) / 24.0;
-
-//         error = znp1 - ynp1;
-//         error_norm = error.norm();
-//         // MAX/MIN_STEP_CHANGE: Limit maximum change of step size to a factor larger/smaller.
-//         h_multiplicator = std::max(std::min(
-//             std::cbrt(tolerance / error_norm),
-//             params::adaptive_RK3_interpolation_max_step_change),
-//             params::adaptive_RK3_interpolation_min_step_change);
-
-//         if (h_multiplicator < params::adaptive_RK3_interpolation_multiplier_threshold_param && h > h_min) {
-//           h = std::max(h_min, h * h_multiplicator);
-//         } else {
-//           // update the shift with the current meteo data
-//           CWD_windDrift_.x += h * factor * ynp1.x();
-//           CWD_windDrift_.y += h * factor * ynp1.y();
-//           CWD_windDrift_.z += h * factor * ynp1.z();
-
-//           t_interpol += h;
-//           h = std::min(h_max, std::min(std::max(h_min, h * h_multiplicator), t - t_interpol));
-//           k1 = k4;
-//         }
-//       }
-//       break;
-//     }
-//     default: {
-//       ROS_ERROR_STREAM("DubinsAirplane2StateSpace::calculateWindDrift: Invalid interpolation approach in
-//       param-file.");
-//     }
-//   }
-
-// #if(TIME_ENABLED)
-//   std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
-//   duration_get_wind_drift_ += std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() * 1e-9;
-// #endif
-//   return CWD_windDrift_;
-// }
 
 double DubinsAirplane2StateSpace::t_lsr(double d, double alpha, double beta, double sa, double sb, double ca,
                                         double cb) const {
