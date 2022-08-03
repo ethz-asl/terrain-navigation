@@ -67,7 +67,11 @@ class TerrainStateSampler : public base::StateSampler {
     double y = rng_.uniformReal(map_pos(1) - 0.5 * map_width_y, map_pos(1) + 0.5 * map_width_y);
     double yaw = rng_.uniformReal(-M_PI, M_PI);
 
-    double terrain_elevation = map_.atPosition("elevation", Eigen::Vector2d(x, y));
+    /// TODO: Workaround when sampled position is not inside the map
+    double terrain_elevation{0.0};
+    if (map_.isInside(Eigen::Vector2d(x, y))) {
+      terrain_elevation = map_.atPosition("elevation", Eigen::Vector2d(x, y));
+    }
     double z = rng_.uniformReal(min_altitude, max_altitude) + terrain_elevation;
 
     state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(x);

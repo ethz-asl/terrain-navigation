@@ -103,6 +103,9 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   mcts_planner_ = std::make_shared<MctsPlanner>();
   mcts_planner_->setViewUtilityMap(viewutility_map_);
 
+  global_planner_ = std::make_shared<TerrainOmplRrt>();
+  global_planner_->setMap(terrain_map_);
+
   planner_profiler_ = std::make_shared<Profiler>("planner");
 }
 TerrainPlanner::~TerrainPlanner() {
@@ -131,30 +134,32 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 
   switch (setpoint_mode_) {
     case SETPOINT_MODE::STATE: {
-      Eigen::Vector3d reference_position;
-      Eigen::Vector3d reference_tangent;
-      double reference_curvature{0.0};
-      reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
-                                           reference_curvature);
-      publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
-      /// TODO: Trigger camera when viewpoint reached
-      /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
-      if (current_state_.mode == "OFFBOARD") {
-        publishPositionHistory(referencehistory_pub_, reference_position, referencehistory_vector_);
-        tracking_error_ = reference_position - vehicle_position_;
-        planner_enabled_ = true;
+      if (!reference_primitive_.segments.empty()) {
+        Eigen::Vector3d reference_position;
+        Eigen::Vector3d reference_tangent;
+        double reference_curvature{0.0};
+        reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
+                                             reference_curvature, 0.1 * 15.0);
+        publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
+        /// TODO: Trigger camera when viewpoint reached
+        /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
+        if (current_state_.mode == "OFFBOARD") {
+          publishPositionHistory(referencehistory_pub_, reference_position, referencehistory_vector_);
+          tracking_error_ = reference_position - vehicle_position_;
+          planner_enabled_ = true;
 
-        // Trigger and keep track of viewpoints
-        if ((ros::Time::now() - last_triggered_time_).toSec() > 1.0) {
-          const int id = viewpoints_.size() + added_viewpoint_list.size();
-          ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
-          added_viewpoint_list.push_back(viewpoint);
-          last_triggered_time_ = ros::Time::now();
+          // Trigger and keep track of viewpoints
+          if ((ros::Time::now() - last_triggered_time_).toSec() > 1.0) {
+            const int id = viewpoints_.size() + added_viewpoint_list.size();
+            ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
+            added_viewpoint_list.push_back(viewpoint);
+            last_triggered_time_ = ros::Time::now();
+          }
+
+        } else {
+          tracking_error_ = Eigen::Vector3d::Zero();
+          planner_enabled_ = false;
         }
-
-      } else {
-        tracking_error_ = Eigen::Vector3d::Zero();
-        planner_enabled_ = false;
       }
       break;
     }
@@ -175,6 +180,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     if (map_initialized_) {
       std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
       viewutility_map_->initializeFromGridmap();
+      global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
     } else {
       std::cout << "[TerrainPlanner]   - Failed to load map: " << map_path_ << std::endl;
     }
@@ -198,7 +204,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // Only run planner in offboard mode
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
-  planner_mode_ = PLANNER_MODE::MCTS;
+  planner_mode_ = PLANNER_MODE::EXHAUSTIVE;
   switch (planner_mode_) {
     case PLANNER_MODE::MCTS: {
       double utility = viewutility_map_->CalculateViewUtility(added_viewpoint_list, true);
@@ -208,6 +214,58 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
           mcts_planner_->solve(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
       if (candidate_primitive.valid()) {
         reference_primitive_ = candidate_primitive;
+      }
+      break;
+    }
+    case PLANNER_MODE::GLOBAL: {
+      /// TODO: Handle start states with loiter circles
+      Eigen::Vector3d start_position = vehicle_position_;
+      Eigen::Vector3d start_velocity = vehicle_velocity_;
+      // Solve planning problem with RRT*
+      if (!reference_primitive_.segments.empty()) {
+        Trajectory current_segment = reference_primitive_.getCurrentSegment(vehicle_position_);
+        start_position = current_segment.states.back().position;
+        start_velocity = current_segment.states.back().velocity;
+
+        /// Only update the problem when the problem is updated or solution is not found
+        // Check if the start position of the problem has been updated
+        // if ((start_position - last_planning_position_).norm() > FLT_EPSILON) {
+        //   problem_udpated_ = true;
+        // }
+        // last_planning_position_ = start_position;
+
+        TrajectorySegments planner_solution_path;
+        if (problem_udpated_ || !found_solution_) {
+          problem_udpated_ = false;
+          global_planner_->setupProblem(start_position, start_velocity, goal_pos_);
+          found_solution_ = global_planner_->Solve(1.0, planner_solution_path);
+
+          /// TODO: Improve solution even if a solution have been found
+          if (found_solution_) {
+            TrajectorySegments updated_segment;
+            updated_segment.segments.clear();
+            updated_segment.appendSegment(current_segment);
+            updated_segment.appendSegment(planner_solution_path);
+            Eigen::Vector3d emergency_rates(0.0, 0.0, 0.3);
+            double horizon = 2 * M_PI / emergency_rates(2);
+            // expandPrimitives(motion_primitive_tree_, emergency_rates, horizon);
+            Eigen::Vector3d end_position = planner_solution_path.lastSegment().states.back().position;
+            Eigen::Vector3d end_velocity = planner_solution_path.lastSegment().states.back().velocity;
+
+            // Append a loiter at the end of the planned path
+            Trajectory loiter_trajectory =
+                maneuver_library_->generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
+            updated_segment.appendSegment(loiter_trajectory);
+
+            /// TODO: Add terminal goal segment with a loiter circle
+            reference_primitive_ = updated_segment;
+          }
+        }
+      } else {
+        maneuver_library_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_, vehicle_attitude_,
+                                                    reference_primitive_);
+        maneuver_library_->Solve();
+        reference_primitive_ = maneuver_library_->getBestPrimitive();
       }
       break;
     }
@@ -504,7 +562,11 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
   bool result = terrain_map_->Load(map_path_, align_location, map_color_path_);
-
+  if (result) {
+    global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
+    problem_udpated_ = true;
+    found_solution_ = false;
+  }
   res.success = result;
   return true;
 }
@@ -522,6 +584,9 @@ bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, pla
   Eigen::Vector3d new_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
   new_goal = maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
   mcts_planner_->setGoal(new_goal);
+  goal_pos_ = maneuver_library_->getGoalPosition();
+  problem_udpated_ = true;
+  found_solution_ = false;
 
   res.success = true;
   return true;

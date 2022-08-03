@@ -190,8 +190,6 @@ int main(int argc, char** argv) {
   planner->setMap(terrain_map);
   /// TODO: Get bounds from gridmap
   planner->setBoundsFromMap(terrain_map->getGridMap());
-  planner->setupProblem();
-  std::vector<Eigen::Vector3d> path;
   double terrain_altitude{100.0};
 
   Eigen::Vector3d start{Eigen::Vector3d(-200.0, -200.0, 0.0)};
@@ -201,6 +199,8 @@ int main(int argc, char** argv) {
   goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
 
   // Repeatedly publish results
+  std::vector<Eigen::Vector3d> path;
+  planner->setupProblem(start, start_vel, goal);
   while (true) {
     planner->solve(1.0, start, goal, path);
     terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());

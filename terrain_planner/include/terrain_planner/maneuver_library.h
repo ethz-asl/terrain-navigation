@@ -60,7 +60,7 @@ class ManeuverLibrary {
   TrajectorySegments getBestPrimitive();
   TrajectorySegments getRandomPrimitive();
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
-                                   Eigen::Vector3d current_vel);
+                                   Eigen::Vector3d current_vel, const double dt = 0.1);
   double getPlanningHorizon() { return planning_horizon_; };
 
   /**
@@ -85,7 +85,6 @@ class ManeuverLibrary {
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
   std::shared_ptr<TerrainMap>& getTerrainMap() { return terrain_map_; };
-  double getTimeStep() const { return dt_; }
   void expandPrimitives(std::shared_ptr<Primitive> primitive, std::vector<Eigen::Vector3d> rates, double horizon);
 
   /**
@@ -124,7 +123,6 @@ class ManeuverLibrary {
   int num_segments{3};
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 100.0)};  // Terrain relative goal position
   bool check_max_altitude_{true};
-  double dt_{0.1};
   double planning_horizon_{10.0};
   double cruise_speed_{20.0};
   double goal_terrain_altitude_{100.0};

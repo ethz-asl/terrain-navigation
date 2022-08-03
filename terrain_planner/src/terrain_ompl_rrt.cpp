@@ -8,7 +8,8 @@ TerrainOmplRrt::~TerrainOmplRrt() {
   // Destructor
 }
 
-void TerrainOmplRrt::setupProblem() {
+void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
+                                  const Eigen::Vector3d& goal) {
   problem_setup_->clear();
 
   problem_setup_->setDefaultPlanner();
@@ -34,6 +35,23 @@ void TerrainOmplRrt::setupProblem() {
   problem_setup_->setStateValidityCheckingResolution(0.001);
 
   planner_data_ = std::make_shared<ompl::base::PlannerData>(problem_setup_->getSpaceInformation());
+
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> start_ompl(
+      problem_setup_->getSpaceInformation());
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> goal_ompl(
+      problem_setup_->getSpaceInformation());
+
+  start_ompl->setX(start_pos(0));
+  start_ompl->setY(start_pos(1));
+  start_ompl->setZ(start_pos(2));
+  double start_yaw = std::atan2(start_vel(1), start_vel(0));
+  start_ompl->setYaw(start_yaw);
+
+  goal_ompl->setX(goal(0));
+  goal_ompl->setY(goal(1));
+  goal_ompl->setZ(goal(2));
+  problem_setup_->setStartAndGoalStates(start_ompl, goal_ompl);
+  problem_setup_->setup();
 }
 
 void TerrainOmplRrt::setBoundsFromMap(const grid_map::GridMap& map) {
@@ -66,33 +84,32 @@ void TerrainOmplRrt::setBoundsFromMap(const grid_map::GridMap& map) {
   setBounds(lower_bounds, upper_bounds);
 }
 
-bool TerrainOmplRrt::solve(const double time_budget, const Eigen::Vector3d& start, const Eigen::Vector3d& goal,
-                           std::vector<Eigen::Vector3d>& path) {
-  std::cout << "[TerrainOmplRrt] start solve" << std::endl;
-  path.clear();
-
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> start_ompl(
-      problem_setup_->getSpaceInformation());
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> goal_ompl(
-      problem_setup_->getSpaceInformation());
-
-  start_ompl->setX(start.x());
-  start_ompl->setY(start.y());
-  start_ompl->setZ(start.z());
-
-  goal_ompl->setX(goal.x());
-  goal_ompl->setY(goal.y());
-  goal_ompl->setZ(goal.z());
-  std::cout << "[TerrainOmplRrt] Problem Setup" << std::endl;
-  problem_setup_->setStartAndGoalStates(start_ompl, goal_ompl);
-  std::cout << "[TerrainOmplRrt] setStartAndGoalStates" << std::endl;
-  problem_setup_->setup();
-  std::cout << "[TerrainOmplRrt] Solve" << std::endl;
+bool TerrainOmplRrt::Solve(double time_budget, TrajectorySegments& path) {
   if (problem_setup_->solve(time_budget)) {
     std::cout << "Found solution:" << std::endl;
     // problem_setup_.getSolutionPath().print(std::cout);
     // problem_setup_.simplifySolution();
-    problem_setup_->getSolutionPath().print(std::cout);
+    // problem_setup_.getSolutionPath().print(std::cout);
+    problem_setup_->getPlannerData(*planner_data_);
+    solve_duration_ = problem_setup_->getLastPlanComputationTime();
+
+  } else {
+    std::cout << "Solution Not found" << std::endl;
+  }
+
+  if (problem_setup_->haveExactSolutionPath()) {
+    solutionPathToTrajectorySegments(problem_setup_->getSolutionPath(), path);
+    return true;
+  }
+  return false;
+}
+
+bool TerrainOmplRrt::Solve(double time_budget, std::vector<Eigen::Vector3d>& path) {
+  if (problem_setup_->solve(time_budget)) {
+    std::cout << "Found solution:" << std::endl;
+    // problem_setup_.getSolutionPath().print(std::cout);
+    // problem_setup_.simplifySolution();
+    // problem_setup_.getSolutionPath().print(std::cout);
 
     problem_setup_->getPlannerData(*planner_data_);
     solve_duration_ = problem_setup_->getLastPlanComputationTime();
@@ -101,12 +118,80 @@ bool TerrainOmplRrt::solve(const double time_budget, const Eigen::Vector3d& star
     std::cout << "Solution Not found" << std::endl;
   }
 
-  if (problem_setup_->haveSolutionPath()) {
+  if (problem_setup_->haveExactSolutionPath()) {
     solutionPathToTrajectoryPoints(problem_setup_->getSolutionPath(), path);
     return true;
   }
   return false;
 }
+
+void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeometric& path,
+                                                      TrajectorySegments& trajectory_segments) const {
+  trajectory_segments.segments.clear();
+  path.interpolate();
+  std::vector<ompl::base::State*>& state_vector = path.getStates();
+  double prev_yaw;
+  Trajectory trajectory;
+  double prev_curvature = std::numeric_limits<double>::infinity();
+  bool is_arc_segment{false};
+  Eigen::Vector3d prev_position{Eigen::Vector3d::Zero()};  // TODO: Invalidate with nans?
+  for (ompl::base::State* state_ptr : state_vector) {
+    // Get states from solution path
+    Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
+                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
+                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
+    double yaw = state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getYaw();
+
+    if (prev_position.norm() < 0.1) {
+      // First segment
+      prev_position = position;
+      continue;
+    }
+
+    const Eigen::Vector3d velocity = (position - prev_position).transpose();
+    const Eigen::Vector2d velocity_2d = Eigen::Vector2d(velocity(0), velocity(1)).normalized();
+    State state;
+    state.position = position;
+    state.velocity = velocity.normalized();
+    state.attitude = Eigen::Vector4d(std::cos(yaw / 2), 0.0, 0.0, std::sin(yaw / 2));
+    trajectory.states.emplace_back(state);
+
+    double heading = std::atan2(velocity_2d(1), velocity_2d(0));
+    double error = heading - yaw;
+    if (error > M_PI)
+      error -= M_PI * 2.0;
+    else if (error > M_PI)
+      error += M_PI * 2.0;
+
+    double curvature{0.0};
+    if (std::abs(yaw - heading) > 0.0000001) {  // Arc segments
+                                                /// TODO: Get curvature from planner
+      curvature = 0.015 * (heading - yaw) / std::abs(heading - yaw);
+    } else {  // Straight segments
+      curvature = 0.0;
+    }
+
+    if ((std::abs(prev_curvature - curvature) > 0.0001) && !trajectory.states.empty() &&
+        std::isfinite(prev_curvature)) {
+      // Segment type has changed
+      trajectory_segments.segments.push_back(trajectory);
+      trajectory_segments.segments.back().curvature = prev_curvature;
+      trajectory.states.clear();
+    }
+
+    prev_yaw = yaw;
+    prev_curvature = curvature;
+    prev_position = position;
+    if (state_ptr == state_vector.back()) {
+      if (!trajectory.states.empty()) {
+        trajectory_segments.segments.push_back(trajectory);
+        trajectory_segments.segments.back().curvature = prev_curvature;
+        trajectory.states.clear();
+      }
+    }
+  }
+}
+
 void TerrainOmplRrt::solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric& path,
                                                     std::vector<Eigen::Vector3d>& trajectory_points) const {
   trajectory_points.clear();

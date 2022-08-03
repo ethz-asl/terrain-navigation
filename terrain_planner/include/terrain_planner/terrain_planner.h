@@ -43,6 +43,7 @@
 
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
+#include "terrain_planner/terrain_ompl_rrt.h"
 
 #include <geographic_msgs/GeoPointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -65,7 +66,7 @@
 
 enum class SETPOINT_MODE { STATE, PATH };
 
-enum class PLANNER_MODE { EXHAUSTIVE, MCTS, RANDOM };
+enum class PLANNER_MODE { EXHAUSTIVE, MCTS, GLOBAL, RANDOM };
 
 class TerrainPlanner {
  public:
@@ -140,6 +141,7 @@ class TerrainPlanner {
   std::shared_ptr<PrimitivePlanner> primitive_planner_;
   std::shared_ptr<TerrainMap> terrain_map_;
   std::shared_ptr<ViewUtilityMap> viewutility_map_;
+  std::shared_ptr<TerrainOmplRrt> global_planner_;
   std::shared_ptr<Profiler> planner_profiler_;
   TrajectorySegments reference_primitive_;
   mavros_msgs::State current_state_;
@@ -152,6 +154,7 @@ class TerrainPlanner {
   Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
+  Eigen::Vector3d last_planning_position_{Eigen::Vector3d::Zero()};
 
   std::string map_path_{};
   std::string map_color_path_{};
@@ -160,6 +163,8 @@ class TerrainPlanner {
   bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};
+  bool problem_udpated_{true};
+  bool found_solution_{false};
 };
 
 #endif

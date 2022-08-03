@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 
 #include <terrain_navigation/terrain_map.h>
+#include "terrain_navigation/trajectory.h"
 
 #include "terrain_planner/ompl_setup.h"
 
@@ -19,15 +20,17 @@ class TerrainOmplRrt {
   TerrainOmplRrt();
   virtual ~TerrainOmplRrt();
 
-  void setupProblem();
+  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal);
   void setBounds(const Eigen::Vector3d& lower_bound, const Eigen::Vector3d& upper_bound) {
     lower_bound_ = lower_bound;
     upper_bound_ = upper_bound;
   }
   void setBoundsFromMap(const grid_map::GridMap& map);
   void setMap(std::shared_ptr<TerrainMap> map) { map_ = std::move(map); }
-  bool solve(const double time_budget, const Eigen::Vector3d& start, const Eigen::Vector3d& goal,
-             std::vector<Eigen::Vector3d>& path);
+  bool Solve(double time_budget, TrajectorySegments& path);
+  bool Solve(double time_budget, std::vector<Eigen::Vector3d>& path);
+  void solutionPathToTrajectorySegments(ompl::geometric::PathGeometric& path,
+                                        TrajectorySegments& trajectory_segments) const;
   void solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric& path,
                                       std::vector<Eigen::Vector3d>& trajectory_points) const;
   std::shared_ptr<ompl::base::PlannerData> getPlannerData() { return planner_data_; };

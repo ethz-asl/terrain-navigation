@@ -119,7 +119,6 @@ void publishTrajectorySegments(ros::Publisher &pub, TrajectorySegments &trajecto
 
   std::vector<visualization_msgs::Marker> maneuver_library_vector;
   int i = 0;
-  bool visualize_invalid_trajectories = false;
   maneuver_library_vector.push_back(trajectory2MarkerMsg(trajectory, 0));
   msg.markers = maneuver_library_vector;
   pub.publish(msg);

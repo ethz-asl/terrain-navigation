@@ -224,7 +224,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * @param[in] gam: The maximum climb angle of the airplane.
    * @param[in] useEuclDist: If true the euclidian distance is used, else the dubins airplane distance.
    */
-  DubinsAirplane2StateSpace(double turningRadius = 25.0, double gam = 0.15, bool useEuclDist = false);
+  DubinsAirplane2StateSpace(double turningRadius = 66.66667, double gam = 0.15, bool useEuclDist = false);
 
   /** \brief Destructor */
   virtual ~DubinsAirplane2StateSpace();

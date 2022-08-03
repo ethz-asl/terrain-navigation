@@ -208,24 +208,34 @@ int main(int argc, char** argv) {
   }
   terrain_map->AddLayerDistanceTransform("distance_surface");
 
-  // Initialize planner with loaded terrain map
-  auto planner = std::make_shared<TerrainOmplRrt>();
-  planner->setMap(terrain_map);
-  /// TODO: Get bounds from gridmap
-  planner->setBoundsFromMap(terrain_map->getGridMap());
-  planner->setupProblem();
   std::vector<Eigen::Vector3d> path;
   double terrain_altitude{100.0};
-
-  // Find a path using the RRT planner
-  Eigen::Vector3d start(-200.0, -200.0, 0.0);
-  start(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
-  Eigen::Vector3d goal(300.0, 300.0, 0.0);
-  goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
-  planner->solve(1.0, start, goal, path);
-
-  // Repeatedly publish results
   while (true) {
+    // Initialize planner with loaded terrain map
+    auto planner = std::make_shared<TerrainOmplRrt>();
+    planner->setMap(terrain_map);
+    /// TODO: Get bounds from gridmap
+    planner->setBoundsFromMap(terrain_map->getGridMap());
+
+    const Eigen::Vector2d map_pos = terrain_map->getGridMap().getPosition();
+    const double map_width_x = terrain_map->getGridMap().getLength().x();
+    const double map_width_y = terrain_map->getGridMap().getLength().y();
+
+    Eigen::Vector3d start{Eigen::Vector3d(getRandom(map_pos(0) - 0.5 * map_width_x, map_pos(0) + 0.5 * map_width_x),
+                                          getRandom(map_pos(1) - 0.5 * map_width_y, map_pos(1) + 0.5 * map_width_y),
+                                          0.0)};
+    start(2) =
+        terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
+    double start_yaw = getRandom(-M_PI, M_PI);
+    Eigen::Vector3d start_vel = 10.0 * Eigen::Vector3d(std::cos(start_yaw), std::sin(start_yaw), 0.0);
+    Eigen::Vector3d goal{Eigen::Vector3d(getRandom(map_pos(0) - 0.5 * map_width_x, map_pos(0) + 0.5 * map_width_x),
+                                         getRandom(map_pos(1) - 0.5 * map_width_y, map_pos(1) + 0.5 * map_width_y),
+                                         0.0)};
+    goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
+    planner->setupProblem(start, start_vel, goal);
+    planner->Solve(1.0, path);
+
+    // Repeatedly publish results
     terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
     grid_map_msgs::GridMap message;
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);

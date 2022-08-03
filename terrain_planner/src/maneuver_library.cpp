@@ -234,8 +234,10 @@ std::vector<TrajectorySegments> ManeuverLibrary::AppendSegment(std::vector<Traje
   return second_segment;
 }
 
+/// TODO: Change rate vector for curvature and climbrates
 Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const double horizon,
-                                                  Eigen::Vector3d current_pos, Eigen::Vector3d current_vel) {
+                                                  Eigen::Vector3d current_pos, Eigen::Vector3d current_vel,
+                                                  const double dt) {
   Trajectory trajectory;
   trajectory.states.clear();
 
@@ -244,12 +246,11 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
   const double climb_rate = rate(1);
   trajectory.climb_rate = climb_rate;
   trajectory.curvature = rate(2) / cruise_speed_;
-  trajectory.dt = dt_;
-  for (int i = 0; i < std::max(1.0, horizon / dt_); i++) {
+  trajectory.dt = dt;
+  for (int i = 0; i < std::max(1.0, horizon / dt); i++) {
     if (std::abs(rate(2)) < 0.0001) {
       rate(2) > 0.0 ? rate(2) = 0.0001 : rate(2) = -0.0001;
     }
-    time = time + dt_;
     double yaw = rate(2) * time + current_yaw;
 
     Eigen::Vector3d pos =
@@ -260,11 +261,14 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
     const double roll = std::atan(rate(2) * cruise_speed_ / 9.81);
     const double pitch = std::atan(climb_rate / cruise_speed_);
     Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);  // TODO: why the hell do you need to reverse signs?
+
     State state_vector;
     state_vector.position = pos;
     state_vector.velocity = vel;
     state_vector.attitude = att;
     trajectory.states.push_back(state_vector);
+
+    time = time + dt;
   }
   return trajectory;
 }

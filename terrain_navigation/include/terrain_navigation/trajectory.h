@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2021 Jaeyoung Lim. All rights reserved.
+ *   Copyright (c) 2021-2022 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -71,6 +71,15 @@ class Trajectory {
     }
     return attitude_vector;
   }
+  static void wrap_pi(double &angle) {
+    while (std::abs(angle) > M_PI) {
+      if (angle > 0)
+        angle = angle - 2 * M_PI;
+      else
+        angle = angle + 2 * M_PI;
+    }
+  }
+
   static Eigen::Vector2d getArcCenter(const Eigen::Vector2d &segment_start, const Eigen::Vector2d &segment_end,
                                       double curvature) {
     double segment_distance = (segment_end - segment_start).norm();
@@ -97,30 +106,18 @@ class Trajectory {
     return theta;
   }
 
-  static double getArcProgress(Eigen::Vector2d &arc_center_2d, const Eigen::Vector2d position_2d,
+  static double getArcProgress(const Eigen::Vector2d &arc_center_2d, const Eigen::Vector2d position_2d,
                                const Eigen::Vector2d &segment_start_2d, const Eigen::Vector2d &segment_end_2d,
                                const double curvature) {
-    arc_center_2d = getArcCenter(segment_start_2d, segment_end_2d, curvature);
-
     Eigen::Vector2d pos_vector = (position_2d - arc_center_2d).normalized();
     Eigen::Vector2d start_vector = (segment_start_2d - arc_center_2d).normalized();
     Eigen::Vector2d end_vector = (segment_end_2d - arc_center_2d).normalized();
-
+    /// TODO: if end_vector == start_vector psi = 2_PI
     double psi = std::atan2(end_vector(1), end_vector(0)) - std::atan2(start_vector(1), start_vector(0));
     double angle_pos = std::atan2(pos_vector(1), pos_vector(0)) - std::atan2(start_vector(1), start_vector(0));
-    while (std::abs(psi) > M_PI) {
-      if (psi > 0)
-        psi = psi - 2 * M_PI;
-      else
-        psi = psi + 2 * M_PI;
-    }
-    while (std::abs(angle_pos) > M_PI) {
-      if (angle_pos > 0)
-        angle_pos = angle_pos - 2 * M_PI;
-      else
-        angle_pos = angle_pos + 2 * M_PI;
-    }
 
+    wrap_pi(psi);
+    wrap_pi(angle_pos);
     double theta = angle_pos / psi;
     /// TODO: Handle cases with -1 < theta cases
     return theta;
@@ -132,6 +129,7 @@ class Trajectory {
   double dt{0.0};
   double utility{0.0};
   bool viewed{false};
+  bool reached{false};
 
  private:
 };
@@ -167,12 +165,22 @@ class TrajectorySegments {
   void resetSegments() { segments.clear(); };
   void prependSegment(const Trajectory &trajectory) { segments.insert(segments.begin(), trajectory); };
   void appendSegment(const Trajectory &trajectory) { segments.push_back(trajectory); };
+  void appendSegment(const TrajectorySegments &trajectory_segments) {
+    for (const auto trajectory : trajectory_segments.segments) {
+      appendSegment(trajectory);
+    }
+  };
   Trajectory lastSegment() { return segments.back(); }
   void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
-                       double &curvature) {
+                       double &curvature, double epsilon = 0.001) {
     double theta{-std::numeric_limits<double>::infinity()};
     closest_point = segments.front().states.front().position;
+
+    // Iterate through all segments
+    int idx{0};
     for (auto &segment : segments) {
+      idx++;
+      if (segment.reached && (&segment != &segments.back())) continue;
       Eigen::Vector3d segment_start = segment.states.front().position;
       Eigen::Vector3d segment_end = segment.states.back().position;
       if (segment.states.size() == 1) {
@@ -186,16 +194,38 @@ class TrajectorySegments {
         closest_point = theta * (segment_end - segment_start) + segment_start;
       } else {
         // Compute closest point on a Arc segment
-        Eigen::Vector2d arc_center;
         Eigen::Vector2d position_2d(position(0), position(1));
         Eigen::Vector2d segment_start_2d(segment_start(0), segment_start(1));
         Eigen::Vector2d segment_end_2d(segment_end(0), segment_end(1));
-        theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
-        Eigen::Vector2d error_vector = (position_2d - arc_center).normalized();
+        Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
+        if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+          Eigen::Vector3d rotational_vector(0.0, 0.0, segment.curvature / std::abs(segment.curvature));
+          Eigen::Vector3d segment_start_tangent = (segment.states.front().velocity).normalized();
+          Eigen::Vector3d arc_center_3d =
+              segment_start + (1 / std::abs(segment.curvature)) * segment_start_tangent.cross(rotational_vector);
+
+          arc_center = Eigen::Vector2d(arc_center_3d(0), arc_center_3d(1));
+          Eigen::Vector2d start_vector = (segment_start_2d - arc_center).normalized();
+          Eigen::Vector2d position_vector = position_2d - arc_center;
+          double angle_pos =
+              std::atan2(position_vector(1), position_vector(0)) - std::atan2(start_vector(1), start_vector(0));
+          while ((angle_pos < 0.0) || (angle_pos > 2 * M_PI)) {
+            if (angle_pos < 0.0) {
+              angle_pos += 2 * M_PI;
+            } else {
+              angle_pos -= 2 * M_PI;
+            }
+          }
+          theta = angle_pos / (2 * M_PI);
+        } else {
+          arc_center = segment.getArcCenter(segment_start_2d, segment_end_2d, segment.curvature);
+          theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
+        }
         Eigen::Vector2d closest_point_2d =
             std::abs(1 / segment.curvature) * (position_2d - arc_center).normalized() + arc_center;
         closest_point = Eigen::Vector3d(closest_point_2d(0), closest_point_2d(1),
                                         theta * segment_end(2) + (1 - theta) * segment_start(2));
+        Eigen::Vector2d error_vector = (closest_point_2d - arc_center).normalized();  // Position to error vector
         tangent = Eigen::Vector3d((segment.curvature / std::abs(segment.curvature)) * error_vector(1),
                                   (segment.curvature / std::abs(segment.curvature)) * -error_vector(0), 0.0);
       }
@@ -203,13 +233,21 @@ class TrajectorySegments {
       tangent(2) =
           std::min(std::max(altitude_correction - segment.climb_rate, max_climb_rate_control_), max_sink_rate_control_);
       curvature = segment.curvature;
-      if (theta < 0.0) {
+      if (theta <= 0.0) {
         /// theta can be negative on the start of the next segment
-        continue;
+        closest_point = segment_start;
+        tangent = (segment.states.front().velocity).normalized();
+        return;
       } else if ((theta < 1.0)) {
         return;
+      } else {
+        closest_point = segment_end;
+        tangent = (segment.states.back().velocity).normalized();
+        // Consider that the segment is tracked
+        segment.reached = true;
       }
     }
+    // TODO: Handle the case when all segments are marked as reached
   }
 
   Eigen::Vector3d getEndofCurrentSegment(const Eigen::Vector3d &position) {
@@ -233,22 +271,19 @@ class TrajectorySegments {
         theta = segment.getLineProgress(position, segment_start, segment_end);
       } else {
         // Compute closest point on a Arc segment
-        Eigen::Vector2d arc_center;
         Eigen::Vector2d position_2d(position(0), position(1));
         Eigen::Vector2d segment_start_2d(segment_start(0), segment_start(1));
         Eigen::Vector2d segment_end_2d(segment_end(0), segment_end(1));
+        Eigen::Vector2d arc_center = segment.getArcCenter(segment_start_2d, segment_end_2d, segment.curvature);
         theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
       }
       if (theta < 0.0) {
-        continue;
+        return segment;
       } else if ((theta < 1.0)) {
         return segment;
       }
     }
-    if (theta > 1.0)
-      return segments.back();
-    else
-      return segments.front();
+    return segments.back();
   }
 
   bool valid() { return validity; }
