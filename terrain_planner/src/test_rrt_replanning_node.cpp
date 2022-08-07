@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
 
   // Repeatedly publish results
   while (true) {
-    planner->Solve(start, start_vel, goal, path);
+    planner->solve(1.0, start, goal, path);
     terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
     grid_map_msgs::GridMap message;
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
