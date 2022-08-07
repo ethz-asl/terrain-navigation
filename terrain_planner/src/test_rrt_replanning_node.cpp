@@ -86,8 +86,9 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
   std::vector<unsigned int> edge_list;
 
   // Create states, a marker and a list to store edges
-  ompl::base::ScopedState<ompl::base::RealVectorStateSpace> vertex(problem_setup->getSpaceInformation());
-  ompl::base::ScopedState<ompl::base::RealVectorStateSpace> neighbor_vertex(problem_setup->getSpaceInformation());
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> vertex(problem_setup->getSpaceInformation());
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> neighbor_vertex(
+      problem_setup->getSpaceInformation());
   size_t marker_idx{0};
   for (size_t i = 0; i < planner_data->numVertices(); i++) {
     visualization_msgs::Marker marker;
