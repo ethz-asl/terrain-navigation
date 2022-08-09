@@ -29,9 +29,9 @@ class TerrainOmplRrt {
   void setMap(std::shared_ptr<TerrainMap> map) { map_ = std::move(map); }
   bool Solve(double time_budget, TrajectorySegments& path);
   bool Solve(double time_budget, std::vector<Eigen::Vector3d>& path);
-  void solutionPathToTrajectorySegments(ompl::geometric::PathGeometric& path,
+  void solutionPathToTrajectorySegments(ompl::geometric::PathGeometric path,
                                         TrajectorySegments& trajectory_segments) const;
-  void solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric& path,
+  void solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric path,
                                       std::vector<Eigen::Vector3d>& trajectory_points) const;
   std::shared_ptr<ompl::base::PlannerData> getPlannerData() { return planner_data_; };
   std::shared_ptr<ompl::OmplSetup> getProblemSetup() { return problem_setup_; };
@@ -39,6 +39,16 @@ class TerrainOmplRrt {
     return std::make_shared<ompl::TerrainStateSampler>(space, map_->getGridMap());
   }
   double getSolutionTime() { return solve_duration_; };
+  static Eigen::Vector3d dubinsairplanePosition(ompl::base::State* state_ptr) {
+    Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
+                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
+                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
+    return position;
+  }
+  static double dubinsairplaneYaw(ompl::base::State* state_ptr) {
+    double yaw = state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getYaw();
+    return yaw;
+  }
 
  private:
   std::shared_ptr<ompl::OmplSetup> problem_setup_;

@@ -125,7 +125,7 @@ bool TerrainOmplRrt::Solve(double time_budget, std::vector<Eigen::Vector3d>& pat
   return false;
 }
 
-void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeometric& path,
+void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeometric path,
                                                       TrajectorySegments& trajectory_segments) const {
   trajectory_segments.segments.clear();
   path.interpolate();
@@ -134,13 +134,14 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
   Trajectory trajectory;
   double prev_curvature = std::numeric_limits<double>::infinity();
   bool is_arc_segment{false};
+  double maximum_curvature = 1 / problem_setup_->getGeometricComponentStateSpace()
+                                     ->as<fw_planning::spaces::DubinsAirplane2StateSpace>()
+                                     ->getMinTurningRadius();
   Eigen::Vector3d prev_position{Eigen::Vector3d::Zero()};  // TODO: Invalidate with nans?
   for (ompl::base::State* state_ptr : state_vector) {
     // Get states from solution path
-    Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
-                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
-                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
-    double yaw = state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getYaw();
+    Eigen::Vector3d position = dubinsairplanePosition(state_ptr);
+    double yaw = dubinsairplaneYaw(state_ptr);
 
     if (prev_position.norm() < 0.1) {
       // First segment
@@ -166,7 +167,7 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
     double curvature{0.0};
     if (std::abs(yaw - heading) > 0.0000001) {  // Arc segments
                                                 /// TODO: Get curvature from planner
-      curvature = 0.015 * (heading - yaw) / std::abs(heading - yaw);
+      curvature = maximum_curvature * (heading - yaw) / std::abs(heading - yaw);
     } else {  // Straight segments
       curvature = 0.0;
     }
@@ -192,7 +193,7 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
   }
 }
 
-void TerrainOmplRrt::solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric& path,
+void TerrainOmplRrt::solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric path,
                                                     std::vector<Eigen::Vector3d>& trajectory_points) const {
   trajectory_points.clear();
   path.interpolate();
@@ -201,9 +202,7 @@ void TerrainOmplRrt::solutionPathToTrajectoryPoints(ompl::geometric::PathGeometr
   std::vector<ompl::base::State*>& state_vector = path.getStates();
 
   for (ompl::base::State* state_ptr : state_vector) {
-    trajectory_points.emplace_back(
-        Eigen::Vector3d(state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
-                        state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
-                        state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ()));
+    auto position = dubinsairplanePosition(state_ptr);
+    trajectory_points.emplace_back(position);
   }
 }

@@ -275,6 +275,7 @@ class TrajectorySegments {
         Eigen::Vector2d segment_end_2d(segment_end(0), segment_end(1));
         Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
         if ((segment_start_2d - segment_end_2d).norm() < epsilon_) {
+          // This is a special logic to handle when the arc segment start and end position is identical
           Eigen::Vector3d rotational_vector(0.0, 0.0, segment.curvature / std::abs(segment.curvature));
           Eigen::Vector3d segment_start_tangent = (segment.states.front().velocity).normalized();
           Eigen::Vector3d arc_center_3d =
