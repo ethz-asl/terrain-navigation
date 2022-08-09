@@ -26,3 +26,11 @@ bool PrimitivePlanner::checkViewUtilityTree(std::shared_ptr<Primitive> primitive
 
   return true;
 }
+
+bool PrimitivePlanner::setGoalPosition(const Eigen::Vector3d position) {
+  if (maneuver_library_) {
+    maneuver_library_->setGoalPosition(position);
+    return true;
+  }
+  return false;
+}

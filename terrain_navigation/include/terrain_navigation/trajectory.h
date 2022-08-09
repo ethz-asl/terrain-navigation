@@ -177,9 +177,7 @@ class TrajectorySegments {
     closest_point = segments.front().states.front().position;
 
     // Iterate through all segments
-    int idx{0};
     for (auto &segment : segments) {
-      idx++;
       if (segment.reached && (&segment != &segments.back())) continue;
       Eigen::Vector3d segment_start = segment.states.front().position;
       Eigen::Vector3d segment_end = segment.states.back().position;
@@ -260,6 +258,7 @@ class TrajectorySegments {
   Trajectory &getCurrentSegment(const Eigen::Vector3d &position) {
     double theta{-std::numeric_limits<double>::infinity()};
     for (auto &segment : segments) {
+      if (segment.reached && (&segment != &segments.back())) continue;
       Eigen::Vector3d segment_start = segment.states.front().position;
       Eigen::Vector3d segment_end = segment.states.back().position;
       if (segment.states.size() == 1) {
@@ -274,16 +273,39 @@ class TrajectorySegments {
         Eigen::Vector2d position_2d(position(0), position(1));
         Eigen::Vector2d segment_start_2d(segment_start(0), segment_start(1));
         Eigen::Vector2d segment_end_2d(segment_end(0), segment_end(1));
-        Eigen::Vector2d arc_center = segment.getArcCenter(segment_start_2d, segment_end_2d, segment.curvature);
-        theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
+        Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
+        if ((segment_start_2d - segment_end_2d).norm() < epsilon_) {
+          Eigen::Vector3d rotational_vector(0.0, 0.0, segment.curvature / std::abs(segment.curvature));
+          Eigen::Vector3d segment_start_tangent = (segment.states.front().velocity).normalized();
+          Eigen::Vector3d arc_center_3d =
+              segment_start + (1 / std::abs(segment.curvature)) * segment_start_tangent.cross(rotational_vector);
+
+          arc_center = Eigen::Vector2d(arc_center_3d(0), arc_center_3d(1));
+          Eigen::Vector2d start_vector = (segment_start_2d - arc_center).normalized();
+          Eigen::Vector2d position_vector = position_2d - arc_center;
+          double angle_pos =
+              std::atan2(position_vector(1), position_vector(0)) - std::atan2(start_vector(1), start_vector(0));
+          while ((angle_pos < 0.0) || (angle_pos > 2 * M_PI)) {
+            if (angle_pos < 0.0) {
+              angle_pos += 2 * M_PI;
+            } else {
+              angle_pos -= 2 * M_PI;
+            }
+          }
+          theta = angle_pos / (2 * M_PI);
+        } else {
+          arc_center = segment.getArcCenter(segment_start_2d, segment_end_2d, segment.curvature);
+          theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
+        }
       }
-      if (theta < 0.0) {
+      if (theta <= 0.0) {
         return segment;
       } else if ((theta < 1.0)) {
         return segment;
+      } else {
+        segment.reached = true;
       }
     }
-    return segments.back();
   }
 
   bool valid() { return validity; }
@@ -295,88 +317,7 @@ class TrajectorySegments {
   double K_z_ = 0.5;
   double max_climb_rate_control_{-3.5};
   double max_sink_rate_control_{2.0};
-};
-
-class Primitive {
- public:
-  Primitive(Trajectory &trajectory) { segment = trajectory; };
-  virtual ~Primitive(){};
-  std::vector<std::shared_ptr<Primitive>> child_primitives;
-  Eigen::Vector3d getEndofSegmentPosition() { return segment.states.back().position; }
-  Eigen::Vector3d getEndofSegmentVelocity() { return segment.states.back().velocity; }
-  bool valid() { return validity; }
-  bool has_child() { return !child_primitives.empty(); }
-  bool has_validchild() {
-    if (!has_child()) {
-      return true;
-    } else {
-      for (auto &child : child_primitives) {
-        if (child->valid()) return true;
-      }
-      return false;
-    }
-  }
-  std::vector<TrajectorySegments> getMotionPrimitives() {
-    std::vector<TrajectorySegments> all_primitives;
-    if (has_child()) {
-      std::vector<TrajectorySegments> extended_primitives;
-      for (auto &child : child_primitives) {
-        extended_primitives = child->getMotionPrimitives();
-        // Append current segment
-        for (auto &primitive : extended_primitives) {
-          primitive.prependSegment(segment);
-          all_primitives.push_back(primitive);
-        }
-      }
-      return all_primitives;
-    } else {  // Append primitive segments
-      TrajectorySegments trajectory_segments;
-      trajectory_segments.appendSegment(segment);
-      trajectory_segments.validity = validity;
-      trajectory_segments.utility = (visits < 1) ? 0.0 : utility / visits;
-      all_primitives.push_back(trajectory_segments);
-    }
-    return all_primitives;
-  }
-
-  std::shared_ptr<Primitive> getBestChild() {
-    int best_idx{0};
-    double best_ucb{-1};
-    double c{0.0001};
-    for (size_t i = 0; i < child_primitives.size(); i++) {
-      std::shared_ptr<Primitive> child = child_primitives[i];
-      if (child->visits < 1) continue;
-      double upper_confidence_bound =
-          child->utility / child->visits + c * std::sqrt(2.0 * std::log(visits) / child->visits);
-      if (upper_confidence_bound > best_ucb) {
-        best_idx = i;
-        best_ucb = upper_confidence_bound;
-      }
-    }
-
-    /// TODO: Safe guard against empty child
-    return child_primitives[best_idx];
-  }
-
-  std::shared_ptr<Primitive> getRandomChild() {
-    int num_child = child_primitives.size();
-    /// TODO: Safe guard against empty child
-    return child_primitives[std::rand() % num_child];
-  }
-  std::shared_ptr<Primitive> getValidChild() {
-    for (auto &child : child_primitives) {
-      if (child->valid()) return child;
-    }
-  }
-  int depth{0};
-  double utility{0.0};
-  int visits{0};
-  // A primitive is not valid if none of the child primitives are valid
-  bool validity{true};
-  bool evaluation{false};
-  Trajectory segment;
-
- private:
+  double epsilon_{15.0 * 0.1};
 };
 
 #endif

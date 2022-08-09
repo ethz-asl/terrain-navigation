@@ -270,8 +270,11 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
       break;
     }
     case PLANNER_MODE::EXHAUSTIVE:
+      primitive_planner_->setGoalPosition(goal_pos_);
       reference_primitive_ =
           primitive_planner_->solve(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
+      publishCandidateManeuvers(primitive_planner_->getMotionPrimitives());
+
       break;
     case PLANNER_MODE::RANDOM:
     default:
@@ -284,7 +287,6 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   }
 
   double planner_time = planner_profiler_->toc();
-  publishCandidateManeuvers(maneuver_library_->getMotionPrimitives());
   publishTrajectory(reference_primitive_.position());
   MapPublishOnce();
   publishGoal(maneuver_library_->getGoalPosition());

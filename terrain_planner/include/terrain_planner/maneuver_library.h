@@ -39,8 +39,8 @@
 #ifndef TERRAIN_PLANNER_MANEUVER_LIBRARY_H
 #define TERRAIN_PLANNER_MANEUVER_LIBRARY_H
 
+#include "terrain_navigation/primitive.h"
 #include "terrain_navigation/terrain_map.h"
-#include "terrain_navigation/trajectory.h"
 #include "terrain_navigation/viewpoint.h"
 
 #include <Eigen/Dense>

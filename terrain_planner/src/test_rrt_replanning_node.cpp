@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
   std::vector<Eigen::Vector3d> path;
   planner->setupProblem(start, start_vel, goal);
   while (true) {
-    planner->solve(1.0, start, goal, path);
+    planner->Solve(1.0, path);
     terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
     grid_map_msgs::GridMap message;
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);

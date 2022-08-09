@@ -276,9 +276,9 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
 TrajectorySegments ManeuverLibrary::getBestPrimitive() {
   /// TODO: Implement best first search on tree
   TrajectorySegments primitive;
-
   // Calculate utilities of each primitives
   for (auto &trajectory : valid_primitives_) {
+    if (!trajectory.valid()) continue;
     // Calculate goal utility
     Eigen::Vector3d end_pos = trajectory.lastSegment().states.back().position;
     double terrain_altitude = end_pos(3);
