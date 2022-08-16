@@ -90,6 +90,7 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
   ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> neighbor_vertex(
       problem_setup->getSpaceInformation());
   size_t marker_idx{0};
+  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplane2StateSpace>();
   for (size_t i = 0; i < planner_data->numVertices(); i++) {
     visualization_msgs::Marker marker;
     marker.header.stamp = ros::Time().now();
@@ -100,14 +101,14 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
     marker.pose.position.x = vertex[0];
     marker.pose.position.y = vertex[1];
     marker.pose.position.z = vertex[2];
-    marker.pose.orientation.w = 1.0;
+    marker.pose.orientation.w = std::cos(0.5 * vertex[3]);
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.z = std::sin(0.5 * vertex[3]);
     marker.scale.x = 10.0;
-    marker.scale.y = 10.0;
-    marker.scale.z = 10.0;
-    marker.type = visualization_msgs::Marker::SPHERE;
+    marker.scale.y = 2.0;
+    marker.scale.z = 2.0;
+    marker.type = visualization_msgs::Marker::ARROW;
     marker.action = visualization_msgs::Marker::ADD;
     marker.color.a = 0.5;  // Don't forget to set the alpha!
     marker.color.r = 1.0;
@@ -117,32 +118,54 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
 
     int num_edges = planner_data->getEdges(i, edge_list);
     if (num_edges > 0) {
-      visualization_msgs::Marker edge_marker;
-      edge_marker.header.stamp = ros::Time().now();
-      edge_marker.header.frame_id = "map";
-      edge_marker.id = marker_idx++;
-      edge_marker.type = visualization_msgs::Marker::LINE_LIST;
-      edge_marker.ns = "edge";
-      std::vector<geometry_msgs::Point> points;
       for (unsigned int edge : edge_list) {
+        visualization_msgs::Marker edge_marker;
+        edge_marker.header.stamp = ros::Time().now();
+        edge_marker.header.frame_id = "map";
+        edge_marker.id = marker_idx++;
+        edge_marker.type = visualization_msgs::Marker::LINE_STRIP;
+        edge_marker.ns = "edge";
         neighbor_vertex = planner_data->getVertex(edge).getState();
-        points.push_back(toMsg(Eigen::Vector3d(vertex[0], vertex[1], vertex[2])));
+        // points.push_back(toMsg(Eigen::Vector3d(vertex[0], vertex[1], vertex[2])));
+        // points.push_back(toMsg(Eigen::Vector3d(neighbor_vertex[0], neighbor_vertex[1], neighbor_vertex[2])));
+        ompl::base::State* state = dubins_ss->allocState();
+        ompl::base::State* from = dubins_ss->allocState();
+        from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(vertex[0]);
+        from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(vertex[1]);
+        from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(vertex[2]);
+        from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(vertex[3]);
+
+        ompl::base::State* to = dubins_ss->allocState();
+        to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(neighbor_vertex[0]);
+        to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(neighbor_vertex[1]);
+        to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(neighbor_vertex[2]);
+        to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(neighbor_vertex[3]);
+
+        std::vector<geometry_msgs::Point> points;
+        for (double t = 0.0; t <= 1.0; t += 0.02) {
+          dubins_ss->interpolate(from, to, t, state);
+          auto interpolated_state =
+              Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
+                              state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
+                              state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
+          points.push_back(toMsg(interpolated_state));
+        }
         points.push_back(toMsg(Eigen::Vector3d(neighbor_vertex[0], neighbor_vertex[1], neighbor_vertex[2])));
+        edge_marker.points = points;
+        edge_marker.action = visualization_msgs::Marker::ADD;
+        edge_marker.pose.orientation.w = 1.0;
+        edge_marker.pose.orientation.x = 0.0;
+        edge_marker.pose.orientation.y = 0.0;
+        edge_marker.pose.orientation.z = 0.0;
+        edge_marker.scale.x = 1.0;
+        edge_marker.scale.y = 1.0;
+        edge_marker.scale.z = 1.0;
+        edge_marker.color.a = 0.5;  // Don't forget to set the alpha!
+        edge_marker.color.r = 1.0;
+        edge_marker.color.g = 1.0;
+        edge_marker.color.b = 0.0;
+        marker_array.markers.push_back(edge_marker);
       }
-      edge_marker.points = points;
-      edge_marker.action = visualization_msgs::Marker::ADD;
-      edge_marker.pose.orientation.w = 1.0;
-      edge_marker.pose.orientation.x = 0.0;
-      edge_marker.pose.orientation.y = 0.0;
-      edge_marker.pose.orientation.z = 0.0;
-      edge_marker.scale.x = 1.0;
-      edge_marker.scale.y = 1.0;
-      edge_marker.scale.z = 1.0;
-      edge_marker.color.a = 0.5;  // Don't forget to set the alpha!
-      edge_marker.color.r = 1.0;
-      edge_marker.color.g = 1.0;
-      edge_marker.color.b = 0.0;
-      marker_array.markers.push_back(edge_marker);
     }
   }
   pub.publish(marker_array);
