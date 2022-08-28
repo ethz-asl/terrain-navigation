@@ -100,9 +100,6 @@ int main(int argc, char **argv) {
 
     Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
-    grid_map::Polygon offset_polygon = polygon;
-    offset_polygon.offsetInward(1.0);
-    Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
 
     Eigen::Vector3d vehicle_pos(start_pos_2d(0), start_pos_2d(1), 100.0);
     double elevation = adaptive_viewutility->getViewUtilityMap()->getGridMap().atPosition(

@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_msgs
   grid_map_ros
   grid_map_pcl
+  grid_map_geo
   adaptive_viewutility
   terrain_navigation
 )
