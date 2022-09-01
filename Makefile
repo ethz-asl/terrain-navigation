@@ -46,3 +46,4 @@ clean: clean-dataset
 	rm -f output/*.bag
 	rm -f output/*.png
 	rm -f output/*.csv
+	rm -f output/*.txt

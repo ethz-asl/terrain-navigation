@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(airsim_client)
 
-add_definitions(-std=c++14)
+add_definitions(-std=c++17)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
