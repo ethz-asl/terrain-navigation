@@ -70,7 +70,7 @@ void AirsimClient::getPose(Eigen::Vector3d &position, Eigen::Vector4d &attitude)
   attitude << att_camera(0), att_camera(1), -att_camera(2), -att_camera(3);
 }
 
-void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att) {
+void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att, std::string &file_name) {
   /// Airsim coordinate system is defined in NED. Therefore, we need to tranform our coordinates into NED from ENU
   Eigen::Vector4d att_ned(att(0), att(1), -att(2), -att(3));
   Eigen::Vector4d q_camera = Eigen::Vector4d(std::cos(-0.25 * M_PI), 0.0, std::sin(-0.25 * M_PI), 0.0);
@@ -98,8 +98,8 @@ void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &at
       memcpy(cv_image.data, image_info.image_data_uint8.data(), image_info.image_data_uint8.size() * sizeof(char));
 
       if (image_directory_path_ != "") {
-        std::string file_path =
-            common_utils::FileSystem::combine(image_directory_path_, std::to_string(image_info.time_stamp));
+        file_name = std::to_string(image_info.time_stamp);
+        std::string file_path = common_utils::FileSystem::combine(image_directory_path_, file_name) + ".jpeg";
 
         imwrite(file_path + ".jpeg", cv_image);  // A JPG FILE IS BEING SAVED
 

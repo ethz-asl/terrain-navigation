@@ -53,9 +53,9 @@ struct Metrics {
 
 class PerformanceTracker {
  public:
-  PerformanceTracker(int id = 0);
+  PerformanceTracker();
   virtual ~PerformanceTracker();
-  double Record(const double simulation_time, const grid_map::GridMap& gridmap);
+  Metrics Record(const double simulation_time, const grid_map::GridMap& gridmap);
   void Output(const std::string path);
 
  private:

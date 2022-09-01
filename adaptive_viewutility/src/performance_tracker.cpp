@@ -40,11 +40,11 @@
 #include <fstream>
 #include <iostream>
 
-PerformanceTracker::PerformanceTracker(int id) { id_ = id; }
+PerformanceTracker::PerformanceTracker() {}
 
 PerformanceTracker::~PerformanceTracker() {}
 
-double PerformanceTracker::Record(const double simulation_time, const grid_map::GridMap& gridmap) {
+Metrics PerformanceTracker::Record(const double simulation_time, const grid_map::GridMap& gridmap) {
   int coverage_count{0};
   double map_quality{0.0};
 
@@ -71,9 +71,7 @@ double PerformanceTracker::Record(const double simulation_time, const grid_map::
   metric.quality = map_quality * cell_area / roi_area;
   performance_metrics_.push_back(metric);
 
-  double average_map_quality = metric.quality;
-
-  return average_map_quality;
+  return metric;
 }
 
 void PerformanceTracker::Output(const std::string path) {

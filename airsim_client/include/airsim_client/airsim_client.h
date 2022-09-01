@@ -72,7 +72,11 @@ class AirsimClient {
   virtual ~AirsimClient();
   static Eigen::Matrix3d quat2RotMatrix(const Eigen::Vector4d &q);
   static Eigen::Vector4d quatMultiplication(const Eigen::Vector4d &q, const Eigen::Vector4d &p);
-  void setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att);
+  void setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att) {
+    std::string file_path;
+    setPose(pos, att, file_path);
+  };
+  void setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &att, std::string &file_name);
   void setImageDirectory(const std::string &image_directory) { image_directory_path_ = image_directory; };
   void getPose(Eigen::Vector3d &position, Eigen::Vector4d &attitude);
   Eigen::Vector3d getPlayerStart() { return player_start_; };

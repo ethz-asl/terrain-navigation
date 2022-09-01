@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 
     Profiler pipeline_perf("Planner Loop");
-    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>(i);
+    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
 
     bool terminate_mapping = false;
     double simulated_time{0.0};
@@ -252,8 +252,7 @@ int main(int argc, char **argv) {
       simulated_time += planning_horizon;
       increment++;
 
-      double map_quality =
-          performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
+      performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
       if (increment % snapshot_increment == 0) {
         std::string saved_map_path = image_directory + "/gridmap_" +
                                      std::to_string(static_cast<int>(increment / snapshot_increment) - 1) + ".bag";
@@ -261,8 +260,6 @@ int main(int argc, char **argv) {
                                                  saved_map_path, "/grid_map");
       }
     }
-    std::string benchmark_file_path = output_dir_path + "/benchmark.csv";
-    performance_tracker->Output(benchmark_file_path);
     std::string saved_map_path = image_directory + "/gridmap" + ".bag";
     grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
                                              "/grid_map");
@@ -272,6 +269,7 @@ int main(int argc, char **argv) {
     std::cout << "[TestRandomAirsimNode] Executed view set path: " << executed_view_set_path << std::endl;
     OutputViewset(executed_viewset, executed_view_set_path);
   }
+  std::string benchmark_file_path = output_dir_path + "/benchmark.csv";
   std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
 
   ros::spin();

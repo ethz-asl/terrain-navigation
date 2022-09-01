@@ -51,8 +51,11 @@ class DataLogger {
   DataLogger();
   virtual ~DataLogger();
   std::vector<std::string> getKeys() { return keys_; };
+  void setPrintHeader(bool header) { print_header_ = header; };
   void addKey(const std::string key) { keys_.push_back(key); };
   void setKeys(const std::vector<std::string> keys) { keys_ = keys; };
+  int count() { return data_list_.size(); };
+  std::vector<std::unordered_map<std::string, std::any>> data() { return data_list_; };
   void setSeparator(const std::string separator) { field_seperator = separator; };
   void record(const std::unordered_map<std::string, std::any> data);
   void writeToFile(const std::string path);
@@ -62,7 +65,7 @@ class DataLogger {
   std::vector<std::string> keys_;
   std::vector<std::unordered_map<std::string, std::any>> data_list_;
   bool print_header_{false};
-  std::string field_seperator{" "};
+  std::string field_seperator{","};
 };
 
 #endif

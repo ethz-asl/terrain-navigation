@@ -8,10 +8,11 @@ import sys
 import yaml
 
 def plotCoverage(fig, data_df, name):
-    experiment_id = np.array(data_df["id"])
     timestamp = np.array(data_df["timestamp"])
     map_coverage = np.array(data_df["coverage"])
-    map_quality = np.array(data_df["quality"])
+    map_coverage_variance = np.sqrt(np.array(data_df["coverage_variance"]))
+    fig.fill_between(timestamp, map_coverage - map_coverage_variance, map_coverage + map_coverage_variance, alpha=0.2)
+    # TODO: Add plotting variance on coverage
 
     fig.plot(timestamp, map_coverage, label=name)
     fig.set_title("Map Coverage")
@@ -21,12 +22,14 @@ def plotCoverage(fig, data_df, name):
     fig.grid(True)
 
 def plotQuality(fig, data_df, name):
-    experiment_id = np.array(data_df["id"])
     timestamp = np.array(data_df["timestamp"])
-    map_coverage = np.array(data_df["coverage"])
     map_quality = np.array(data_df["quality"])
+    map_quality_variance = np.sqrt(np.array(data_df["quality_variance"]))
+
+    # TODO: Add plotting quality on coverage
 
     fig.plot(timestamp, map_quality, label=name)
+    fig.fill_between(timestamp, map_quality - map_quality_variance, map_quality + map_quality_variance, alpha=0.2)
     fig.set_title("Map Quality")
     fig.set_xlabel('Time [s]')
     fig.set_ylabel('Quality')
@@ -45,7 +48,7 @@ with open(sys.argv[1]) as file:
     # scalar values to Python the dictionary format
     list = yaml.load(file, Loader=yaml.FullLoader)
     for key, value in list.items():
-        data_df = pd.read_csv(value['progress'])
+        data_df = pd.read_csv(value['path'])
         plotCoverage(axis1, data_df, value['name'])
         plotQuality(axis2, data_df, value['name'])
 
