@@ -30,9 +30,9 @@ def plotQuality(fig, data_df, name):
 
     fig.plot(timestamp, map_quality, label=name)
     fig.fill_between(timestamp, map_quality - map_quality_variance, map_quality + map_quality_variance, alpha=0.2)
-    fig.set_title("Map Quality")
+    fig.set_title("Map Uncertainty")
     fig.set_xlabel('Time [s]')
-    fig.set_ylabel('Quality')
+    fig.set_ylabel('Uncertainty')
     fig.legend(loc='lower right')
     fig.grid(True)
 

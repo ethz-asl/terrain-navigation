@@ -2,8 +2,8 @@
     <arg name="visualization" default="true"/>
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="adaptive_viewutility" type="test_grid_node" name="test_grid" output="screen">
-        <param name="file_path" value="/home/jaeyoung/dev/mesh/q_max_06/groundtruth_roi_meshlab.obj"/>
-        <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
+        <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
+        <param name="result_directory" value="$(find adaptive_viewutility)/../output"/>
         <param name="max_experiment_duration" value="1000"/>
     </node>
 
