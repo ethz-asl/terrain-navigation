@@ -73,7 +73,6 @@ int main(int argc, char **argv) {
     adaptive_viewutility->LoadMap(file_path);
 
     ros::Time start_time_ = ros::Time::now();
-    double start_time_seconds_ = 0.0;
 
     /// set Current state of vehicle
 
@@ -104,7 +103,16 @@ int main(int argc, char **argv) {
     grid_map::Polygon offset_polygon = polygon;
     offset_polygon.offsetInward(1.0);
 
+    double simulated_time{0.0};
+
+    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 0.0);
+    Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
+    adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+    Eigen::Vector2d vehicle_startpos_2d{Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1))};
+
     Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
+
+    simulated_time += (start_pos_2d - vehicle_startpos_2d).norm() / vehicle_vel.norm();
 
     // Run sweep segments until the boundary
     double view_distance = 51.6;
@@ -125,7 +133,6 @@ int main(int argc, char **argv) {
     bool terminate_mapping = false;
     double planning_horizon = 2.0;
     double turning_time = 10.0;
-    double simulated_time{0.0};
     bool survey_finished{false};
 
     auto data_logger = std::make_shared<DataLogger>();
