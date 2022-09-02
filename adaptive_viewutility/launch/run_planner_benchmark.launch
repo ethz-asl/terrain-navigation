@@ -5,7 +5,7 @@
         <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
         <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
         <param name="num_experiments" value="10"/>
-        <param name="max_experiment_duration" value="150"/>
+        <param name="max_experiment_duration" value="200"/>
         <param name="result_directory" value="$(find adaptive_viewutility)/../output"/>
     </node>
     <group if="$(arg visualization)">

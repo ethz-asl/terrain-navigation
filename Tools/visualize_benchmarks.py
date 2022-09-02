@@ -33,7 +33,7 @@ def plotQuality(fig, data_df, name):
     fig.set_title("Map Uncertainty")
     fig.set_xlabel('Time [s]')
     fig.set_ylabel('Uncertainty')
-    fig.legend(loc='lower right')
+    fig.legend(loc='upper right')
     fig.grid(True)
 
 

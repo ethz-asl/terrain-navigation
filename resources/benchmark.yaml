@@ -1,8 +1,12 @@
-active:
-  name: "Ours"
-  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/benchmark.txt"
+coverage_optimal:
+  name: "Coverage Pattern"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/data/coverage.txt"
 
-# coverage:
-#   name: "Coverage Pattern"
-#   path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/benchmark_1.csv"
+coverage:
+  name: "Coverage Benchmark"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/data/coverage_benchmark.txt"
+
+active:
+  name: "Active Mapping"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/data/active_benchmark.txt"
 

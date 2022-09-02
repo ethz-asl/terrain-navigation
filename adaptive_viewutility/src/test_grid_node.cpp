@@ -56,8 +56,6 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
-  std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
-
   std::vector<std::shared_ptr<DataLogger>> benchmark_results;
 
   std::string file_path, result_directory;
@@ -69,6 +67,7 @@ int main(int argc, char **argv) {
   nh_private.param<int>("num_experiments", num_experiments, num_experiments);
 
   for (int i = 0; i < num_experiments; i++) {
+    std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
     // Add elevation map from GeoTIFF file defined in path
     adaptive_viewutility->LoadMap(file_path);
 
@@ -112,8 +111,6 @@ int main(int argc, char **argv) {
 
     Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
 
-    simulated_time += (start_pos_2d - vehicle_startpos_2d).norm() / vehicle_vel.norm();
-
     // Run sweep segments until the boundary
     double view_distance = 51.6;
     double altitude = 100.0;
@@ -138,8 +135,18 @@ int main(int argc, char **argv) {
     auto data_logger = std::make_shared<DataLogger>();
     data_logger->setKeys({"timestamp", "coverage", "quality"});
 
+    bool survey_start = true;
+
     while (true) {
-      if (!survey_finished) {
+      if (survey_start) {
+        double traverse_time = (start_pos_2d - vehicle_startpos_2d).norm() / vehicle_vel.norm();
+        simulated_time += planning_horizon;
+        Trajectory reference_trajectory;
+        adaptive_viewutility->UpdateUtility(reference_trajectory);
+        if (simulated_time > traverse_time) {
+          survey_start = false;
+        }
+      } else if (!survey_finished) {
         Trajectory reference_trajectory;
         Eigen::Vector2d vehicle_vel_2d = 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
 
@@ -194,6 +201,7 @@ int main(int argc, char **argv) {
     benchmark_results.emplace_back(data_logger);
   }
 
+  std::cout << "Running evaluations: " << std::endl;
   // Evaluate benchmark results
   auto results_logger = std::make_shared<DataLogger>();
   results_logger->setPrintHeader(true);
@@ -206,14 +214,23 @@ int main(int argc, char **argv) {
     double coverage_mean{0.0};
     double quality_squared{0.0};
     double coverage_squared{0.0};
+    int data_count{1};
     for (auto &result : benchmark_results) {
-      double quality = std::any_cast<double &>(result->data()[i].at("quality"));
-      quality_mean += quality * (1.0 / benchmark_results.size());
-      quality_squared += std::pow(quality, 2) * (1.0 / benchmark_results.size());
-      double coverage = std::any_cast<double &>(result->data()[i].at("coverage"));
-      coverage_mean += coverage * (1.0 / benchmark_results.size());
-      coverage_squared += std::pow(coverage, 2) * (1.0 / benchmark_results.size());
+      if (i < result->data().size()) {
+        double quality = std::any_cast<double &>(result->data()[i].at("quality"));
+        quality_mean += quality;
+        quality_squared += std::pow(quality, 2);
+        double coverage = std::any_cast<double &>(result->data()[i].at("coverage"));
+        coverage_mean += coverage;
+        coverage_squared += std::pow(coverage, 2);
+        data_count++;
+      }
     }
+    quality_mean = quality_mean /data_count;
+    coverage_mean = coverage_mean /data_count;
+    quality_squared = quality_squared /data_count;
+    coverage_squared = coverage_squared /data_count;
+
     double quality_variance = quality_squared - std::pow(quality_mean, 2);
     double coverage_variance = coverage_squared - std::pow(coverage_mean, 2);
     std::unordered_map<std::string, std::any> average;
@@ -224,8 +241,7 @@ int main(int argc, char **argv) {
     average.insert(std::pair<std::string, double>("coverage_variance", coverage_variance));
     results_logger->record(average);
   }
-
-  std::string benchmark_output_path = result_directory + "/benchmark.txt";
+  std::string benchmark_output_path = result_directory + "/coverage_benchmark.txt";
   results_logger->writeToFile(benchmark_output_path);
   std::cout << "[TestGridNode] Grid Planner Terminated" << std::endl;
 

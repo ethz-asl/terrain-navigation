@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
     results_logger->record(average);
   }
 
-  std::string benchmark_output_path = result_directory + "/benchmark.txt";
+  std::string benchmark_output_path = result_directory + "/active_benchmark.txt";
   results_logger->writeToFile(benchmark_output_path);
   std::cout << "[TestPlannerNode] Benchmark terminated" << std::endl;
   ros::spin();
