@@ -109,26 +109,10 @@ int main(int argc, char **argv) {
     data_logger->setKeys({"timestamp", "coverage", "quality"});
 
     while (true) {
+      
       pipeline_perf.tic();
-      adaptive_viewutility->generateMotionPrimitives();
-
-      adaptive_viewutility->estimateViewUtility();
-
-      Trajectory reference_trajectory = adaptive_viewutility->getBestPrimitive();
-
-      Trajectory first_segment;
-      for (int i = 0; i < 5; i++) {
-        first_segment.states.push_back(reference_trajectory.states[i]);
-      }
-
-      adaptive_viewutility->UpdateUtility(first_segment);
-
-      adaptive_viewutility->setCurrentState(first_segment.states.back().position, first_segment.states.back().velocity);
-
+      adaptive_viewutility->runSingleStep();
       pipeline_perf.toc();
-      adaptive_viewutility->MapPublishOnce();
-      adaptive_viewutility->ViewpointPublishOnce();
-      adaptive_viewutility->publishViewpointHistory();
 
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
       simulated_time += planning_horizon;

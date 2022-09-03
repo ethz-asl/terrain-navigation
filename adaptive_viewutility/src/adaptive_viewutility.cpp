@@ -372,3 +372,23 @@ visualization_msgs::Marker AdaptiveViewUtility::trajectory2MarkerMsg(Trajectory 
   marker.color.b = 0.0;
   return marker;
 }
+
+void AdaptiveViewUtility::runSingleStep() {
+  generateMotionPrimitives();
+  estimateViewUtility();
+
+  Trajectory reference_trajectory = getBestPrimitive();
+
+  Trajectory first_segment;
+  for (int i = 0; i < 5; i++) {
+    first_segment.states.push_back(reference_trajectory.states[i]);
+  }
+
+  UpdateUtility(first_segment);
+
+  setCurrentState(first_segment.states.back().position, first_segment.states.back().velocity);
+  
+  MapPublishOnce();
+  ViewpointPublishOnce();
+  publishViewpointHistory();
+}
