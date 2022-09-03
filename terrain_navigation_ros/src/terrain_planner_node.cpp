@@ -37,7 +37,7 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner/terrain_planner.h"
+#include "terrain_navigation_ros/terrain_planner.h"
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "terrain_planner");

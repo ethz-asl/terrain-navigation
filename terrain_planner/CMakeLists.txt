@@ -20,7 +20,6 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_ros
   grid_map_pcl
   grid_map_geo
-  interactive_markers
   terrain_navigation
   adaptive_viewutility
 )
@@ -46,7 +45,6 @@ include_directories(
 
 add_library(${PROJECT_NAME}
   src/maneuver_library.cpp
-  src/terrain_planner.cpp
   src/mcts_planner.cpp
   src/primitive_planner.cpp
   src/terrain_ompl.cpp
@@ -60,12 +58,6 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${
 ############
 # BINARIES #
 ############
-add_executable(terrain_planner_node
-  src/terrain_planner_node.cpp
-)
-add_dependencies(terrain_planner_node terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(terrain_planner_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
-
 add_executable(test_distance_surface
   src/test_distance_surface.cpp
 )

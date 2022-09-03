@@ -37,7 +37,7 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner/terrain_planner.h"
+#include "terrain_planner/maneuver_library.h"
 
 #include <grid_map_msgs/GridMap.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>

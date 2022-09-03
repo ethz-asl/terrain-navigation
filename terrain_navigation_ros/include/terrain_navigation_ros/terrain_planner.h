@@ -51,8 +51,6 @@
 #include <mavros_msgs/CameraImageCaptured.h>
 #include <mavros_msgs/State.h>
 #include <nav_msgs/Path.h>
-#include <planner_msgs/SetString.h>
-#include <planner_msgs/SetVector3.h>
 #include <visualization_msgs/Marker.h>
 
 #include <Eigen/Dense>
@@ -63,6 +61,9 @@
 #include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/mcts_planner.h"
 #include "terrain_planner/primitive_planner.h"
+
+#include <planner_msgs/SetString.h>
+#include <planner_msgs/SetVector3.h>
 
 enum class SETPOINT_MODE { STATE, PATH };
 

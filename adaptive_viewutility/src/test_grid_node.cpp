@@ -226,10 +226,10 @@ int main(int argc, char **argv) {
         data_count++;
       }
     }
-    quality_mean = quality_mean /data_count;
-    coverage_mean = coverage_mean /data_count;
-    quality_squared = quality_squared /data_count;
-    coverage_squared = coverage_squared /data_count;
+    quality_mean = quality_mean / data_count;
+    coverage_mean = coverage_mean / data_count;
+    quality_squared = quality_squared / data_count;
+    coverage_squared = coverage_squared / data_count;
 
     double quality_variance = quality_squared - std::pow(quality_mean, 2);
     double coverage_variance = coverage_squared - std::pow(coverage_mean, 2);
