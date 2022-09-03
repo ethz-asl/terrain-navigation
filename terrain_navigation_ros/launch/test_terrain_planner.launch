@@ -32,7 +32,7 @@
         <arg name="gui" value="$(arg gui)"/>
     </include>
 
-    <node pkg="terrain_planner" type="terrain_planner_node" name="terrain_planner" output="screen">
+    <node pkg="terrain_navigation_ros" type="terrain_planner_node" name="terrain_planner" output="screen">
         <param name="terrain_path" value="$(find terrain_planner)/../resources/$(arg location).tif"/>
         <param name="terrain_color_path" value="$(find terrain_planner)/../resources/$(arg location)_color.tif"/>
         <param name="resource_path" value="$(find terrain_planner)/../resources"/>

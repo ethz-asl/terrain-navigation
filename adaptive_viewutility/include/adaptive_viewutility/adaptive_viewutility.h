@@ -70,10 +70,10 @@ class AdaptiveViewUtility {
   void NormalPublishOnce();
   void UpdateUtility(ViewPoint &viewpoint);
   void UpdateUtility(Trajectory &trajectory);
-  
+
   /**
    * @brief Run single step of the planning iteration
-   * 
+   *
    */
   void runSingleStep();
   void setCurrentState(const Eigen::Vector3d vehicle_pos, const Eigen::Vector3d vehicle_vel) {

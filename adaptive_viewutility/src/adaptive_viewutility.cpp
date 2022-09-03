@@ -387,7 +387,7 @@ void AdaptiveViewUtility::runSingleStep() {
   UpdateUtility(first_segment);
 
   setCurrentState(first_segment.states.back().position, first_segment.states.back().velocity);
-  
+
   MapPublishOnce();
   ViewpointPublishOnce();
   publishViewpointHistory();

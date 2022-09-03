@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(terrain_navigation_ros)
-add_definitions(-std=c++11)
+add_definitions(-std=c++17)
 
 find_package(ompl REQUIRED)
 
@@ -46,3 +46,10 @@ add_executable(terrain_planner_node
 )
 add_dependencies(terrain_planner_node ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(terrain_planner_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
+
+add_executable(visualize_path_node
+  src/visualize_path_node.cpp
+)
+add_dependencies(visualize_path_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(visualize_path_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
+

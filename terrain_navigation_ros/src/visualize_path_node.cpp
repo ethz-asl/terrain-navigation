@@ -40,14 +40,14 @@
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "adaptive_viewutility/data_logger.h"
 #include "adaptive_viewutility/performance_tracker.h"
-#include "terrain_navigation/profiler.h"
 
-void writeGridmapToImage(const grid_map::GridMap &map, const std::string layer, const std::string &file_path) {
-  cv_bridge::CvImage image;
-  grid_map::GridMapRosConverter::toCvImage(map, layer, sensor_msgs::image_encodings::MONO8, image);
-  if (!cv::imwrite(file_path.c_str(), image.image, {cv::IMWRITE_PNG_STRATEGY_DEFAULT})) {
-    std::cout << "Failed to write map to image: " << file_path << std::endl;
-  }
+void addViewpoint(Trajectory &trajectory, Eigen::Vector3d pos, Eigen::Vector3d vel, Eigen::Vector4d att) {
+  State vehicle_state;
+  vehicle_state.position = pos;
+  vehicle_state.velocity = vel * 15.0;
+  vehicle_state.attitude = att;
+  trajectory.states.push_back(vehicle_state);
+  return;
 }
 
 int main(int argc, char **argv) {
@@ -65,11 +65,7 @@ int main(int argc, char **argv) {
   nh_private.param<std::string>("result_directory", result_directory, "output");
 
   /// set Current state of vehicle
-  /// TODO: Randomly generate initial position
-  std::vector<std::shared_ptr<DataLogger>> benchmark_results;
-
-  for (int i = 0; i < num_experiments; i++) {
-    std::cout << "Starting Experiment: " << i << std::endl;
+  {
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
 
     // Add elevation map from GeoTIFF file defined in path
@@ -99,7 +95,6 @@ int main(int argc, char **argv) {
     std::cout << "  - Initial Velocity: " << vehicle_vel.transpose() << std::endl;
 
     adaptive_viewutility->setCurrentState(vehicle_pos, vehicle_vel);
-    Profiler pipeline_perf("Planner Loop");
     std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
 
     bool terminate_mapping = false;
@@ -109,9 +104,7 @@ int main(int argc, char **argv) {
     data_logger->setKeys({"timestamp", "coverage", "quality"});
 
     while (true) {
-      pipeline_perf.tic();
       adaptive_viewutility->runSingleStep();
-      pipeline_perf.toc();
 
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
       simulated_time += planning_horizon;
@@ -132,50 +125,127 @@ int main(int argc, char **argv) {
         break;
       }
     }
-    std::string elevation_output_path = result_directory + "/elevation_" + std::to_string(i) + ".png";
-    writeGridmapToImage(adaptive_viewutility->getViewUtilityMap()->getGridMap(), "elevation", elevation_output_path);
-    std::string prior_output_path = result_directory + "/geometric_prior_" + std::to_string(i) + ".png";
-    writeGridmapToImage(adaptive_viewutility->getViewUtilityMap()->getGridMap(), "geometric_prior", prior_output_path);
-    std::string saved_map_path = result_directory + "/gridmap_" + std::to_string(i) + ".bag";
-    grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
-                                             "/grid_map");
-    std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
-    benchmark_results.emplace_back(data_logger);
   }
+  // Run coverage planner
+  {
+    std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
+    // Add elevation map from GeoTIFF file defined in path
+    adaptive_viewutility->LoadMap(file_path);
 
-  // Evaluate benchmark results
-  auto results_logger = std::make_shared<DataLogger>();
-  results_logger->setPrintHeader(true);
-  results_logger->setKeys({"timestamp", "coverage", "quality", "coverage_variance", "quality_variance"});
-  std::cout << "[TestPlannerNode] Number of benchmarks: " << benchmark_results.size() << std::endl;
-  int num_data_points = benchmark_results[0]->count();
-  for (int i = 0; i < benchmark_results[0]->count(); i++) {
-    double time = std::any_cast<double &>(benchmark_results[0]->data()[i].at("timestamp"));
-    double quality_mean{0.0};
-    double coverage_mean{0.0};
-    double quality_squared{0.0};
-    double coverage_squared{0.0};
-    for (auto &result : benchmark_results) {
-      double quality = std::any_cast<double &>(result->data()[i].at("quality"));
-      quality_mean += quality * (1.0 / benchmark_results.size());
-      quality_squared += std::pow(quality, 2) * (1.0 / benchmark_results.size());
-      double coverage = std::any_cast<double &>(result->data()[i].at("coverage"));
-      coverage_mean += coverage * (1.0 / benchmark_results.size());
-      coverage_squared += std::pow(coverage, 2) * (1.0 / benchmark_results.size());
+    ros::Time start_time_ = ros::Time::now();
+
+    /// set Current state of vehicle
+
+    grid_map::Polygon polygon;
+
+    // Hah! we have access to the map reference. be careful!
+    grid_map::GridMap &map = adaptive_viewutility->getViewUtilityMap()->getGridMap();
+    const Eigen::Vector2d map_pos = map.getPosition();
+    const double map_width_x = map.getLength().x();
+    const double map_width_y = map.getLength().y();
+
+    polygon.setFrameId(map.getFrameId());
+    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
+
+    adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
+
+    // From "Huang, Wesley H. "Optimal line-sweep-based decompositions for coverage algorithms." Proceedings 2001 ICRA.
+    // IEEE International Conference on Robotics and Automation (Cat. No. 01CH37164). Vol. 1. IEEE, 2001."
+    // The optimal sweep pattern direction coinsides with the edge direction of the ROI polygon
+
+    /// TODO: Get sweep distance from sensor model
+    grid_map::Polygon offset_polygon = polygon;
+    offset_polygon.offsetInward(1.0);
+
+    double simulated_time{0.0};
+
+    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 0.0);
+    Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
+    adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+    Eigen::Vector2d vehicle_startpos_2d{Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1))};
+
+    Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
+
+    // Run sweep segments until the boundary
+    double view_distance = 51.6;
+    double altitude = 100.0;
+    Eigen::Vector2d sweep_direction = (polygon.getVertex(1) - polygon.getVertex(0)).normalized();
+    Eigen::Vector2d sweep_perpendicular = (polygon.getVertex(3) - polygon.getVertex(0)).normalized();
+
+    double dt = 2.0;
+    Eigen::Vector2d vehicle_pos_2d = start_pos_2d;
+    int max_viewpoints = 1000;  // Terminate when the number of view points exceed the maximum
+
+    // Generate a lawnmower pattern survey
+    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
+
+    bool terminate_mapping = false;
+    double planning_horizon = 2.0;
+    double turning_time = 10.0;
+    bool survey_finished{false};
+
+    auto data_logger = std::make_shared<DataLogger>();
+    data_logger->setKeys({"timestamp", "coverage", "quality"});
+
+    bool survey_start = true;
+
+    while (true) {
+      if (survey_start) {
+        double traverse_time = (start_pos_2d - vehicle_startpos_2d).norm() / vehicle_vel.norm();
+        simulated_time += planning_horizon;
+        Trajectory reference_trajectory;
+        adaptive_viewutility->UpdateUtility(reference_trajectory);
+        if (simulated_time > traverse_time) {
+          survey_start = false;
+        }
+      } else if (!survey_finished) {
+        Trajectory reference_trajectory;
+        Eigen::Vector2d vehicle_vel_2d = 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
+
+        // Generate sweep pattern
+        Eigen::Vector2d candidate_vehicle_pos_2d = vehicle_vel_2d * dt + vehicle_pos_2d;
+        if (polygon.isInside(candidate_vehicle_pos_2d)) {
+          vehicle_pos_2d = candidate_vehicle_pos_2d;
+          simulated_time += planning_horizon;
+        } else {  // Reached the other end of the vertex
+          sweep_direction = -1.0 * sweep_direction;
+          vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;  // next row
+          simulated_time += turning_time;
+
+          if (!polygon.isInside(vehicle_pos_2d)) {
+            survey_finished = true;
+            break;
+          }
+        }
+
+        double elevation = map.atPosition("elevation", vehicle_pos_2d);
+        Eigen::Vector3d vehicle_pos(vehicle_pos_2d(0), vehicle_pos_2d(1), elevation + altitude);
+        Eigen::Vector3d vehicle_vel(vehicle_vel_2d(0), vehicle_vel_2d(1), 0.0);
+        Eigen::Vector4d vehicle_att(1.0, 0.0, 0.0, 0.0);
+        adaptive_viewutility->setCurrentState(vehicle_pos, vehicle_vel);
+        addViewpoint(reference_trajectory, vehicle_pos, vehicle_vel, vehicle_att);
+
+        adaptive_viewutility->UpdateUtility(reference_trajectory);
+
+        // Visualize results
+        adaptive_viewutility->MapPublishOnce();
+        adaptive_viewutility->ViewpointPublishOnce();
+        adaptive_viewutility->publishViewpointHistory();
+      } else {
+        simulated_time += planning_horizon;
+      }
+
+      // Terminate if simulation time has exceeded
+      if (simulated_time > max_experiment_duration) terminate_mapping = true;
+      if (terminate_mapping) {
+        break;
+      }
     }
-    double quality_variance = quality_squared - std::pow(quality_mean, 2);
-    double coverage_variance = coverage_squared - std::pow(coverage_mean, 2);
-    std::unordered_map<std::string, std::any> average;
-    average.insert(std::pair<std::string, double>("timestamp", time));
-    average.insert(std::pair<std::string, double>("coverage", coverage_mean));
-    average.insert(std::pair<std::string, double>("quality", quality_mean));
-    average.insert(std::pair<std::string, double>("quality_variance", quality_variance));
-    average.insert(std::pair<std::string, double>("coverage_variance", coverage_variance));
-    results_logger->record(average);
   }
 
-  std::string benchmark_output_path = result_directory + "/active_benchmark.txt";
-  results_logger->writeToFile(benchmark_output_path);
   std::cout << "[TestPlannerNode] Benchmark terminated" << std::endl;
   ros::spin();
   return 0;
