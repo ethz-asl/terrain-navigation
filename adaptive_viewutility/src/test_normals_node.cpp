@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
   while (true) {
     // Visualize results
     adaptive_viewutility->MapPublishOnce();
-    adaptive_viewutility->ViewpointPublishOnce();
     adaptive_viewutility->NormalPublishOnce();
 
     ros::Duration(10.0).sleep();

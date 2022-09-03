@@ -100,7 +100,8 @@ int main(int argc, char **argv) {
         ros::Duration(delta_time - dt).sleep();
       }
     }
-    adaptive_viewutility->Visualize();
+    /// TODO: Visualize utility
+    // adaptive_viewutility->Visualize();
   }
 
   ros::spin();

@@ -66,6 +66,10 @@ int main(int argc, char **argv) {
 
   /// set Current state of vehicle
   {
+    ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("planner/camera_path", 1, true);
+    ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("planner/camera_poses", 1, true);
+    ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("planner/viewpoints", 1, true);
+
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
 
     // Add elevation map from GeoTIFF file defined in path
@@ -100,23 +104,27 @@ int main(int argc, char **argv) {
     bool terminate_mapping = false;
     double simulated_time{0.0};
 
-    auto data_logger = std::make_shared<DataLogger>();
-    data_logger->setKeys({"timestamp", "coverage", "quality"});
-
     while (true) {
-      adaptive_viewutility->runSingleStep();
+      adaptive_viewutility->generateMotionPrimitives();
+      adaptive_viewutility->estimateViewUtility();
 
+      Trajectory reference_trajectory = adaptive_viewutility->getBestPrimitive();
+
+      Trajectory first_segment;
+      for (int i = 0; i < 5; i++) {
+        first_segment.states.push_back(reference_trajectory.states[i]);
+      }
+
+      adaptive_viewutility->UpdateUtility(first_segment);
+
+      adaptive_viewutility->setCurrentState(first_segment.states.back().position, first_segment.states.back().velocity);
+
+      adaptive_viewutility->MapPublishOnce();
+      adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
+      adaptive_viewutility->publishViewpoint(viewpoint_pub, Eigen::Vector3d(0.0, 0.0, 1.0));
+      adaptive_viewutility->publishViewpointHistory();
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
       simulated_time += planning_horizon;
-
-      Metrics performance =
-          performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
-
-      std::unordered_map<std::string, std::any> state;
-      state.insert(std::pair<std::string, double>("timestamp", performance.time));
-      state.insert(std::pair<std::string, double>("coverage", performance.coverage));
-      state.insert(std::pair<std::string, double>("quality", performance.quality));
-      data_logger->record(state);
 
       // Terminate if simulation time has exceeded
       if (simulated_time > max_experiment_duration) terminate_mapping = true;
@@ -128,6 +136,9 @@ int main(int argc, char **argv) {
   }
   // Run coverage planner
   {
+    ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("coverage/camera_path", 1, true);
+    ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("coverage/camera_poses", 1, true);
+    ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("coverage/viewpoints", 1, true);
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
     // Add elevation map from GeoTIFF file defined in path
     adaptive_viewutility->LoadMap(file_path);
@@ -232,7 +243,8 @@ int main(int argc, char **argv) {
 
         // Visualize results
         adaptive_viewutility->MapPublishOnce();
-        adaptive_viewutility->ViewpointPublishOnce();
+        adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
+        adaptive_viewutility->publishViewpoint(viewpoint_pub, Eigen::Vector3d(1.0, 0.0, 0.0));
         adaptive_viewutility->publishViewpointHistory();
       } else {
         simulated_time += planning_horizon;

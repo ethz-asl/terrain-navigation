@@ -45,6 +45,10 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
+  ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("camera_path", 1, true);
+  ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("camera_poses", 1, true);
+  ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
+
   std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
 
   std::string tiff_path;
@@ -68,7 +72,8 @@ int main(int argc, char **argv) {
   while (true) {
     // Visualize results
     adaptive_viewutility->MapPublishOnce();
-    adaptive_viewutility->ViewpointPublishOnce();
+    adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
+    adaptive_viewutility->publishViewpoint(viewpoint_pub);
 
     ros::Duration(10.0).sleep();
   }

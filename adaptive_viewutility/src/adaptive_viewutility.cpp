@@ -47,13 +47,10 @@ AdaptiveViewUtility::AdaptiveViewUtility(const ros::NodeHandle &nh, const ros::N
   terrain_map_ = std::make_shared<TerrainMap>();
   statusloop_timer_ = nh_.createTimer(ros::Duration(1), &AdaptiveViewUtility::statusLoopCallback,
                                       this);  // Define timer for constant loop rate
-  camera_path_pub_ = nh_.advertise<nav_msgs::Path>("camera_path", 1, true);
   candidate_path_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("candidate_path", 1, true);
-  vehicle_path_pub_ = nh_.advertise<nav_msgs::Path>("vehicle_path", 1);
-  camera_pose_pub_ = nh_.advertise<geometry_msgs::PoseArray>("camera_poses", 1, true);
+  vehicle_path_pub_ = nh_private_.advertise<nav_msgs::Path>("vehicle_path", 1);
   camera_utility_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
   normal_marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("surface_normal_marker", 1, true);
-  viewpoint_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   viewpoint_image_pub_ = nh_.advertise<sensor_msgs::Image>("image", 1, true);
@@ -85,11 +82,11 @@ void AdaptiveViewUtility::MapPublishOnce() {
   grid_map_pub_.publish(message);
 }
 
-void AdaptiveViewUtility::ViewpointPublishOnce() {
+void AdaptiveViewUtility::ViewpointPublishOnce(const ros::Publisher &camera_path_pub,
+                                               const ros::Publisher &camera_pose_pub) {
   std::vector<geometry_msgs::PoseStamped> posestampedhistory_vector;
   std::vector<geometry_msgs::Pose> posehistory_vector;
   std::vector<visualization_msgs::Marker> markerhistory_vector;
-  std::vector<visualization_msgs::Marker> viewpoint_vector;
 
   int i = 0;
   for (auto viewpoint : viewpoint_) {
@@ -97,7 +94,6 @@ void AdaptiveViewUtility::ViewpointPublishOnce() {
                                      vector3d2PoseStampedMsg(viewpoint.getCenterLocal(), viewpoint.getOrientation()));
     posehistory_vector.insert(posehistory_vector.begin(),
                               vector3d2PoseMsg(viewpoint.getCenterLocal(), viewpoint.getOrientation()));
-    viewpoint_vector.insert(viewpoint_vector.begin(), Viewpoint2MarkerMsg(i, viewpoint));
     markerhistory_vector.insert(markerhistory_vector.begin(),
                                 utility2MarkerMsg(viewpoint.getUtility(), viewpoint.getCenterLocal(), i));
     i++;
@@ -108,22 +104,32 @@ void AdaptiveViewUtility::ViewpointPublishOnce() {
   msg.header.frame_id = "map";
   msg.poses = posestampedhistory_vector;
 
-  camera_path_pub_.publish(msg);
+  camera_path_pub.publish(msg);
 
   geometry_msgs::PoseArray pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id = "map";
   pose_msg.poses = posehistory_vector;
 
-  camera_pose_pub_.publish(pose_msg);
-
-  visualization_msgs::MarkerArray viewpoint_marker_msg;
-  viewpoint_marker_msg.markers = viewpoint_vector;
-  viewpoint_pub_.publish(viewpoint_marker_msg);
+  camera_pose_pub.publish(pose_msg);
 
   visualization_msgs::MarkerArray marker_msg;
   marker_msg.markers = markerhistory_vector;
   camera_utility_pub_.publish(marker_msg);
+}
+
+void AdaptiveViewUtility::publishViewpoint(const ros::Publisher &viewpoint_pub, const Eigen::Vector3d color) {
+  std::vector<visualization_msgs::Marker> viewpoint_vector;
+
+  int i = 0;
+  for (auto viewpoint : viewpoint_) {
+    viewpoint_vector.insert(viewpoint_vector.begin(), Viewpoint2MarkerMsg(i, viewpoint, color));
+    i++;
+  }
+
+  visualization_msgs::MarkerArray viewpoint_marker_msg;
+  viewpoint_marker_msg.markers = viewpoint_vector;
+  viewpoint_pub.publish(viewpoint_marker_msg);
 }
 
 void AdaptiveViewUtility::NormalPublishOnce() {
@@ -260,12 +266,6 @@ void AdaptiveViewUtility::PublishViewpointImage(ViewPoint &viewpoint) {
   viewpoint_image_pub_.publish(image_msg);
 }
 
-void AdaptiveViewUtility::Visualize() {
-  PublishViewpointImage(viewpoint_.back());
-  ViewpointPublishOnce();
-  MapPublishOnce();
-}
-
 bool AdaptiveViewUtility::generateMotionPrimitives() {
   std::vector<Trajectory> motion_primitives =
       viewplanner_->generateMotionPrimitives(vehicle_position_, vehicle_velocity_);
@@ -371,24 +371,4 @@ visualization_msgs::Marker AdaptiveViewUtility::trajectory2MarkerMsg(Trajectory 
   marker.color.g = 0.0;
   marker.color.b = 0.0;
   return marker;
-}
-
-void AdaptiveViewUtility::runSingleStep() {
-  generateMotionPrimitives();
-  estimateViewUtility();
-
-  Trajectory reference_trajectory = getBestPrimitive();
-
-  Trajectory first_segment;
-  for (int i = 0; i < 5; i++) {
-    first_segment.states.push_back(reference_trajectory.states[i]);
-  }
-
-  UpdateUtility(first_segment);
-
-  setCurrentState(first_segment.states.back().position, first_segment.states.back().velocity);
-
-  MapPublishOnce();
-  ViewpointPublishOnce();
-  publishViewpointHistory();
 }

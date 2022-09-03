@@ -66,6 +66,10 @@ int main(int argc, char **argv) {
   nh_private.param<std::string>("result_directory", result_directory, "output");
   nh_private.param<int>("num_experiments", num_experiments, num_experiments);
 
+  ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("camera_path", 1, true);
+  ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("camera_poses", 1, true);
+  ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
+
   for (int i = 0; i < num_experiments; i++) {
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
     // Add elevation map from GeoTIFF file defined in path
@@ -177,7 +181,8 @@ int main(int argc, char **argv) {
 
         // Visualize results
         adaptive_viewutility->MapPublishOnce();
-        adaptive_viewutility->ViewpointPublishOnce();
+        adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
+        adaptive_viewutility->publishViewpoint(viewpoint_pub);
         adaptive_viewutility->publishViewpointHistory();
       } else {
         simulated_time += planning_horizon;

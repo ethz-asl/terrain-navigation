@@ -10,6 +10,6 @@
     </node>
 
     <group if="$(arg visualization)">
-        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_planner.rviz" />
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_navigation_ros)/launch/config_visualize.rviz" />
     </group>
 </launch>

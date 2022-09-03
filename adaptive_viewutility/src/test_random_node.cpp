@@ -147,6 +147,10 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
+  ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("camera_path", 1, true);
+  ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("camera_poses", 1, true);
+  ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
+
   std::string file_path, output_dir_path, viewpoint_path;
   int num_experiments;
   double max_experiment_duration;
@@ -242,7 +246,8 @@ int main(int argc, char **argv) {
 
       pipeline_perf.toc();
       adaptive_viewutility->MapPublishOnce();
-      adaptive_viewutility->ViewpointPublishOnce();
+      adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
+      adaptive_viewutility->publishViewpoint(viewpoint_pub);
       adaptive_viewutility->publishViewpointHistory();
       adaptive_viewutility->publishCandidatePaths(candidate_viewpoints);
 

@@ -64,6 +64,9 @@ int main(int argc, char **argv) {
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("result_directory", result_directory, "output");
 
+  ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("camera_path", 1, true);
+  ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("camera_poses", 1, true);
+  ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
   /// set Current state of vehicle
   /// TODO: Randomly generate initial position
   std::vector<std::shared_ptr<DataLogger>> benchmark_results;
@@ -110,7 +113,24 @@ int main(int argc, char **argv) {
 
     while (true) {
       pipeline_perf.tic();
-      adaptive_viewutility->runSingleStep();
+      adaptive_viewutility->generateMotionPrimitives();
+      adaptive_viewutility->estimateViewUtility();
+
+      Trajectory reference_trajectory = adaptive_viewutility->getBestPrimitive();
+
+      Trajectory first_segment;
+      for (int i = 0; i < 5; i++) {
+        first_segment.states.push_back(reference_trajectory.states[i]);
+      }
+
+      adaptive_viewutility->UpdateUtility(first_segment);
+
+      adaptive_viewutility->setCurrentState(first_segment.states.back().position, first_segment.states.back().velocity);
+
+      adaptive_viewutility->MapPublishOnce();
+      adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
+      adaptive_viewutility->publishViewpoint(viewpoint_pub);
+      adaptive_viewutility->publishViewpointHistory();
       pipeline_perf.toc();
 
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();

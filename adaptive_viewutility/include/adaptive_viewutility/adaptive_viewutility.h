@@ -66,7 +66,7 @@ class AdaptiveViewUtility {
   void AddViewPoint(const int idx, const double &longitude, const double &latitude, const double &altitude);
   void LoadMap(const std::string &path, const std::string color_map_path = "");
   void MapPublishOnce();
-  void ViewpointPublishOnce();
+  void ViewpointPublishOnce(const ros::Publisher &camera_path_pub, const ros::Publisher &camera_pose_pub);
   void NormalPublishOnce();
   void UpdateUtility(ViewPoint &viewpoint);
   void UpdateUtility(Trajectory &trajectory);
@@ -75,7 +75,6 @@ class AdaptiveViewUtility {
    * @brief Run single step of the planning iteration
    *
    */
-  void runSingleStep();
   void setCurrentState(const Eigen::Vector3d vehicle_pos, const Eigen::Vector3d vehicle_vel) {
     vehicle_position_ = vehicle_pos;
     vehicle_velocity_ = vehicle_vel;
@@ -89,12 +88,13 @@ class AdaptiveViewUtility {
   std::vector<ViewPoint> &getViewPoints() { return viewpoint_; };
   std::shared_ptr<ViewUtilityMap> &getViewUtilityMap() { return viewutility_map_; };
   std::shared_ptr<ViewPlanner> &getViewPlanner() { return viewplanner_; };
-  void Visualize();
   void publishCandidatePaths(std::vector<Trajectory> &motion_primitives);
   void estimateViewUtility();
   void estimateViewUtility(std::vector<Trajectory> &motion_primitives);
   void OutputMapData(const std::string &path);
   void publishViewpointHistory();
+  void publishViewpoint(const ros::Publisher &viewpoint_pub,
+                        const Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0));
 
  private:
   void statusLoopCallback(const ros::TimerEvent &event);
@@ -107,8 +107,6 @@ class AdaptiveViewUtility {
   ros::Timer statusloop_timer_;
   ros::CallbackQueue statusloop_queue_;
   std::unique_ptr<ros::AsyncSpinner> statusloop_spinner_;
-  ros::Publisher camera_pose_pub_;
-  ros::Publisher camera_path_pub_;
   ros::Publisher grid_map_pub_;
   ros::Publisher viewpoint_image_pub_;
   ros::Publisher camera_utility_pub_;
