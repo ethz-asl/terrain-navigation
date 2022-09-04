@@ -256,7 +256,6 @@ int main(int argc, char **argv) {
     // Visualize results
     adaptive_viewutility->MapPublishOnce();
     adaptive_viewutility->ViewpointPublishOnce();
-    adaptive_viewutility->publishViewpointHistory();
     publishTrajectorySegments(trajectory_pub_, vehicle_trajectory);
 
     /// TODO: Publish vehcile trajectory

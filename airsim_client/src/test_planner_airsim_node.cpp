@@ -158,7 +158,6 @@ int main(int argc, char **argv) {
       time_vector.push_back(pipeline_perf.toc());
       adaptive_viewutility->MapPublishOnce();
       adaptive_viewutility->ViewpointPublishOnce();
-      adaptive_viewutility->publishViewpointHistory();
 
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
       simulated_time += planning_horizon;

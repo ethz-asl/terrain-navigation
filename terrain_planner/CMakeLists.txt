@@ -64,12 +64,6 @@ add_executable(test_distance_surface
 add_dependencies(test_distance_surface terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_distance_surface ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
 
-add_executable(test_dubins_planner
-  src/test_dubins_planner.cpp
-)
-add_dependencies(test_dubins_planner terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_dubins_planner ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
-
 add_executable(test_mcts
   src/test_mcts.cpp
 )

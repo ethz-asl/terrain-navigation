@@ -45,12 +45,8 @@
 AdaptiveViewUtility::AdaptiveViewUtility(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
   terrain_map_ = std::make_shared<TerrainMap>();
-  statusloop_timer_ = nh_.createTimer(ros::Duration(1), &AdaptiveViewUtility::statusLoopCallback,
-                                      this);  // Define timer for constant loop rate
   candidate_path_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("candidate_path", 1, true);
-  vehicle_path_pub_ = nh_private_.advertise<nav_msgs::Path>("vehicle_path", 1);
   camera_utility_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
-  normal_marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("surface_normal_marker", 1, true);
 
   grid_map_pub_ = nh_.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   viewpoint_image_pub_ = nh_.advertise<sensor_msgs::Image>("image", 1, true);
@@ -62,18 +58,6 @@ AdaptiveViewUtility::AdaptiveViewUtility(const ros::NodeHandle &nh, const ros::N
 }
 
 AdaptiveViewUtility::~AdaptiveViewUtility() {}
-
-void AdaptiveViewUtility::Init() {
-  double statusloop_dt_ = 1.0;
-  ros::TimerOptions statuslooptimer_options(ros::Duration(statusloop_dt_),
-                                            boost::bind(&AdaptiveViewUtility::statusLoopCallback, this, _1),
-                                            &statusloop_queue_);
-
-  statusloop_spinner_.reset(new ros::AsyncSpinner(1, &statusloop_queue_));
-  statusloop_spinner_->start();
-}
-
-void AdaptiveViewUtility::statusLoopCallback(const ros::TimerEvent &event) {}
 
 void AdaptiveViewUtility::MapPublishOnce() {
   viewutility_map_->getGridMap().setTimestamp(ros::Time::now().toNSec());
@@ -132,7 +116,7 @@ void AdaptiveViewUtility::publishViewpoint(const ros::Publisher &viewpoint_pub, 
   viewpoint_pub.publish(viewpoint_marker_msg);
 }
 
-void AdaptiveViewUtility::NormalPublishOnce() {
+void AdaptiveViewUtility::NormalPublishOnce(const ros::Publisher &pub) {
   std::vector<visualization_msgs::Marker> normals_vector;
 
   int i = 0;
@@ -154,7 +138,7 @@ void AdaptiveViewUtility::NormalPublishOnce() {
 
   visualization_msgs::MarkerArray marker_msg;
   marker_msg.markers = normals_vector;
-  normal_marker_pub_.publish(marker_msg);
+  pub.publish(marker_msg);
 }
 
 bool AdaptiveViewUtility::AddViewPointFromImage(std::string &image_path) {
@@ -243,19 +227,6 @@ void AdaptiveViewUtility::UpdateUtility(Trajectory &trajectory) {
 }
 
 void AdaptiveViewUtility::UpdateUtility(ViewPoint &viewpoint) { viewutility_map_->UpdateUtility(viewpoint); }
-
-void AdaptiveViewUtility::publishViewpointHistory() {
-  nav_msgs::Path msg;
-  std::vector<geometry_msgs::PoseStamped> posestampedhistory_vector;
-  Eigen::Vector4d orientation(1.0, 0.0, 0.0, 0.0);
-  for (auto pos : vehicle_position_history_) {
-    posestampedhistory_vector.insert(posestampedhistory_vector.begin(), vector3d2PoseStampedMsg(pos, orientation));
-  }
-  msg.header.stamp = ros::Time::now();
-  msg.header.frame_id = "map";
-  msg.poses = posestampedhistory_vector;
-  vehicle_path_pub_.publish(msg);
-}
 
 void AdaptiveViewUtility::PublishViewpointImage(ViewPoint &viewpoint) {
   cv_bridge::CvImage msg;

@@ -122,7 +122,6 @@ int main(int argc, char **argv) {
       adaptive_viewutility->MapPublishOnce();
       adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
       adaptive_viewutility->publishViewpoint(viewpoint_pub, Eigen::Vector3d(0.0, 0.0, 1.0));
-      adaptive_viewutility->publishViewpointHistory();
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
       simulated_time += planning_horizon;
 
@@ -245,7 +244,6 @@ int main(int argc, char **argv) {
         adaptive_viewutility->MapPublishOnce();
         adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
         adaptive_viewutility->publishViewpoint(viewpoint_pub, Eigen::Vector3d(1.0, 0.0, 0.0));
-        adaptive_viewutility->publishViewpointHistory();
       } else {
         simulated_time += planning_horizon;
       }

@@ -249,7 +249,6 @@ int main(int argc, char **argv) {
       pipeline_perf.toc();
       adaptive_viewutility->MapPublishOnce();
       adaptive_viewutility->ViewpointPublishOnce();
-      adaptive_viewutility->publishViewpointHistory();
       adaptive_viewutility->publishCandidatePaths(candidate_viewpoints);
 
       double planning_horizon = 1.0;

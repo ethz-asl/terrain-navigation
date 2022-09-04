@@ -248,7 +248,6 @@ int main(int argc, char **argv) {
       adaptive_viewutility->MapPublishOnce();
       adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
       adaptive_viewutility->publishViewpoint(viewpoint_pub);
-      adaptive_viewutility->publishViewpointHistory();
       adaptive_viewutility->publishCandidatePaths(candidate_viewpoints);
 
       double planning_horizon = 1.0;

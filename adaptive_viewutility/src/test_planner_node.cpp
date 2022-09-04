@@ -130,7 +130,6 @@ int main(int argc, char **argv) {
       adaptive_viewutility->MapPublishOnce();
       adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
       adaptive_viewutility->publishViewpoint(viewpoint_pub);
-      adaptive_viewutility->publishViewpointHistory();
       pipeline_perf.toc();
 
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
@@ -166,7 +165,8 @@ int main(int argc, char **argv) {
   // Evaluate benchmark results
   auto results_logger = std::make_shared<DataLogger>();
   results_logger->setPrintHeader(true);
-  results_logger->setKeys({"timestamp", "coverage", "quality", "coverage_variance", "quality_variance"});
+  results_logger->setKeys({"timestamp", "coverage", "quality", "coverage_variance", "quality_variance", "coverage_min",
+                           "coverage_max", "quality_min", "quality_max"});
   std::cout << "[TestPlannerNode] Number of benchmarks: " << benchmark_results.size() << std::endl;
   int num_data_points = benchmark_results[0]->count();
   for (int i = 0; i < benchmark_results[0]->count(); i++) {
@@ -175,14 +175,31 @@ int main(int argc, char **argv) {
     double coverage_mean{0.0};
     double quality_squared{0.0};
     double coverage_squared{0.0};
+    double quality_min = std::numeric_limits<double>::infinity();
+    double quality_max = -std::numeric_limits<double>::infinity();
+    double coverage_min = std::numeric_limits<double>::infinity();
+    double coverage_max = -std::numeric_limits<double>::infinity();
+    int data_count{0};
     for (auto &result : benchmark_results) {
-      double quality = std::any_cast<double &>(result->data()[i].at("quality"));
-      quality_mean += quality * (1.0 / benchmark_results.size());
-      quality_squared += std::pow(quality, 2) * (1.0 / benchmark_results.size());
-      double coverage = std::any_cast<double &>(result->data()[i].at("coverage"));
-      coverage_mean += coverage * (1.0 / benchmark_results.size());
-      coverage_squared += std::pow(coverage, 2) * (1.0 / benchmark_results.size());
+      if (i < result->data().size()) {
+        double quality = std::any_cast<double &>(result->data()[i].at("quality"));
+        quality_mean += quality;
+        if (quality > quality_max) quality_max = quality;
+        if (quality < quality_min) quality_min = quality;
+        quality_squared += std::pow(quality, 2);
+        double coverage = std::any_cast<double &>(result->data()[i].at("coverage"));
+        coverage_mean += coverage;
+        if (coverage > coverage_max) coverage_max = coverage;
+        if (coverage < coverage_min) coverage_min = coverage;
+        coverage_squared += std::pow(coverage, 2);
+        data_count++;
+      }
     }
+    quality_mean = quality_mean / data_count;
+    coverage_mean = coverage_mean / data_count;
+    quality_squared = quality_squared / data_count;
+    coverage_squared = coverage_squared / data_count;
+
     double quality_variance = quality_squared - std::pow(quality_mean, 2);
     double coverage_variance = coverage_squared - std::pow(coverage_mean, 2);
     std::unordered_map<std::string, std::any> average;
@@ -191,6 +208,12 @@ int main(int argc, char **argv) {
     average.insert(std::pair<std::string, double>("quality", quality_mean));
     average.insert(std::pair<std::string, double>("quality_variance", quality_variance));
     average.insert(std::pair<std::string, double>("coverage_variance", coverage_variance));
+    average.insert(std::pair<std::string, double>("quality_variance", quality_variance));
+    average.insert(std::pair<std::string, double>("coverage_min", coverage_min));
+    average.insert(std::pair<std::string, double>("coverage_max", coverage_max));
+    average.insert(std::pair<std::string, double>("quality_max", quality_max));
+    average.insert(std::pair<std::string, double>("quality_min", quality_min));
+
     results_logger->record(average);
   }
 

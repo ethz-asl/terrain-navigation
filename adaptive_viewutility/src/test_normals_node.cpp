@@ -45,6 +45,8 @@ int main(int argc, char **argv) {
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
+  ros::Publisher normal_marker_pub = nh.advertise<visualization_msgs::MarkerArray>("surface_normal_marker", 1, true);
+
   std::string file_path;
   nh_private.param<std::string>("file_path", file_path, "");
 
@@ -54,7 +56,7 @@ int main(int argc, char **argv) {
   while (true) {
     // Visualize results
     adaptive_viewutility->MapPublishOnce();
-    adaptive_viewutility->NormalPublishOnce();
+    adaptive_viewutility->NormalPublishOnce(normal_marker_pub);
 
     ros::Duration(10.0).sleep();
   }

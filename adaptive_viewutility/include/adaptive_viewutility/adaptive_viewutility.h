@@ -60,14 +60,13 @@ class AdaptiveViewUtility {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   AdaptiveViewUtility(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
   virtual ~AdaptiveViewUtility();
-  void Init();
   void InitializeVehicleFromMap(Eigen::Vector3d &init_pos, Eigen::Vector3d &init_vel);
   bool AddViewPointFromImage(std::string &image_path);
   void AddViewPoint(const int idx, const double &longitude, const double &latitude, const double &altitude);
   void LoadMap(const std::string &path, const std::string color_map_path = "");
   void MapPublishOnce();
   void ViewpointPublishOnce(const ros::Publisher &camera_path_pub, const ros::Publisher &camera_pose_pub);
-  void NormalPublishOnce();
+  void NormalPublishOnce(const ros::Publisher &pub);
   void UpdateUtility(ViewPoint &viewpoint);
   void UpdateUtility(Trajectory &trajectory);
 
@@ -92,7 +91,6 @@ class AdaptiveViewUtility {
   void estimateViewUtility();
   void estimateViewUtility(std::vector<Trajectory> &motion_primitives);
   void OutputMapData(const std::string &path);
-  void publishViewpointHistory();
   void publishViewpoint(const ros::Publisher &viewpoint_pub,
                         const Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0));
 
@@ -104,16 +102,10 @@ class AdaptiveViewUtility {
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
-  ros::Timer statusloop_timer_;
-  ros::CallbackQueue statusloop_queue_;
-  std::unique_ptr<ros::AsyncSpinner> statusloop_spinner_;
   ros::Publisher grid_map_pub_;
   ros::Publisher viewpoint_image_pub_;
   ros::Publisher camera_utility_pub_;
-  ros::Publisher vehicle_path_pub_;
   ros::Publisher candidate_path_pub_;
-  ros::Publisher normal_marker_pub_;
-  ros::Publisher viewpoint_pub_;
 
   std::vector<ViewPoint> viewpoint_;
   std::shared_ptr<TerrainMap> terrain_map_;

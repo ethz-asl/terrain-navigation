@@ -53,3 +53,8 @@ add_executable(visualize_path_node
 add_dependencies(visualize_path_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(visualize_path_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
 
+add_executable(test_coverage_node
+  src/test_coverage_node.cpp
+)
+add_dependencies(test_coverage_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(test_coverage_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})

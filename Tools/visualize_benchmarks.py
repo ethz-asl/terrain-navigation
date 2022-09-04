@@ -10,11 +10,12 @@ import yaml
 def plotCoverage(fig, data_df, name):
     timestamp = np.array(data_df["timestamp"])
     map_coverage = np.array(data_df["coverage"])
-    map_coverage_variance = np.sqrt(np.array(data_df["coverage_variance"]))
-    fig.fill_between(timestamp, map_coverage - map_coverage_variance, map_coverage + map_coverage_variance, alpha=0.2)
-    # TODO: Add plotting variance on coverage
-
     fig.plot(timestamp, map_coverage, label=name)
+    if ("coverage_min" in data_df) and ("coverage_max" in data_df):
+        map_coverage_min = np.array(data_df["coverage_min"])
+        map_coverage_max = np.array(data_df["coverage_max"])
+        fig.fill_between(timestamp, map_coverage_min, map_coverage_max, alpha=0.2)
+
     fig.set_title("Map Coverage")
     fig.set_xlabel('Time [s]')
     fig.set_ylabel('Coverage')
@@ -25,11 +26,12 @@ def plotQuality(fig, data_df, name):
     timestamp = np.array(data_df["timestamp"])
     map_quality = np.array(data_df["quality"])
     map_quality_variance = np.sqrt(np.array(data_df["quality_variance"]))
-
-    # TODO: Add plotting quality on coverage
-
     fig.plot(timestamp, map_quality, label=name)
-    fig.fill_between(timestamp, map_quality - map_quality_variance, map_quality + map_quality_variance, alpha=0.2)
+    if ("quality_min" in data_df) and ("quality_max" in data_df):
+        map_quality_min = np.array(data_df["quality_min"])
+        map_quality_max = np.array(data_df["quality_max"])
+        fig.fill_between(timestamp, map_quality_min, map_quality_max, alpha=0.2)
+
     fig.set_title("Map Uncertainty")
     fig.set_xlabel('Time [s]')
     fig.set_ylabel('Uncertainty')
