@@ -101,7 +101,7 @@ void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &at
         file_name = std::to_string(image_info.time_stamp);
         std::string file_path = common_utils::FileSystem::combine(image_directory_path_, file_name) + ".jpeg";
 
-        imwrite(file_path + ".jpeg", cv_image);  // A JPG FILE IS BEING SAVED
+        imwrite(file_path, cv_image);  // A JPG FILE IS BEING SAVED
 
         char gps_tag_command[1024];
         char north_south = 'N', east_west = 'E';
@@ -119,7 +119,7 @@ void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &at
                  " -gpsdatetime=now -gpsmapdatum=WGS-84"
                  " -datetimeoriginal=now -gpsdop=0.8"
                  " -gpsmeasuremode=3-d -gpssatellites=13 -gpsaltitude=%.3lf -overwrite_original %s &>/dev/null",
-                 north_south, east_west, lat, lon, altitude, (file_path + ".jpeg").c_str());
+                 north_south, east_west, lat, lon, altitude, file_path.c_str());
         if (system(gps_tag_command) < 0) {
           std::cout << "gps tag command failed" << std::endl;
           return;

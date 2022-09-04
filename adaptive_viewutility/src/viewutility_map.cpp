@@ -284,7 +284,18 @@ void ViewUtilityMap::initializeFromGridmap() {
 
 bool ViewUtilityMap::initializeFromMesh(const std::string &path, const double res) {
   pcl::PolygonMesh mesh;
+  // std::string file_extension = path.substr(path.find_last_of(".") + 1);
+  // if (file_extension == "obj") {
+  //     std::cout << "Loading GT map: " << path << std::endl;
+  //     pcl::io::loadOBJFile(path, mesh);
+  // } else if (file_extension == "ply") {
+  //     std::cout << "Loading EST map: " << path << std::endl;
+  //     pcl::io::loadPLYFile(path, mesh);
+  // } else {
+  //     std::cout << "unknown file type" << std::endl;
+  // }
   pcl::io::loadOBJFile(path, mesh);
+
   grid_map::GridMapPclConverter::initializeFromPolygonMesh(mesh, res, grid_map_);
   grid_map::GridMapPclConverter::addLayerFromPolygonMesh(mesh, "elevation", grid_map_);
 

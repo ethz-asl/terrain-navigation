@@ -38,6 +38,7 @@
  */
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
+#include "adaptive_viewutility/data_logger.h"
 #include "adaptive_viewutility/performance_tracker.h"
 #include "airsim_client/airsim_client.h"
 #include "terrain_navigation/profiler.h"
@@ -204,6 +205,9 @@ int main(int argc, char **argv) {
     double simulated_time{0.0};
     int increment{0};
 
+    std::shared_ptr<DataLogger> data_logger = std::make_shared<DataLogger>();
+    data_logger->setKeys({"file", "X", "Y", "Z"});
+
     std::vector<Trajectory> candidate_viewpoints;
     if (viewpoint_path.empty()) {  // Generate viewpoints and save it to a file
       for (int k = 0; k < num_samples; k++) {
@@ -240,7 +244,16 @@ int main(int argc, char **argv) {
       Eigen::Vector3d vehicle_pos = first_segment.states[0].position;
       Eigen::Vector4d vehicle_att = first_segment.states[0].attitude;
 
-      airsim_client->setPose(vehicle_pos, vehicle_att);
+      std::string image_path;
+      airsim_client->setPose(vehicle_pos, vehicle_att, image_path);
+      std::cout << "image path: " << image_path << std::endl;
+      std::unordered_map<std::string, std::any> camera_state;
+      camera_state.insert(std::pair<std::string, std::string>("file", image_path));
+      /// TODO: Switch vehicle pos to ECEF
+      camera_state.insert(std::pair<std::string, double>("X", vehicle_pos.x()));
+      camera_state.insert(std::pair<std::string, double>("Y", vehicle_pos.y()));
+      camera_state.insert(std::pair<std::string, double>("Z", vehicle_pos.z()));
+      data_logger->record(camera_state);
 
       adaptive_viewutility->UpdateUtility(first_segment);
 
@@ -276,6 +289,9 @@ int main(int argc, char **argv) {
     std::string executed_view_set_path = output_dir_path + "/executed_viewset.csv";
     std::cout << "[TestRandomAirsimNode] Executed view set path: " << executed_view_set_path << std::endl;
     OutputViewset(executed_viewset, executed_view_set_path);
+
+    std::cout << "[TestAirsimRandomNode] write to file" << std::endl;
+    data_logger->writeToFile(output_dir_path + "/camera.txt");
   }
   std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
 
