@@ -57,23 +57,23 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
       Color: 200; 200; 200
-      Color Layer: elevation
+      Color Layer: geometric_prior
       Color Transformer: IntensityLayer
       Enabled: true
       Height Layer: elevation
       Height Transformer: Layer
       History Length: 1
-      Invert Rainbow: false
+      Invert Rainbow: true
       Max Color: 255; 255; 255
-      Max Intensity: 10
+      Max Intensity: 1
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: GridMap
-      Show Grid Lines: true
+      Show Grid Lines: false
       Topic: /grid_map
       Unreliable: false
       Use Rainbow: true
@@ -97,7 +97,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
-      Color: 245; 121; 0
+      Color: 255; 0; 0
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
@@ -168,7 +168,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1346.8314208984375
+      Distance: 1709.5120849609375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -183,10 +183,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.62980055809021
+      Pitch: 0.604800820350647
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.6048701405525208
+      Yaw: 0.47487032413482666
     Saved: ~
 Window Geometry:
   Displays:

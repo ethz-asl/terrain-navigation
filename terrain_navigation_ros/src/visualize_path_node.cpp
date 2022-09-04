@@ -40,6 +40,7 @@
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "adaptive_viewutility/data_logger.h"
 #include "adaptive_viewutility/performance_tracker.h"
+#include "terrain_planner/terrain_ompl_rrt.h"
 
 void addViewpoint(Trajectory &trajectory, Eigen::Vector3d pos, Eigen::Vector3d vel, Eigen::Vector4d att) {
   State vehicle_state;
@@ -48,6 +49,44 @@ void addViewpoint(Trajectory &trajectory, Eigen::Vector3d pos, Eigen::Vector3d v
   vehicle_state.attitude = att;
   trajectory.states.push_back(vehicle_state);
   return;
+}
+
+double interpolateDubins(Eigen::Vector3d start_pos, Eigen::Vector3d start_vel, Eigen::Vector3d goal_pos,
+                         Eigen::Vector3d goal_vel, double progress, Eigen::Vector3d &interpolated_state) {
+  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplane2StateSpace>();
+  dubins_ss->setMaxClimbingAngle(1.0);
+
+  ompl::base::State *from = dubins_ss->allocState();
+  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(start_pos.x());
+  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(start_pos.y());
+  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(start_pos.z());
+  double start_yaw = std::atan2(start_vel.y(), start_vel.x());
+  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(start_yaw);
+
+  ompl::base::State *to = dubins_ss->allocState();
+  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(goal_pos.x());
+  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(goal_pos.y());
+  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(goal_pos.z());
+  double goal_yaw = std::atan2(goal_vel.y(), goal_vel.x());
+  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(goal_yaw);
+
+  ompl::base::State *state = dubins_ss->allocState();
+
+  fw_planning::spaces::DubinsPath dubins_path;
+  fw_planning::spaces::DubinsAirplane2StateSpace::SegmentStarts segmentStarts;
+  bool first_time = true;
+  dubins_ss->interpolate(from, to, progress, first_time, dubins_path, segmentStarts, state);
+
+  interpolated_state.x() = state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX();
+  interpolated_state.y() = state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY();
+  interpolated_state.z() = state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ();
+
+  double curvature = dubins_ss->getMinTurningRadius();
+
+  dubins_ss->freeState(from);
+  dubins_ss->freeState(to);
+
+  return dubins_path.length_3D() * curvature;
 }
 
 int main(int argc, char **argv) {
@@ -63,6 +102,181 @@ int main(int argc, char **argv) {
   nh_private.param<int>("num_experiments", num_experiments, 1);
   nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<std::string>("result_directory", result_directory, "output");
+
+  // Run coverage planner
+  {
+    double dt = 0.2;
+    ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("coverage/camera_path", 1, true);
+    ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("coverage/camera_poses", 1, true);
+    ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("coverage/viewpoints", 1, true);
+    std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
+    // Add elevation map from GeoTIFF file defined in path
+    adaptive_viewutility->LoadMap(file_path);
+
+    /// set Current state of vehicle
+    grid_map::Polygon polygon;
+    // Hah! we have access to the map reference. be careful!
+    grid_map::GridMap &map = adaptive_viewutility->getViewUtilityMap()->getGridMap();
+    const Eigen::Vector2d map_pos = map.getPosition();
+    const double map_width_x = map.getLength().x();
+    const double map_width_y = map.getLength().y();
+
+    polygon.setFrameId(map.getFrameId());
+    polygon.addVertex(grid_map::Position(map_pos(0) - 0.5 * map_width_x, map_pos(1) - 0.5 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + 0.5 * map_width_x, map_pos(1) - 0.5 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) + 0.5 * map_width_x, map_pos(1) + 0.5 * map_width_y));
+    polygon.addVertex(grid_map::Position(map_pos(0) - 0.5 * map_width_x, map_pos(1) + 0.5 * map_width_y));
+
+    adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
+
+    grid_map::Polygon offset_polygon = polygon;
+    /// TODO: Get sweep distance from sensor model
+    double altitude = 100.0;
+    /// TODO: Define offset from sensor model
+    offset_polygon.offsetInward(10.0);
+
+    Eigen::Vector2d coverage_start_pos_2d = offset_polygon.getVertex(0);
+    double coverage_start_elevation = map.atPosition("elevation", coverage_start_pos_2d);
+    Eigen::Vector3d coverage_start_pos = Eigen::Vector3d(
+        offset_polygon.getVertex(0).x(), offset_polygon.getVertex(0).y(), coverage_start_elevation + altitude);
+
+    // Run sweep segments until the boundary
+    double sweep_distance = 51.6;
+    Eigen::Vector2d sweep_direction = (offset_polygon.getVertex(1) - offset_polygon.getVertex(0)).normalized();
+    Eigen::Vector2d sweep_perpendicular = (offset_polygon.getVertex(3) - offset_polygon.getVertex(0)).normalized();
+    // From "Huang, Wesley H. "Optimal line-sweep-based decompositions for coverage algorithms." Proceedings 2001 ICRA.
+    // IEEE International Conference on Robotics and Automation (Cat. No. 01CH37164). Vol. 1. IEEE, 2001."
+    // The optimal sweep pattern direction coinsides with the edge direction of the ROI polygon
+
+    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
+
+    auto data_logger = std::make_shared<DataLogger>();
+    data_logger->setKeys({"timestamp", "coverage", "quality"});
+
+    /// TODO: Get start velocity from geometry
+    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 0.0);
+    Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
+    adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+
+    // Place holders
+    double simulated_time{0.0};
+    double last_triggered_time{0.0};
+    double recording_rate{2.0};  // seconds [s]
+    bool survey_start = true;
+    double planning_horizon = 2.0;
+    Eigen::Vector3d previous_candidate_pos = vehicle_pos;
+    Eigen::Vector3d previous_vehicle_vel = vehicle_vel;
+
+    // Generate a lawnmower pattern survey
+
+    // Get dubins distance to start position
+    Eigen::Vector3d interpolated_pos;
+    double dubins_distance =
+        interpolateDubins(vehicle_pos, vehicle_vel, coverage_start_pos,
+                          Eigen::Vector3d(sweep_direction.x(), sweep_direction.y(), 0.0), 1.0, interpolated_pos);
+    double traverse_time = dubins_distance / vehicle_vel.norm();
+
+    double elapsed_time = 0.0;
+    double last_update_time = simulated_time;
+
+    Eigen::Vector3d candidate_vehicle_pos = coverage_start_pos;
+    Eigen::Vector2d candidate_vehicle_pos_2d = candidate_vehicle_pos.head(2);
+    Eigen::Vector2d candiate_vehicle_vel_2d = Eigen::Vector2d(sweep_direction.x(), sweep_direction.y());
+
+    std::vector<Eigen::Vector3d> vehicle_path;
+    bool constrain_elevation{true};
+    while (true) {
+      elapsed_time = simulated_time - last_update_time;
+      if (elapsed_time >= traverse_time) {
+        previous_candidate_pos = candidate_vehicle_pos;
+        // Update where the next viewpoint should be
+        candiate_vehicle_vel_2d = 2 * 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
+        // Generate sweep pattern
+        candidate_vehicle_pos_2d = candiate_vehicle_vel_2d + vehicle_pos.head(2);
+        if (!polygon.isInside(candidate_vehicle_pos_2d)) {  // Reached the other end of the vertex
+          sweep_direction = -1.0 * sweep_direction;
+          candidate_vehicle_pos_2d = vehicle_pos.head(2) + sweep_perpendicular * sweep_distance;  // next row
+          candiate_vehicle_vel_2d = 2 * 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
+          if (!polygon.isInside(candidate_vehicle_pos_2d)) {
+            // Grid pattern has been completed
+            break;
+          }
+        }
+        double candidate_elevation = map.atPosition("elevation", candidate_vehicle_pos_2d) + altitude;
+
+        if (constrain_elevation) {
+          // Constrain next viewpoint with climbrate
+          double gamma = 0.1;  // maximum flight path angle
+          double max_elevation_difference =
+              (previous_candidate_pos.head(2) - candidate_vehicle_pos_2d).norm() * std::tan(gamma);
+          candidate_elevation =
+              previous_candidate_pos.z() +
+              std::max(std::min(candidate_elevation - previous_candidate_pos.z(), max_elevation_difference),
+                       -max_elevation_difference);
+        }
+        candidate_vehicle_pos =
+            Eigen::Vector3d(candidate_vehicle_pos_2d.x(), candidate_vehicle_pos_2d.y(), candidate_elevation);
+
+        double residual_time = traverse_time - elapsed_time;
+        Eigen::Vector3d interpolated_pos;
+        double distance = interpolateDubins(
+            vehicle_pos, vehicle_vel, candidate_vehicle_pos,
+            Eigen::Vector3d(candiate_vehicle_vel_2d.x(), candiate_vehicle_vel_2d.y(), 0.0), 1.0, interpolated_pos);
+        traverse_time = (distance / 15.0) + residual_time;
+        previous_vehicle_vel = vehicle_vel;
+        last_update_time = simulated_time;
+        elapsed_time = 0.0;
+
+        Trajectory reference_trajectory;
+        adaptive_viewutility->setCurrentState(previous_candidate_pos, vehicle_vel);
+        addViewpoint(reference_trajectory, previous_candidate_pos, vehicle_vel, Eigen::Vector4d(1.0, 0.0, 0.0, 0.0));
+        adaptive_viewutility->UpdateUtility(reference_trajectory);
+      }
+
+      double progress = elapsed_time / traverse_time;
+      interpolateDubins(previous_candidate_pos, previous_vehicle_vel, candidate_vehicle_pos,
+                        Eigen::Vector3d(candiate_vehicle_vel_2d.x(), candiate_vehicle_vel_2d.y(), 0.0), progress,
+                        vehicle_pos);
+
+      vehicle_path.push_back(vehicle_pos);
+      vehicle_vel = Eigen::Vector3d(candiate_vehicle_vel_2d.x(), candiate_vehicle_vel_2d.y(), 0.0);
+
+      if ((simulated_time - last_triggered_time) > planning_horizon) {
+        Metrics performance =
+            performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
+
+        std::unordered_map<std::string, std::any> state;
+        state.insert(std::pair<std::string, double>("timestamp", performance.time));
+        state.insert(std::pair<std::string, double>("coverage", performance.coverage));
+        state.insert(std::pair<std::string, double>("quality", performance.quality));
+        data_logger->record(state);
+
+        last_triggered_time = simulated_time;
+      }
+
+      // Visualize results
+      std::vector<geometry_msgs::PoseStamped> posestampedhistory_vector;
+      for (auto &state : vehicle_path) {
+        posestampedhistory_vector.insert(posestampedhistory_vector.begin(),
+                                         vector3d2PoseStampedMsg(state, Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)));
+      }
+      nav_msgs::Path msg;
+      msg.header.stamp = ros::Time::now();
+      msg.header.frame_id = "map";
+      msg.poses = posestampedhistory_vector;
+      camera_path_pub.publish(msg);
+
+      adaptive_viewutility->MapPublishOnce();
+      adaptive_viewutility->publishViewpoint(viewpoint_pub, Eigen::Vector3d(1.0, 0.0, 0.0));
+
+      // Terminate if simulation time has exceeded
+      // if (simulated_time > max_experiment_duration) {
+      //   break;
+      // }
+      simulated_time += dt;
+      // ros::Duration(dt).sleep();
+    }
+  }
 
   /// set Current state of vehicle
   {
@@ -128,128 +342,6 @@ int main(int argc, char **argv) {
       // Terminate if simulation time has exceeded
       if (simulated_time > max_experiment_duration) terminate_mapping = true;
       /// TODO: Define termination condition for map quality
-      if (terminate_mapping) {
-        break;
-      }
-    }
-  }
-  // Run coverage planner
-  {
-    ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("coverage/camera_path", 1, true);
-    ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("coverage/camera_poses", 1, true);
-    ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("coverage/viewpoints", 1, true);
-    std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
-    // Add elevation map from GeoTIFF file defined in path
-    adaptive_viewutility->LoadMap(file_path);
-
-    ros::Time start_time_ = ros::Time::now();
-
-    /// set Current state of vehicle
-
-    grid_map::Polygon polygon;
-
-    // Hah! we have access to the map reference. be careful!
-    grid_map::GridMap &map = adaptive_viewutility->getViewUtilityMap()->getGridMap();
-    const Eigen::Vector2d map_pos = map.getPosition();
-    const double map_width_x = map.getLength().x();
-    const double map_width_y = map.getLength().y();
-
-    polygon.setFrameId(map.getFrameId());
-    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
-    polygon.addVertex(grid_map::Position(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y));
-
-    adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
-
-    // From "Huang, Wesley H. "Optimal line-sweep-based decompositions for coverage algorithms." Proceedings 2001 ICRA.
-    // IEEE International Conference on Robotics and Automation (Cat. No. 01CH37164). Vol. 1. IEEE, 2001."
-    // The optimal sweep pattern direction coinsides with the edge direction of the ROI polygon
-
-    /// TODO: Get sweep distance from sensor model
-    grid_map::Polygon offset_polygon = polygon;
-    offset_polygon.offsetInward(1.0);
-
-    double simulated_time{0.0};
-
-    Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 0.0);
-    Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
-    adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
-    Eigen::Vector2d vehicle_startpos_2d{Eigen::Vector2d(vehicle_pos(0), vehicle_pos(1))};
-
-    Eigen::Vector2d start_pos_2d = offset_polygon.getVertex(0);
-
-    // Run sweep segments until the boundary
-    double view_distance = 51.6;
-    double altitude = 100.0;
-    Eigen::Vector2d sweep_direction = (polygon.getVertex(1) - polygon.getVertex(0)).normalized();
-    Eigen::Vector2d sweep_perpendicular = (polygon.getVertex(3) - polygon.getVertex(0)).normalized();
-
-    double dt = 2.0;
-    Eigen::Vector2d vehicle_pos_2d = start_pos_2d;
-    int max_viewpoints = 1000;  // Terminate when the number of view points exceed the maximum
-
-    // Generate a lawnmower pattern survey
-    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
-
-    bool terminate_mapping = false;
-    double planning_horizon = 2.0;
-    double turning_time = 10.0;
-    bool survey_finished{false};
-
-    auto data_logger = std::make_shared<DataLogger>();
-    data_logger->setKeys({"timestamp", "coverage", "quality"});
-
-    bool survey_start = true;
-
-    while (true) {
-      if (survey_start) {
-        double traverse_time = (start_pos_2d - vehicle_startpos_2d).norm() / vehicle_vel.norm();
-        simulated_time += planning_horizon;
-        Trajectory reference_trajectory;
-        adaptive_viewutility->UpdateUtility(reference_trajectory);
-        if (simulated_time > traverse_time) {
-          survey_start = false;
-        }
-      } else if (!survey_finished) {
-        Trajectory reference_trajectory;
-        Eigen::Vector2d vehicle_vel_2d = 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
-
-        // Generate sweep pattern
-        Eigen::Vector2d candidate_vehicle_pos_2d = vehicle_vel_2d * dt + vehicle_pos_2d;
-        if (polygon.isInside(candidate_vehicle_pos_2d)) {
-          vehicle_pos_2d = candidate_vehicle_pos_2d;
-          simulated_time += planning_horizon;
-        } else {  // Reached the other end of the vertex
-          sweep_direction = -1.0 * sweep_direction;
-          vehicle_pos_2d = vehicle_pos_2d + sweep_perpendicular * view_distance;  // next row
-          simulated_time += turning_time;
-
-          if (!polygon.isInside(vehicle_pos_2d)) {
-            survey_finished = true;
-            break;
-          }
-        }
-
-        double elevation = map.atPosition("elevation", vehicle_pos_2d);
-        Eigen::Vector3d vehicle_pos(vehicle_pos_2d(0), vehicle_pos_2d(1), elevation + altitude);
-        Eigen::Vector3d vehicle_vel(vehicle_vel_2d(0), vehicle_vel_2d(1), 0.0);
-        Eigen::Vector4d vehicle_att(1.0, 0.0, 0.0, 0.0);
-        adaptive_viewutility->setCurrentState(vehicle_pos, vehicle_vel);
-        addViewpoint(reference_trajectory, vehicle_pos, vehicle_vel, vehicle_att);
-
-        adaptive_viewutility->UpdateUtility(reference_trajectory);
-
-        // Visualize results
-        adaptive_viewutility->MapPublishOnce();
-        adaptive_viewutility->ViewpointPublishOnce(camera_path_pub, camera_pose_pub);
-        adaptive_viewutility->publishViewpoint(viewpoint_pub, Eigen::Vector3d(1.0, 0.0, 0.0));
-      } else {
-        simulated_time += planning_horizon;
-      }
-
-      // Terminate if simulation time has exceeded
-      if (simulated_time > max_experiment_duration) terminate_mapping = true;
       if (terminate_mapping) {
         break;
       }
