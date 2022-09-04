@@ -3,7 +3,7 @@
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="terrain_navigation_ros" type="test_coverage_node" name="test_grid" output="screen">
         <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
-        <param name="num_experiments" value="1"/>
+        <param name="num_experiments" value="10"/>
         <param name="result_directory" value="$(find adaptive_viewutility)/../output"/>
         <param name="max_experiment_duration" value="500.0"/>
         <param name="dt" value="0.2"/>

@@ -110,6 +110,7 @@ int main(int argc, char **argv) {
   ros::Publisher camera_path_pub = nh.advertise<nav_msgs::Path>("camera_path", 1, true);
   ros::Publisher camera_pose_pub = nh.advertise<geometry_msgs::PoseArray>("camera_poses", 1, true);
   ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
+  bool random_initial_state{false};
 
   for (int i = 0; i < num_experiments; i++) {
     std::shared_ptr<AdaptiveViewUtility> adaptive_viewutility = std::make_shared<AdaptiveViewUtility>(nh, nh_private);
@@ -159,7 +160,12 @@ int main(int argc, char **argv) {
     /// TODO: Get start velocity from geometry
     Eigen::Vector3d vehicle_pos(map_pos(0), map_pos(1), 0.0);
     Eigen::Vector3d vehicle_vel(15.0, 0.0, 0.0);
-    adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+    if (random_initial_state) {
+      adaptive_viewutility->InitializeVehicleFromMap(vehicle_pos, vehicle_vel);
+    } else {
+      vehicle_pos = coverage_start_pos;
+      random_initial_state = true;
+    }
 
     // Place holders
     double simulated_time{0.0};
@@ -213,14 +219,10 @@ int main(int argc, char **argv) {
           double gamma = 0.1;  // maximum flight path angle
           double max_elevation_difference =
               (previous_candidate_pos.head(2) - candidate_vehicle_pos_2d).norm() * std::tan(gamma);
-          std::cout << "  - max elevation_difference: " << max_elevation_difference << std::endl;
-          std::cout << "  - previous elevation: " << previous_candidate_pos.z() << std::endl;
-          std::cout << "  - unconstrained elevation: " << candidate_elevation << std::endl;
           candidate_elevation =
               previous_candidate_pos.z() +
               std::max(std::min(candidate_elevation - previous_candidate_pos.z(), max_elevation_difference),
                        -max_elevation_difference);
-          std::cout << "  - constrained elevation: " << candidate_elevation << std::endl;
         }
         candidate_vehicle_pos =
             Eigen::Vector3d(candidate_vehicle_pos_2d.x(), candidate_vehicle_pos_2d.y(), candidate_elevation);
