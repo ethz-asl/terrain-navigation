@@ -356,18 +356,21 @@ bool ViewUtilityMap::initializeEmptyMap() {
   return true;
 }
 
-void ViewUtilityMap::OutputMapData(const std::string path) {
+void ViewUtilityMap::OutputMapData(const std::vector<std::string> layers, const std::string path) {
   // Write data to files
 
   std::ofstream output_file;
   output_file.open(path);
-  output_file << "geometric_prior,visibility,\n";
+  for (auto layer : layers) {
+    output_file << layer << ",";
+  }
+  output_file << "\n";
 
   for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index index(*iterator);
-
-    output_file << grid_map_.at("geometric_prior", index) << ",";
-    output_file << grid_map_.at("visibility", index) << ",";
+    for (auto layer : layers) {
+      output_file << grid_map_.at(layer, index) << ",";
+    }
     output_file << "\n";
   }
 

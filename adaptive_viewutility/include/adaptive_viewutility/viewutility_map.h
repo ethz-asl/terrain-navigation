@@ -81,7 +81,7 @@ class ViewUtilityMap {
   grid_map::GridMap &getGridMap() { return grid_map_; };
   std::vector<CellInfo> getCellInfo() { return cell_information_; };
   void UpdateUtility(ViewPoint &viewpoint) { CalculateViewUtility(viewpoint, true, cell_information_, grid_map_); };
-  void OutputMapData(const std::string path);
+  void OutputMapData(const std::vector<std::string> layers, const std::string path);
   double CalculateViewUtility(std::vector<ViewPoint> &viewpoint_set, bool update_utility_map);
 
   /**
