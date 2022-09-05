@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
   printGridmapInfo("Groundtruth map (After Transform)", groundtruth_map->getGridMap());
   printGridmapInfo("Estimated map", estimated_map->getGridMap());
 
-  groundtruth_map->CompareMapLayer(estimated_map->getGridMap());
+  // groundtruth_map->CompareMapLayer(estimated_map->getGridMap());
 
   grid_map::GridMap viewutility_map;
   if (!viewutility_map_path.empty()) {
