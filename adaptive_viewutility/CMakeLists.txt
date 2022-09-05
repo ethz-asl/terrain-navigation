@@ -93,18 +93,6 @@ add_executable(test_normals_node
 add_dependencies(test_normals_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_normals_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
 
-add_executable(run_meshtrimmer_node
-  src/run_meshtrimmer_node.cpp
-)
-add_dependencies(run_meshtrimmer_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(run_meshtrimmer_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
-
-add_executable(compare_mesh_node
-  src/compare_mesh_node.cpp
-)
-add_dependencies(compare_mesh_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(compare_mesh_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
-
 add_executable(test_gridmap_loader
   src/test_gridmap_loader.cpp
 )
