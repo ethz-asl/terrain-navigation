@@ -331,6 +331,6 @@ int main(int argc, char **argv) {
   std::cout << "  - Number of images: " << num_images << std::endl;
   std::cout << "  - Elapsed Time: " << elapsed_time << std::endl;
 
-  ros::spin();
+  // ros::spin();
   return 0;
 }

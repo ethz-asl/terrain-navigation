@@ -1,15 +1,18 @@
 <launch>
-    <arg name="visualization" default="true"/>
+    <arg name="visualization" default="false"/>
+    <arg name="output_path" default="$(find adaptive_viewutility)/../output"/>
+    <arg name="num_samples" default="50"/>
+
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
-    <node pkg="airsim_client" type="test_random_airsim_node" name="test_planner" output="screen">
+    <node pkg="airsim_client" type="test_random_airsim_node" name="test_planner" output="screen" required="true">
         <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
         <param name="viewpoint_path" value="$(find adaptive_viewutility)/../resources/executed_viewset.csv"/>
-        <param name="num_view_samples" value="200"/>
-        <param name="output_directory_path" value="$(find adaptive_viewutility)/../output"/>
+        <param name="num_view_samples" value="$(arg num_samples)"/>
+        <param name="output_directory_path" value="$(arg output_path)"/>
         <param name="num_experiments" value="1"/>
         <param name="max_experiment_duration" value="100"/>
         <param name="snapshot_interval" value="10"/>
-        <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
+        <param name="image_directory" value="$(arg output_path)/images"/>
         <param name="enable_greedy" value="true"/>
     </node>
     <group if="$(arg visualization)">

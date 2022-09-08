@@ -98,8 +98,8 @@ void AirsimClient::setPose(const Eigen::Vector3d &pos, const Eigen::Vector4d &at
       memcpy(cv_image.data, image_info.image_data_uint8.data(), image_info.image_data_uint8.size() * sizeof(char));
 
       if (image_directory_path_ != "") {
-        file_name = std::to_string(image_info.time_stamp);
-        std::string file_path = common_utils::FileSystem::combine(image_directory_path_, file_name) + ".jpeg";
+        file_name = std::to_string(image_info.time_stamp) + ".jpeg";
+        std::string file_path = common_utils::FileSystem::combine(image_directory_path_, file_name);
 
         imwrite(file_path, cv_image);  // A JPG FILE IS BEING SAVED
 

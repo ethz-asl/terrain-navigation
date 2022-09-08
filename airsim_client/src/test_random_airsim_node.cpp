@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
     adaptive_viewutility->getViewUtilityMap()->SetRegionOfInterest(polygon);
 
     Profiler pipeline_perf("Planner Loop");
-    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>(i);
+    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
 
     bool terminate_mapping = false;
     double simulated_time{0.0};
@@ -207,6 +207,7 @@ int main(int argc, char **argv) {
 
     std::shared_ptr<DataLogger> data_logger = std::make_shared<DataLogger>();
     data_logger->setKeys({"file", "X", "Y", "Z"});
+    data_logger->setSeparator(" ");
 
     std::vector<Trajectory> candidate_viewpoints;
     if (viewpoint_path.empty()) {  // Generate viewpoints and save it to a file
@@ -261,7 +262,7 @@ int main(int argc, char **argv) {
 
       pipeline_perf.toc();
       adaptive_viewutility->MapPublishOnce();
-      adaptive_viewutility->ViewpointPublishOnce();
+      // adaptive_viewutility->ViewpointPublishOnce();
       adaptive_viewutility->publishCandidatePaths(candidate_viewpoints);
 
       double planning_horizon = 1.0;
@@ -270,8 +271,8 @@ int main(int argc, char **argv) {
       simulated_time += planning_horizon;
       increment++;
 
-      double map_quality =
-          performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
+      // double map_quality =
+      //     performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
       if (increment % snapshot_increment == 0) {
         std::string saved_map_path = image_directory + "/gridmap_" +
                                      std::to_string(static_cast<int>(increment / snapshot_increment) - 1) + ".bag";
@@ -295,6 +296,6 @@ int main(int argc, char **argv) {
   }
   std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
 
-  ros::spin();
+  // ros::spin();
   return 0;
 }

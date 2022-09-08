@@ -292,7 +292,9 @@ void AdaptiveViewUtility::estimateViewUtility(std::vector<Trajectory> &motion_pr
   }
 }
 
-void AdaptiveViewUtility::OutputMapData(const std::string &path) { viewutility_map_->OutputMapData({"geometric_prior", "visibility"}, path); }
+void AdaptiveViewUtility::OutputMapData(const std::string &path) {
+  viewutility_map_->OutputMapData({"geometric_prior", "visibility"}, path);
+}
 
 void AdaptiveViewUtility::InitializeVehicleFromMap(Eigen::Vector3d &init_pos, Eigen::Vector3d &init_vel) {
   double max_altitude = 150.0;

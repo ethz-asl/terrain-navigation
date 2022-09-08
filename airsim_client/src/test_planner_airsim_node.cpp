@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
     std::cout << "Initial Velocity: " << vehicle_vel.transpose() << std::endl;
     adaptive_viewutility->setCurrentState(vehicle_pos, vehicle_vel);
     Profiler pipeline_perf("Planner Loop");
-    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>(i);
+    std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
 
     bool terminate_mapping = false;
     double simulated_time{0.0};
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
       std::cout << "Planning time: " << pipeline_perf.toc() << std::endl;
       time_vector.push_back(pipeline_perf.toc());
       adaptive_viewutility->MapPublishOnce();
-      adaptive_viewutility->ViewpointPublishOnce();
+      // adaptive_viewutility->ViewpointPublishOnce();
 
       double planning_horizon = adaptive_viewutility->getViewPlanner()->getPlanningHorizon();
       simulated_time += planning_horizon;
@@ -168,8 +168,8 @@ int main(int argc, char **argv) {
             image_directory + "/gridmap_" + std::to_string(static_cast<int>(snapshot_index)) + ".bag";
         grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(),
                                                  saved_map_path, "/grid_map");
-        double map_quality =
-            performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
+        // double map_quality =
+        //     performance_tracker->Record(simulated_time, adaptive_viewutility->getViewUtilityMap()->getGridMap());
         snapshot_index++;
       }
     }
@@ -191,6 +191,6 @@ int main(int argc, char **argv) {
   std::cout << "  - mean: " << mean << std::endl;
   std::cout << "  - stdev: " << stdev << std::endl;
 
-  ros::spin();
+  // ros::spin();
   return 0;
 }
