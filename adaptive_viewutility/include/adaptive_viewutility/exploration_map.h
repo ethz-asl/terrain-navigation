@@ -38,36 +38,17 @@
  *
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
-#ifndef SPHERICALCOVERAGE_MAP_H
-#define SPHERICALCOVERAGE_MAP_H
+#ifndef EXPLORATION_MAP_H
+#define EXPLORATION_MAP_H
 
 #include "adaptive_viewutility/viewutility_map.h"
 
-class SphericalCoverageMap : public ViewUtilityMap {
+class ExplorationMap : public ViewUtilityMap {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  SphericalCoverageMap(grid_map::GridMap &grid_map);
-  virtual ~SphericalCoverageMap();
+  ExplorationMap(grid_map::GridMap &grid_map);
+  virtual ~ExplorationMap();
 
-  /**
-   * @brief Helper function to evaluate coverage with hemisphere radials
-   *
-   * @param view unit vector of view point
-   * @param sample unit vector of hemisphere sample
-   * @param distance distance to view point
-   * @return true inside hemisphere cover
-   * @return false not inside hemisphere cover
-   */
-  static bool hemisphereInside(const Eigen::Vector3d &view, const Eigen::Vector3d &sample, const double distance) {
-    double theta_max{0.5 * 0.25 * M_PI};
-    double t0 = 100.0;
-    double t_half = 30.0;
-    double angle = std::acos(sample.dot(view));  // Angle between view sample and sample
-    double radius = theta_max * std::pow(2.0, -std::max(distance - t0, 0.0) / t_half);
-    return bool(angle < radius);  // Sample is inside the radius of a view
-  }
-
- protected:
   /**
    * @brief Calculate view utility of the viewpoint
    *
@@ -78,7 +59,7 @@ class SphericalCoverageMap : public ViewUtilityMap {
    * @return double view utility
    */
   double CalculateViewUtility(ViewPoint &viewpoint, bool update_utility_map, std::vector<CellInfo> &cell_information,
-                              grid_map::GridMap &grid_map) override;
+                              grid_map::GridMap &grid_map);
 
  private:
 };

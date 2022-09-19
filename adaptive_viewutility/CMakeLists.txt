@@ -37,13 +37,14 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-  src/sphericalcoverage_map.cpp
-  src/geometricprior_map.cpp
-  src/viewutility_map.cpp
-  src/viewplanner.cpp
-  src/performance_tracker.cpp
   src/adaptive_viewutility.cpp
   src/data_logger.cpp
+  src/exploration_map.cpp
+  src/geometricprior_map.cpp
+  src/performance_tracker.cpp
+  src/sphericalcoverage_map.cpp
+  src/viewutility_map.cpp
+  src/viewplanner.cpp
 )
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

@@ -1,14 +1,19 @@
 <launch>
     <arg name="visualization" default="true"/>
+    <arg name="num_experiments" default="1"/>
+    <arg name="max_experiment_duration" default="500"/>
+    <arg name="output_path" default="$(find adaptive_viewutility)/../output"/>
+
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
-    <node pkg="airsim_client" type="test_gridplanner_node" name="test_planner" output="screen">
+    <node pkg="airsim_client" type="test_gridplanner_node" name="test_planner" output="screen" required="true">
         <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
-        <param name="output_file_path" value="$(find adaptive_viewutility)/../output/benchmark.csv"/>
-        <param name="num_experiments" value="1"/>
-        <param name="max_experiment_duration" value="300"/>
+        <param name="max_experiment_duration" value="$(arg max_experiment_duration)"/>
+        <param name="num_experiments" value="$(arg num_experiments)"/>
+        <param name="output_directory_path" value="$(arg output_path)"/>
         <param name="snapshot_interval" value="20"/>
         <param name="viewpoint_noise" value="true"/>
-        <param name="image_directory" value="$(find adaptive_viewutility)/../output"/>
+        <param name="dt" value="0.2"/>
+        <param name="image_directory" value="$(arg output_path)/images"/>
     </node>
 
     <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">

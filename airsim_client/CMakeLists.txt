@@ -3,6 +3,8 @@ project(airsim_client)
 
 add_definitions(-std=c++17)
 
+find_package(ompl REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -15,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_geo
   adaptive_viewutility
   terrain_navigation
+  terrain_planner
 )
 
 catkin_package(
@@ -30,6 +33,7 @@ include_directories(
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
+  ${OMPL_INCLUDE_DIR}
 )
 
 set(AIRSIM_ROOT "/home/jaeyoung/dev/AirSim")
@@ -72,11 +76,11 @@ add_dependencies(test_random_airsim_node adaptive_viewutility ${${PROJECT_NAME}_
 target_link_libraries(test_random_airsim_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} pthread AirLib rpc MavLinkCom)
 
 
-# add_executable(test_gridplanner_node
-#   src/test_gridplanner_node.cpp
-# )
-# add_dependencies(test_gridplanner_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# target_link_libraries(test_gridplanner_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} pthread AirLib rpc MavLinkCom)
+add_executable(test_gridplanner_node
+  src/test_gridplanner_node.cpp
+)
+add_dependencies(test_gridplanner_node adaptive_viewutility ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_gridplanner_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES} pthread AirLib rpc MavLinkCom)
 
 
 add_executable(get_airsim_position_node

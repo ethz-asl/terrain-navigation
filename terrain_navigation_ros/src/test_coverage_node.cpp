@@ -197,16 +197,17 @@ int main(int argc, char **argv) {
     while (true) {
       elapsed_time = simulated_time - last_update_time;
       if (elapsed_time >= traverse_time) {
-        std::cout << " **** Update: " << vehicle_pos.transpose() << std::endl;
         previous_candidate_pos = candidate_vehicle_pos;
         // Update where the next viewpoint should be
         candiate_vehicle_vel_2d = 2 * 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
         // Generate sweep pattern
+        bool turning = false;
         candidate_vehicle_pos_2d = candiate_vehicle_vel_2d + vehicle_pos.head(2);
         if (!polygon.isInside(candidate_vehicle_pos_2d)) {  // Reached the other end of the vertex
           sweep_direction = -1.0 * sweep_direction;
           candidate_vehicle_pos_2d = vehicle_pos.head(2) + sweep_perpendicular * sweep_distance;  // next row
           candiate_vehicle_vel_2d = 2 * 15.0 * Eigen::Vector2d(sweep_direction(0), sweep_direction(1));
+          turning = true;
           if (!polygon.isInside(candidate_vehicle_pos_2d)) {
             // Grid pattern has been completed
             break;
@@ -214,7 +215,7 @@ int main(int argc, char **argv) {
         }
         double candidate_elevation = map.atPosition("elevation", candidate_vehicle_pos_2d) + altitude;
 
-        if (constrain_elevation) {
+        if (constrain_elevation && !turning) {
           // Constrain next viewpoint with climbrate
           double gamma = 0.1;  // maximum flight path angle
           double max_elevation_difference =

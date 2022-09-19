@@ -42,8 +42,4 @@ clean-dataset:
 	rm -rf output/dataset
 
 clean: clean-dataset
-	rm -f output/*.jpeg
-	rm -f output/*.bag
-	rm -f output/*.png
-	rm -f output/*.csv
-	rm -f output/*.txt
+	rm -rf output/*

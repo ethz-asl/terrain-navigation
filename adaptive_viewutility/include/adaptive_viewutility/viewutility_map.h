@@ -131,8 +131,8 @@ class ViewUtilityMap {
   void TransformMap(const Eigen::Vector3d &translation);
 
  protected:
-  double CalculateViewUtility(ViewPoint &viewpoint, bool update_utility_map, std::vector<CellInfo> &cell_information,
-                              grid_map::GridMap &grid_map);
+  virtual double CalculateViewUtility(ViewPoint &viewpoint, bool update_utility_map,
+                                      std::vector<CellInfo> &cell_information, grid_map::GridMap &grid_map);
   grid_map::Polygon getVisibilityPolygon(ViewPoint &viewpoint, grid_map::GridMap &grid_map);
 
   grid_map::GridMap &grid_map_;

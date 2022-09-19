@@ -37,6 +37,7 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
+#include <ctime>
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "adaptive_viewutility/data_logger.h"
 #include "adaptive_viewutility/performance_tracker.h"
@@ -151,14 +152,12 @@ int main(int argc, char **argv) {
 
   std::string file_path, output_dir_path, viewpoint_path;
   int num_experiments;
-  double max_experiment_duration;
   bool enable_greedy{false};
   int snapshot_increment{20};
   int num_samples{200};
   nh_private.param<std::string>("file_path", file_path, "");
   nh_private.param<int>("num_experiments", num_experiments, 1);
   nh_private.param<int>("snapshot_interval", snapshot_increment, 20);
-  nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
   nh_private.param<int>("num_view_samples", num_samples, 200);
   nh_private.param<bool>("enable_greedy", enable_greedy, false);
   nh_private.param<std::string>("viewpoint_path", viewpoint_path, "");
@@ -169,6 +168,7 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<AirsimClient> airsim_client = std::make_shared<AirsimClient>();
   airsim_client->setImageDirectory(image_directory);
+  srand(time(0));
 
   /// set Current state of vehicle
   /// TODO: Randomly generate initial position
@@ -202,7 +202,6 @@ int main(int argc, char **argv) {
     std::shared_ptr<PerformanceTracker> performance_tracker = std::make_shared<PerformanceTracker>();
 
     bool terminate_mapping = false;
-    double simulated_time{0.0};
     int increment{0};
 
     std::shared_ptr<DataLogger> data_logger = std::make_shared<DataLogger>();
@@ -225,8 +224,7 @@ int main(int argc, char **argv) {
     std::vector<Trajectory> executed_viewset;
 
     while (true) {
-      // Terminate if simulation time has exceeded
-      if (simulated_time >= max_experiment_duration) {
+      if (increment > num_samples - 1) {
         break;
       }
 
@@ -268,7 +266,6 @@ int main(int argc, char **argv) {
       double planning_horizon = 1.0;
       /// TODO: Use dubins distance for calculating time to reach viewpoint
 
-      simulated_time += planning_horizon;
       increment++;
 
       // double map_quality =
@@ -286,7 +283,7 @@ int main(int argc, char **argv) {
     grid_map::GridMapRosConverter::saveToBag(adaptive_viewutility->getViewUtilityMap()->getGridMap(), saved_map_path,
                                              "/grid_map");
     std::cout << "Final : " << saved_map_path << std::endl;
-    std::cout << "[TestPlannerNode] Planner terminated experiment: " << i << std::endl;
+    std::cout << "[TestRandomAirsimNode] Planner terminated experiment: " << i << std::endl;
     std::string executed_view_set_path = output_dir_path + "/executed_viewset.csv";
     std::cout << "[TestRandomAirsimNode] Executed view set path: " << executed_view_set_path << std::endl;
     OutputViewset(executed_viewset, executed_view_set_path);
@@ -294,8 +291,6 @@ int main(int argc, char **argv) {
     std::cout << "[TestAirsimRandomNode] write to file" << std::endl;
     data_logger->writeToFile(output_dir_path + "/camera.txt");
   }
-  std::cout << "[TestPlannerNode] Planner terminated" << std::endl;
-
-  // ros::spin();
+  std::cout << "[TestRandomAirsimNode] Planner terminated" << std::endl;
   return 0;
 }

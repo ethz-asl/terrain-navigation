@@ -37,6 +37,9 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 #include "adaptive_viewutility/adaptive_viewutility.h"
+#include "adaptive_viewutility/exploration_map.h"
+#include "adaptive_viewutility/sphericalcoverage_map.h"
+
 #include "terrain_navigation/profiler.h"
 #include "terrain_navigation/visualization.h"
 
@@ -53,6 +56,7 @@ AdaptiveViewUtility::AdaptiveViewUtility(const ros::NodeHandle &nh, const ros::N
 
   grid_map_ = grid_map::GridMap({"roi", "elevation", "elevation_normal_x", "elevation_normal_y", "elevation_normal_z",
                                  "visibility", "geometric_prior", "normalized_prior"});
+
   viewutility_map_ = std::make_shared<ViewUtilityMap>(grid_map_);
   viewplanner_ = std::make_shared<ViewPlanner>();
 }

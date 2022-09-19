@@ -3,7 +3,7 @@
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="adaptive_viewutility" type="test_random_node" name="test_planner" output="screen">
         <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
-        <param name="viewpoint_path" value="$(find adaptive_viewutility)/../resources/executed_viewset.csv"/>
+        <!-- <param name="viewpoint_path" value="$(find adaptive_viewutility)/../resources/executed_viewset.csv"/> -->
         <param name="num_view_samples" value="200"/>
         <param name="output_directory_path" value="$(find adaptive_viewutility)/../output"/>
         <param name="num_experiments" value="1"/>

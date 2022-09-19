@@ -2,7 +2,7 @@
     <arg name="visualization" default="true"/>
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="adaptive_viewutility" type="test_mesh_node" name="test_mesh" output="screen">
-        <param name="file_path" value="$(find adaptive_viewutility)/../resources/LandscapeMapwithout_cropped_rescaled_x90.obj"/>
+        <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
     </node>
 
     <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">

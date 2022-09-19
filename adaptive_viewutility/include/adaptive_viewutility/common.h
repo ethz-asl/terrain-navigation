@@ -163,7 +163,8 @@ bool parseAttitudeFromText(std::string text_path, std::string image_file, Eigen:
 }
 
 double getRandom(double min, double max) {
-  return std::abs(max - min) * static_cast<double>(rand()) / static_cast<double>(RAND_MAX) + std::min(max, min);
+  return std::abs(max - min) * static_cast<double>(static_cast<double>(rand()) / static_cast<double>(RAND_MAX)) +
+         std::min(max, min);
 }
 
 double getNormalRandom(double mean, double sigma) {

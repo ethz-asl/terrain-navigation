@@ -13,7 +13,7 @@
         <param name="max_experiment_duration" value="100"/>
         <param name="snapshot_interval" value="10"/>
         <param name="image_directory" value="$(arg output_path)/images"/>
-        <param name="enable_greedy" value="true"/>
+        <param name="enable_greedy" value="false"/>
     </node>
     <group if="$(arg visualization)">
         <node type="rviz" name="rviz" pkg="rviz" args="-d $(find adaptive_viewutility)/launch/config_random.rviz" />

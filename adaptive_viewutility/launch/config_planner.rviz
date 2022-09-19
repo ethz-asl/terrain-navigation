@@ -65,7 +65,7 @@ Visualization Manager:
       Color: 200; 200; 200
       Color Layer: color
       Color Transformer: ColorLayer
-      Enabled: true
+      Enabled: false
       Height Layer: elevation
       Height Transformer: GridMapLayer
       History Length: 1
@@ -79,7 +79,7 @@ Visualization Manager:
       Topic: /grid_map
       Unreliable: false
       Use Rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Class: grid_map_rviz_plugin/GridMap
@@ -172,13 +172,13 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /candidate_path
       Name: MarkerArray
       Namespaces:
-        my_namespace: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -207,25 +207,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1414.37353515625
+      Distance: 1259.417236328125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -593.42724609375
-        Y: 213.8929901123047
-        Z: -74.67927551269531
+        X: -19.343828201293945
+        Y: -385.5036315917969
+        Z: -285.5233459472656
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5548006892204285
+      Pitch: 0.8448004126548767
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.5798701643943787
+      Yaw: 0.664870023727417
     Saved: ~
 Window Geometry:
   Displays:

@@ -146,7 +146,6 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
     grid_map::Matrix &layer_geometricprior = grid_map["geometric_prior"];
     grid_map::Matrix &layer_sample_distance = grid_map["ground_sample_distance"];
     grid_map::Matrix &layer_incident_prior = grid_map["incident_prior"];
-    grid_map::Matrix &layer_triangulation_prior = grid_map["triangulation_prior"];
     grid_map::Matrix &layer_utility = grid_map["normalized_prior"];
     grid_map::Matrix &layer_min_eigen_value = grid_map["min_eigen_value"];
     for (grid_map::PolygonIterator iterator(grid_map, polygon); !iterator.isPastEnd(); ++iterator) {
@@ -181,9 +180,7 @@ double ViewUtilityMap::CalculateViewUtility(ViewPoint &viewpoint, bool update_ut
       Eigen::Matrix3d cell_fim = cell_information[idx].fisher_information;
 
       // Calculate fisher information of each bearing vector observation
-      double reference_view_distance = 100;
       Eigen::Vector3d bearing_vector = -view_vector;
-      // double gsd_prior = getGroundSamplePrior(bearing_vector, optical_center, reference_view_distance);
       double pixel_res = viewpoint.getPixelResolution();
       double sigma = std::sin(pixel_res);
       Eigen::Matrix3d fim = getFisherInformationMatrix(bearing_vector, view_distance, sigma);
@@ -295,6 +292,7 @@ bool ViewUtilityMap::initializeFromMesh(const std::string &path, const double re
 
   grid_map::GridMapPclConverter::initializeFromPolygonMesh(mesh, res, grid_map_);
   grid_map::GridMapPclConverter::addLayerFromPolygonMesh(mesh, "elevation", grid_map_);
+  grid_map::GridMapPclConverter::addColorLayerFromPolygonMesh(mesh, "color", grid_map_);
 
   double width = grid_map_.getSize()(0);
   double height = grid_map_.getSize()(1);
