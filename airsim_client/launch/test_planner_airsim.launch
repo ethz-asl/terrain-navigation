@@ -4,7 +4,8 @@
     <arg name="max_experiment_duration" default="200"/>
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="airsim_client" type="test_planner_airsim_node" name="test_planner" output="screen" required="true">
-        <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/>
+        <!-- <param name="file_path" value="/home/jaeyoung/dev/mesh/groundtruth_roi_meshlab.obj"/> -->
+        <param name="file_path" value="/home/jaeyoung/dev/mesh/slope_scaled.obj"/>
         <param name="output_directory_path" value="$(arg output_path)"/>
         <param name="num_experiments" value="1"/>
         <param name="snapshot_interval" value="20"/>

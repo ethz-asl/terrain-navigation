@@ -39,6 +39,8 @@
 #include "adaptive_viewutility/adaptive_viewutility.h"
 #include "adaptive_viewutility/exploration_map.h"
 #include "adaptive_viewutility/sphericalcoverage_map.h"
+#include "adaptive_viewutility/exploration_map.h"
+#include "adaptive_viewutility/sphericalcoverage_map.h"
 
 #include "terrain_navigation/profiler.h"
 #include "terrain_navigation/visualization.h"
