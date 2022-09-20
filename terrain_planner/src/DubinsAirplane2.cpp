@@ -569,14 +569,12 @@ void DubinsAirplane2StateSpace::dubins(double d, double alpha, double beta, Dubi
     // distance cases.
     path.setClassification(classifyPath(alpha, beta));
 
-    bool long_path_case = d > (sqrtf(4.0 - pow(fabs(ca) + fabs(cb), 2.0)) + fabs(sa) + fabs(sb));
+    bool long_path_case = d > (sqrtf(4.0 - pow(ca + cb, 2.0)) + fabs(sa) + fabs(sb));
 
     if (long_path_case) {  // sufficient condition for optimality of CSC path type
       ++long_ctr_;
       calcDubPathWithClassification(path, d, alpha, beta, sa, sb, ca, cb);
-    }
-    /// TODO: This is a bandaid to still return valid dubins paths if the dubins classification returns invalid paths
-    if (!long_path_case | !std::isfinite(path.length_2D())) {  // path of type CCC or CSC will be optimal
+    } else {  // path of type CCC or CSC will be optimal
       ++short_ctr_;
       calcDubPathWithoutClassification(path, d, alpha, beta, sa, sb, ca, cb);
     }
