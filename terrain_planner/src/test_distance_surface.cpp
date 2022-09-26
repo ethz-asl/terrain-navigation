@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   std::shared_ptr<ManeuverLibrary> maneuver_library_ = std::make_shared<ManeuverLibrary>();
   std::shared_ptr<TerrainMap> terrain_map_ = std::make_shared<TerrainMap>();
   terrain_map_->Load(map_path, true);
-  terrain_map_->AddLayerDistamceTransform(distance_surface);
+  terrain_map_->AddLayerDistanceTransform("distance_surface");
   maneuver_library_->setTerrainMap(terrain_map_);
 
   while (true) {
