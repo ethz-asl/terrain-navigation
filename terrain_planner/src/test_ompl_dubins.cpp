@@ -39,7 +39,6 @@
 
 #include <geometry_msgs/Point.h>
 #include <ros/ros.h>
-#include <terrain_navigation/terrain_map.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -89,6 +88,47 @@ void publishTrajectory(ros::Publisher& pub, std::vector<Eigen::Vector3d> traject
   pub.publish(msg);
 }
 
+void getDubinsShortestPath(const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
+                           const double goal_yaw, std::vector<Eigen::Vector3d>& path) {
+  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplane2StateSpace>();
+
+  ompl::base::State* from = dubins_ss->allocState();
+  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(start_pos.x());
+  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(start_pos.y());
+  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(start_pos.z());
+  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(start_yaw);
+
+  ompl::base::State* to = dubins_ss->allocState();
+  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(goal_pos.x());
+  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(goal_pos.y());
+  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(goal_pos.z());
+  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(goal_yaw);
+
+  ompl::base::State* state = dubins_ss->allocState();
+  bool publish = true;
+  for (double t = 0.0; t < 1.0; t += 0.02) {
+    dubins_ss->interpolate(from, to, t, state);
+    auto interpolated_state =
+        Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
+                        state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
+                        state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
+    if (interpolated_state(0) >= std::numeric_limits<float>::max() && publish) {
+      std::cout << "interpolated state had nans!" << std::endl;
+      std::cout << "  - start_yaw: " << start_yaw << " goal_yaw: " << goal_yaw << std::endl;
+      const double curvature = dubins_ss->getCurvature();
+      const double dx = (goal_pos(0) - start_pos(0)) * curvature;
+      const double dy = (goal_pos(1) - start_pos(1)) * curvature;
+      const double dz = (goal_pos(2) - start_pos(2)) * curvature;
+      const double fabs_dz = fabs(dz);
+      const double th = atan2f(dy, dx);
+      const double alpha = start_yaw - th;
+      const double beta = goal_yaw - th;
+      publish = false;
+    }
+    path.push_back(interpolated_state);
+  }
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ompl_rrt_planner");
   ros::NodeHandle nh("");
@@ -98,78 +138,20 @@ int main(int argc, char** argv) {
   auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
   auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
   auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
-  auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
 
-  std::string map_path, color_file_path;
-  nh_private.param<std::string>("map_path", map_path, "");
-  nh_private.param<std::string>("color_file_path", color_file_path, "");
-
-  // Load terrain map from defined tif paths
-  auto terrain_map = std::make_shared<TerrainMap>();
-  terrain_map->initializeFromGeotiff(map_path, false);
-  if (!color_file_path.empty()) {  // Load color layer if the color path is nonempty
-    terrain_map->addColorFromGeotiff(color_file_path);
-  }
-  terrain_map->AddLayerDistanceTransform("distance_surface");
-
-  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplane2StateSpace>();
   std::vector<double> start_yaw{0.0, 2.51681, 2.71681, 3.71681, 3.91681};
   std::vector<double> goal_yaw{3.53454, 6.17454, 6.23454, 0.25135, 0.31135};
   int idx = 0;
   while (true) {
     Eigen::Vector3d start_pos(0.0, 0.0, 0.0);
     Eigen::Vector3d goal_pos(152.15508, 0.0, 0.0);
-    std::cout << "index: " << idx % start_yaw.size() << std::endl;
-    ompl::base::State* from = dubins_ss->allocState();
-    from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(start_pos.x());
-    from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(start_pos.y());
-    from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(start_pos.z());
-    from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(start_yaw[idx % start_yaw.size()]);
 
-    // std::cout << "start state: " << start_pos.transpose() << ", " << start_yaw << std::endl;
-
-    ompl::base::State* to = dubins_ss->allocState();
-    to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(goal_pos.x());
-    to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(goal_pos.y());
-    to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(goal_pos.z());
-    to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(goal_yaw[idx % goal_yaw.size()]);
-
-    // std::cout << "goal state: " << goal_pos.transpose() << ", " << goal_yaw << std::endl;
-
-    ompl::base::State* state = dubins_ss->allocState();
     std::vector<Eigen::Vector3d> path;
-    bool publish = true;
-    for (double t = 0.0; t < 1.0; t += 0.02) {
-      dubins_ss->interpolate(from, to, t, state);
-      auto interpolated_state =
-          Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
-                          state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
-                          state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
-      if (interpolated_state(0) >= std::numeric_limits<float>::max() && publish) {
-        std::cout << "interpolated state had nans!" << std::endl;
-        std::cout << "  - start_yaw: " << start_yaw[idx % start_yaw.size()]
-                  << " goal_yaw: " << goal_yaw[idx % goal_yaw.size()] << std::endl;
-        // std::cout << "  - yaw_error    : " << modtwopi(goal_yaw[idx%goal_yaw.size()] -
-        // start_yaw[idx%start_yaw.size()])
-        // << std::endl;
-        const double curvature = dubins_ss->getCurvature();
-        const double dx = (goal_pos(0) - start_pos(0)) * curvature;
-        const double dy = (goal_pos(1) - start_pos(1)) * curvature;
-        const double dz = (goal_pos(2) - start_pos(2)) * curvature;
-        const double fabs_dz = fabs(dz);
-        const double th = atan2f(dy, dx);
-        const double alpha = start_yaw[idx % start_yaw.size()] - th;
-        const double beta = goal_yaw[idx % goal_yaw.size()] - th;
-        publish = false;
-      }
-      path.push_back(interpolated_state);
-    }
 
-    terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
-    grid_map_msgs::GridMap message;
-    grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
-    grid_map_pub.publish(message);
+    getDubinsShortestPath(start_pos, start_yaw[idx % start_yaw.size()], goal_pos, goal_yaw[idx % goal_yaw.size()],
+                          path);
+
     publishTrajectory(path_pub, path);
     publishPositionSetpoints(start_pos_pub, start_pos, start_yaw[idx % start_yaw.size()]);
     publishPositionSetpoints(goal_pos_pub, goal_pos, goal_yaw[idx % goal_yaw.size()]);
