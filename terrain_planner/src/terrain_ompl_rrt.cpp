@@ -15,7 +15,7 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   problem_setup_->setDefaultPlanner();
   problem_setup_->setDefaultObjective();
   assert(map);
-  problem_setup_->setOctomapCollisionChecking(map_->getGridMap());
+  problem_setup_->setTerrainCollisionChecking(map_->getGridMap());
   problem_setup_->getStateSpace()->setStateSamplerAllocator(
       std::bind(&TerrainOmplRrt::allocTerrainStateSampler, this, std::placeholders::_1));
   problem_setup_->getStateSpace()->allocStateSampler();

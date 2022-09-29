@@ -33,7 +33,7 @@ class OmplSetup : public geometric::SimpleSetup {
     si_->setStateValidityCheckingResolution(resolution);
   }
 
-  void setOctomapCollisionChecking(const grid_map::GridMap& map) {
+  void setTerrainCollisionChecking(const grid_map::GridMap& map) {
     std::shared_ptr<TerrainValidityChecker> validity_checker(new TerrainValidityChecker(getSpaceInformation(), map));
 
     setStateValidityChecker(base::StateValidityCheckerPtr(validity_checker));
