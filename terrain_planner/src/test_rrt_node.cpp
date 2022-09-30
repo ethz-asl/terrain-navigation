@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
   if (!color_file_path.empty()) {  // Load color layer if the color path is nonempty
     terrain_map->addColorFromGeotiff(color_file_path);
   }
-  terrain_map->AddLayerDistanceTransform("distance_surface");
+  terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
 
   std::vector<Eigen::Vector3d> path;
   double terrain_altitude{100.0};

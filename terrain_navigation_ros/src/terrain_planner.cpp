@@ -177,7 +177,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   if (local_origin_received_ && !map_initialized_) {
     std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
     map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
-    terrain_map_->AddLayerDistamceTransform("distance_surface");
+    terrain_map_->AddLayerDistanceTransform(50.0, "distance_surface");
     if (map_initialized_) {
       std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
       viewutility_map_->initializeFromGridmap();
