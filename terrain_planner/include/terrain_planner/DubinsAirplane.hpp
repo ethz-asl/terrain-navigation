@@ -1,5 +1,5 @@
 /*!
- * \file DubinsAirplane2.hpp
+ * \file DubinsAirplane.hpp
  *
  * \brief DUBINSAIRPLANE STATE SPACE for control-based planning with (non-optimal) Dubins airplane paths,
  * using geometric motion planning algorithms. (This is an extension ot the OMPL DubinsStateSpace)
@@ -32,10 +32,10 @@ namespace fw_planning {
 
 namespace spaces {
 
-/** \brief DubinsAirplane2StateSpace
+/** \brief DubinsAirplaneStateSpace
  * A Dubins airplane state space for (non-optimal) planning using (non-optimal) Dubins airplane paths.
  *
- * \note: The DubinsAirplane2StateSpace is asymmetric!!!!
+ * \note: The DubinsAirplaneStateSpace is asymmetric!!!!
  *
  * Computations are based on these two papers:
  *  [1] Time-optimal Paths for a Dubins airplane, Chitzsaz, LaValle, 2007
@@ -89,7 +89,7 @@ namespace spaces {
  *do not give the same results for the long path case, current guess is that this happens due to floating point
  *inaccuracies.
  */
-class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
+class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
  private:
   /** THRESHOLD_DISTANCE_GOAL_SQUARED
    * Threshold for the maximum allowed squared distance to goal.
@@ -108,14 +108,6 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * to more failed attemps of dubins path computation.
    */
   const int MAX_ITER = 12;
-
-  /** MAX_WIND_DRIFT_MULTI
-   * Maximum multiplication factor of the wind-drift-adjustment.
-   *
-   * @note: Too big numbers could take the path to completely different parts
-   * of the wind-field and also result in way longer paths.
-   */
-  const double MAX_WIND_DRIFT_MULTI = 2.0;
 
  public:
   /** \brief The state in the DA2 state space, consisting of
@@ -224,10 +216,10 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * @param[in] gam: The maximum climb angle of the airplane.
    * @param[in] useEuclDist: If true the euclidian distance is used, else the dubins airplane distance.
    */
-  DubinsAirplane2StateSpace(double turningRadius = 66.66667, double gam = 0.15, bool useEuclDist = false);
+  DubinsAirplaneStateSpace(double turningRadius = 66.66667, double gam = 0.15, bool useEuclDist = false);
 
   /** \brief Destructor */
-  virtual ~DubinsAirplane2StateSpace();
+  virtual ~DubinsAirplaneStateSpace();
 
   /** \brief getMaximumExtent
    * Get the maximum value a call to distance() can return (or an upper bound).
@@ -243,7 +235,7 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   virtual double getMaximumExtent() const override;
 
   /** \brief getEuclideanExtent
-   * Get the maximum extent of the RealVectorStateSpace part of the DubinsAirplane2StateSpace */
+   * Get the maximum extent of the RealVectorStateSpace part of the DubinsAirplaneStateSpace */
   double getEuclideanExtent() const;
 
   /** \brief validSegmentCount
@@ -442,28 +434,6 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   void resetDurationsAndCtrs();
 
  protected:
-  /** \brief WindDrift
-   * Struct to represent the wind drift.
-   */
-  struct WindDrift {
-    double x;
-    double y;
-    double z;
-
-    WindDrift() : x(0.0), y(0.0), z(0.0) {}
-
-    WindDrift(double x_in, double y_in, double z_in) : x(x_in), y(y_in), z(z_in) {}
-
-    WindDrift(const WindDrift& that) : x(that.x), y(that.y), z(that.z) {}
-
-    WindDrift& operator=(WindDrift that) {
-      this->x = that.x;
-      this->y = that.y;
-      this->z = that.z;
-      return *this;
-    }
-  };
-
   /** \brief dubins
    * Compute the (non-optimal) Dubins airplane path from SE(2)xR3 state state1 to SE(2)xR3 state state2
    *
@@ -602,17 +572,6 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
    * Converts the input segment index (0-5) to the corresponding path segment index (0-2).
    */
   unsigned int convert_idx(unsigned int i) const;
-
-  /** \brief calculateWindDrift
-   * Calculates the wind drift of a certain point in the dubins path.
-   *
-   * @param[in] from: Start state of the path.
-   * @param[in] t: The point where the drift should be computed, fraction of the total path length [0, 1]
-   * @param[in] dp: The dubins path.
-   * @return: The computed wind drift.
-   */
-  WindDrift calculateWindDrift(const ob::State* from, double t, const DubinsPath& dp,
-                               const SegmentStarts& segmentStarts) const;
 
   // TODO: Check if it makes sense to use mutable class variables for the following functions to speed it up.
   /** \brief t_lsr
@@ -831,14 +790,6 @@ class DubinsAirplane2StateSpace : public ob::CompoundStateSpace {
   /** \brief stateInterpolation_
    * Variable to store an intermediate result (state) in the interpolate function.*/
   mutable StateType* stateInterpolation_;
-
-  /** \brief stateInterpolation_
-   * Variable to store an intermediate result (state) in the compute wind drift function.*/
-  mutable ob::State* stateComputeWindDrift_;
-
-  /** \brief CWD_windDrift_
-   * Variable to store an intermediate result (wind drift) in the compute wind drift function.*/
-  mutable DubinsAirplane2StateSpace::WindDrift CWD_windDrift_;
 
   /** \brief CWD_meteoData_
    * Variable to store an intermediate result (meteo data) in the compute wind drift function.*/

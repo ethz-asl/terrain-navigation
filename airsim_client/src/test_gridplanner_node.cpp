@@ -55,33 +55,33 @@ void addViewpoint(Trajectory &trajectory, Eigen::Vector3d pos, Eigen::Vector3d v
 
 double interpolateDubins(Eigen::Vector3d start_pos, Eigen::Vector3d start_vel, Eigen::Vector3d goal_pos,
                          Eigen::Vector3d goal_vel, double progress, Eigen::Vector3d &interpolated_state) {
-  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplane2StateSpace>();
+  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
   dubins_ss->setMaxClimbingAngle(1.0);
 
   ompl::base::State *from = dubins_ss->allocState();
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(start_pos.x());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(start_pos.y());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(start_pos.z());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(start_pos.x());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(start_pos.y());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start_pos.z());
   double start_yaw = std::atan2(start_vel.y(), start_vel.x());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(start_yaw);
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start_yaw);
 
   ompl::base::State *to = dubins_ss->allocState();
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(goal_pos.x());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(goal_pos.y());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(goal_pos.z());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(goal_pos.x());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(goal_pos.y());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(goal_pos.z());
   double goal_yaw = std::atan2(goal_vel.y(), goal_vel.x());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(goal_yaw);
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(goal_yaw);
 
   ompl::base::State *state = dubins_ss->allocState();
 
   fw_planning::spaces::DubinsPath dubins_path;
-  fw_planning::spaces::DubinsAirplane2StateSpace::SegmentStarts segmentStarts;
+  fw_planning::spaces::DubinsAirplaneStateSpace::SegmentStarts segmentStarts;
   bool first_time = true;
   dubins_ss->interpolate(from, to, progress, first_time, dubins_path, segmentStarts, state);
 
-  interpolated_state.x() = state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX();
-  interpolated_state.y() = state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY();
-  interpolated_state.z() = state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ();
+  interpolated_state.x() = state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX();
+  interpolated_state.y() = state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY();
+  interpolated_state.z() = state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ();
 
   double curvature = dubins_ss->getMinTurningRadius();
 

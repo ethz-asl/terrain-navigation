@@ -86,11 +86,11 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
   std::vector<unsigned int> edge_list;
 
   // Create states, a marker and a list to store edges
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> vertex(problem_setup->getSpaceInformation());
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> neighbor_vertex(
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> vertex(problem_setup->getSpaceInformation());
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> neighbor_vertex(
       problem_setup->getSpaceInformation());
   size_t marker_idx{0};
-  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplane2StateSpace>();
+  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
   for (size_t i = 0; i < planner_data->numVertices(); i++) {
     visualization_msgs::Marker marker;
     marker.header.stamp = ros::Time().now();
@@ -130,24 +130,24 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
         // points.push_back(toMsg(Eigen::Vector3d(neighbor_vertex[0], neighbor_vertex[1], neighbor_vertex[2])));
         ompl::base::State* state = dubins_ss->allocState();
         ompl::base::State* from = dubins_ss->allocState();
-        from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(vertex[0]);
-        from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(vertex[1]);
-        from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(vertex[2]);
-        from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(vertex[3]);
+        from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(vertex[0]);
+        from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(vertex[1]);
+        from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(vertex[2]);
+        from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(vertex[3]);
 
         ompl::base::State* to = dubins_ss->allocState();
-        to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(neighbor_vertex[0]);
-        to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(neighbor_vertex[1]);
-        to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(neighbor_vertex[2]);
-        to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(neighbor_vertex[3]);
+        to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(neighbor_vertex[0]);
+        to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(neighbor_vertex[1]);
+        to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(neighbor_vertex[2]);
+        to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(neighbor_vertex[3]);
 
         std::vector<geometry_msgs::Point> points;
         for (double t = 0.0; t <= 1.0; t += 0.02) {
           dubins_ss->interpolate(from, to, t, state);
           auto interpolated_state =
-              Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
-                              state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
-                              state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
+              Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
+                              state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
+                              state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
           points.push_back(toMsg(interpolated_state));
         }
         points.push_back(toMsg(Eigen::Vector3d(neighbor_vertex[0], neighbor_vertex[1], neighbor_vertex[2])));

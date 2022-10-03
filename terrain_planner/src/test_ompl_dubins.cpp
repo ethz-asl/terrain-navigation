@@ -90,28 +90,28 @@ void publishTrajectory(ros::Publisher& pub, std::vector<Eigen::Vector3d> traject
 
 void getDubinsShortestPath(const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
                            const double goal_yaw, std::vector<Eigen::Vector3d>& path) {
-  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplane2StateSpace>();
+  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
 
   ompl::base::State* from = dubins_ss->allocState();
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(start_pos.x());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(start_pos.y());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(start_pos.z());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(start_yaw);
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(start_pos.x());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(start_pos.y());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start_pos.z());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start_yaw);
 
   ompl::base::State* to = dubins_ss->allocState();
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(goal_pos.x());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(goal_pos.y());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(goal_pos.z());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(goal_yaw);
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(goal_pos.x());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(goal_pos.y());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(goal_pos.z());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(goal_yaw);
 
   ompl::base::State* state = dubins_ss->allocState();
   bool publish = true;
   for (double t = 0.0; t < 1.0; t += 0.02) {
     dubins_ss->interpolate(from, to, t, state);
     auto interpolated_state =
-        Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
-                        state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
-                        state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
+        Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
+                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
+                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
     if (interpolated_state(0) >= std::numeric_limits<float>::max() && publish) {
       std::cout << "interpolated state had nans!" << std::endl;
       std::cout << "  - start_yaw: " << start_yaw << " goal_yaw: " << goal_yaw << std::endl;

@@ -40,13 +40,13 @@ class TerrainOmplRrt {
   }
   double getSolutionTime() { return solve_duration_; };
   static Eigen::Vector3d dubinsairplanePosition(ompl::base::State* state_ptr) {
-    Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
-                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
-                             state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
+    Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
+                             state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
+                             state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
     return position;
   }
   static double dubinsairplaneYaw(ompl::base::State* state_ptr) {
-    double yaw = state_ptr->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getYaw();
+    double yaw = state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getYaw();
     return yaw;
   }
 

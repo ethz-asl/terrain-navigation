@@ -4,7 +4,7 @@
 #include <ompl/base/StateValidityChecker.h>
 #include <ompl/base/spaces/SE3StateSpace.h>
 
-#include "terrain_planner/DubinsAirplane2.hpp"
+#include "terrain_planner/DubinsAirplane.hpp"
 
 #include <grid_map_core/GridMap.hpp>
 
@@ -74,10 +74,10 @@ class TerrainStateSampler : public base::StateSampler {
     }
     double z = rng_.uniformReal(min_altitude, max_altitude) + terrain_elevation;
 
-    state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(x);
-    state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(y);
-    state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(z);
-    state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(yaw);
+    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(x);
+    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(y);
+    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(z);
+    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(yaw);
     assert(si_->isValid(state));
     return;
   }

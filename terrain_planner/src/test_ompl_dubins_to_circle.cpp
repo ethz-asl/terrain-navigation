@@ -127,33 +127,33 @@ void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& po
   pub.publish(marker);
 }
 
-void getDubinsShortestPath(std::shared_ptr<fw_planning::spaces::DubinsAirplane2StateSpace>& dubins_ss,
+void getDubinsShortestPath(std::shared_ptr<fw_planning::spaces::DubinsAirplaneStateSpace>& dubins_ss,
                            const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
                            const double goal_yaw, std::vector<Eigen::Vector3d>& path) {
   ompl::base::State* from = dubins_ss->allocState();
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(start_pos.x());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(start_pos.y());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(start_pos.z());
-  from->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(start_yaw);
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(start_pos.x());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(start_pos.y());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start_pos.z());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start_yaw);
 
   ompl::base::State* to = dubins_ss->allocState();
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setX(goal_pos.x());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setY(goal_pos.y());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setZ(goal_pos.z());
-  to->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->setYaw(goal_yaw);
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(goal_pos.x());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(goal_pos.y());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(goal_pos.z());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(goal_yaw);
 
   ompl::base::State* state = dubins_ss->allocState();
   for (double t = 0.0; t < 1.0; t += 0.02) {
     dubins_ss->interpolate(from, to, t, state);
     auto interpolated_state =
-        Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getX(),
-                        state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getY(),
-                        state->as<fw_planning::spaces::DubinsAirplane2StateSpace::StateType>()->getZ());
+        Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
+                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
+                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
     path.push_back(interpolated_state);
   }
 }
 
-double getDubinsTangentPoint(std::shared_ptr<fw_planning::spaces::DubinsAirplane2StateSpace>& dubins_ss,
+double getDubinsTangentPoint(std::shared_ptr<fw_planning::spaces::DubinsAirplaneStateSpace>& dubins_ss,
                              const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
                              const double goal_radius) {
   // References:
@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
 
   double start_yaw{M_PI_2};
   while (true) {
-    auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplane2StateSpace>();
+    auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
     Eigen::Vector3d start_pos(0.0, 0.0, 0.0);
     /// Goal circular radius
     Eigen::Vector3d goal_pos(400.0, 0.0, 0.0);

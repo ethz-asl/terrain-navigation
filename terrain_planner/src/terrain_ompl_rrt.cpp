@@ -29,16 +29,16 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   bounds.setHigh(2, upper_bound_.z());
 
   // Define start and goal positions.
-  problem_setup_->getGeometricComponentStateSpace()->as<fw_planning::spaces::DubinsAirplane2StateSpace>()->setBounds(
+  problem_setup_->getGeometricComponentStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->setBounds(
       bounds);
 
   problem_setup_->setStateValidityCheckingResolution(0.001);
 
   planner_data_ = std::make_shared<ompl::base::PlannerData>(problem_setup_->getSpaceInformation());
 
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> start_ompl(
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
       problem_setup_->getSpaceInformation());
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplane2StateSpace> goal_ompl(
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
       problem_setup_->getSpaceInformation());
 
   start_ompl->setX(start_pos(0));
@@ -135,7 +135,7 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
   double prev_curvature = std::numeric_limits<double>::infinity();
   bool is_arc_segment{false};
   double maximum_curvature = 1 / problem_setup_->getGeometricComponentStateSpace()
-                                     ->as<fw_planning::spaces::DubinsAirplane2StateSpace>()
+                                     ->as<fw_planning::spaces::DubinsAirplaneStateSpace>()
                                      ->getMinTurningRadius();
   Eigen::Vector3d prev_position{Eigen::Vector3d::Zero()};  // TODO: Invalidate with nans?
   for (ompl::base::State* state_ptr : state_vector) {
