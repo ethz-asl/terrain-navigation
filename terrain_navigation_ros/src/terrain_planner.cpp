@@ -206,7 +206,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   // Only run planner in offboard mode
   /// TODO: Switch to chrono
   plan_time_ = ros::Time::now();
-  planner_mode_ = PLANNER_MODE::EXHAUSTIVE;
+  planner_mode_ = PLANNER_MODE::GLOBAL;
   switch (planner_mode_) {
     case PLANNER_MODE::MCTS: {
       double utility = viewutility_map_->CalculateViewUtility(added_viewpoint_list, true);
@@ -258,8 +258,6 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
             Trajectory loiter_trajectory =
                 maneuver_library_->generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
             updated_segment.appendSegment(loiter_trajectory);
-
-            /// TODO: Add terminal goal segment with a loiter circle
             reference_primitive_ = updated_segment;
           }
         }

@@ -162,6 +162,15 @@ class TrajectorySegments {
     }
     return attitude_vector;
   }
+  static void wrap_2pi(double &angle) {
+    while ((angle < 0.0) || (angle > 2 * M_PI)) {
+      if (angle < 0.0) {
+        angle += 2 * M_PI;
+      } else {
+        angle -= 2 * M_PI;
+      }
+    }
+  }
   void resetSegments() { segments.clear(); };
   void prependSegment(const Trajectory &trajectory) { segments.insert(segments.begin(), trajectory); };
   void appendSegment(const Trajectory &trajectory) { segments.push_back(trajectory); };
@@ -177,7 +186,9 @@ class TrajectorySegments {
     closest_point = segments.front().states.front().position;
 
     // Iterate through all segments
+    int segment_idx{-1};
     for (auto &segment : segments) {
+      segment_idx++;
       if (segment.reached && (&segment != &segments.back())) continue;
       Eigen::Vector3d segment_start = segment.states.front().position;
       Eigen::Vector3d segment_end = segment.states.back().position;
@@ -197,6 +208,7 @@ class TrajectorySegments {
         Eigen::Vector2d segment_end_2d(segment_end(0), segment_end(1));
         Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
         if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+          // Segment is full circle!
           Eigen::Vector3d rotational_vector(0.0, 0.0, segment.curvature / std::abs(segment.curvature));
           Eigen::Vector3d segment_start_tangent = (segment.states.front().velocity).normalized();
           Eigen::Vector3d arc_center_3d =
@@ -207,13 +219,7 @@ class TrajectorySegments {
           Eigen::Vector2d position_vector = position_2d - arc_center;
           double angle_pos =
               std::atan2(position_vector(1), position_vector(0)) - std::atan2(start_vector(1), start_vector(0));
-          while ((angle_pos < 0.0) || (angle_pos > 2 * M_PI)) {
-            if (angle_pos < 0.0) {
-              angle_pos += 2 * M_PI;
-            } else {
-              angle_pos -= 2 * M_PI;
-            }
-          }
+          wrap_2pi(angle_pos);
           theta = angle_pos / (2 * M_PI);
         } else {
           arc_center = segment.getArcCenter(segment_start_2d, segment_end_2d, segment.curvature);
@@ -226,6 +232,18 @@ class TrajectorySegments {
         Eigen::Vector2d error_vector = (closest_point_2d - arc_center).normalized();  // Position to error vector
         tangent = Eigen::Vector3d((segment.curvature / std::abs(segment.curvature)) * error_vector(1),
                                   (segment.curvature / std::abs(segment.curvature)) * -error_vector(0), 0.0);
+
+        /// If current segment is a full circle, and has a next segment, escape when close to start of next segment
+        if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+          if (&segment != &segments.back()) {  // Segment is a full circle
+            /// TODO: Get next segment from iterator
+            Eigen::Vector2d next_segment_start = segments[segment_idx].states.front().position.head(2);
+            if ((closest_point_2d - next_segment_start).norm() < epsilon) {
+              segment.reached = true;
+              return;
+            }
+          }
+        }
       }
       double altitude_correction = K_z_ * (position(2) - closest_point(2));
       tangent(2) =
