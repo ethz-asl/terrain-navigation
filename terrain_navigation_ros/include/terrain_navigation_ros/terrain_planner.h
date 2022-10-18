@@ -98,6 +98,8 @@ class TerrainPlanner {
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
+  void publishTree(const ros::Publisher &pub, std::shared_ptr<ompl::base::PlannerData> planner_data,
+                   std::shared_ptr<ompl::OmplSetup> problem_setup);
   void publishGoal(const Eigen::Vector3d &position);
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -113,6 +115,7 @@ class TerrainPlanner {
   ros::Publisher planner_status_pub_;
   ros::Publisher goal_pub_;
   ros::Publisher viewpoint_pub_;
+  ros::Publisher tree_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;
