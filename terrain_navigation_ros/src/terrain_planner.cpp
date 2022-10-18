@@ -382,14 +382,19 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   mavros_msgs::PositionTarget msg;
   msg.header.stamp = ros::Time::now();
   msg.coordinate_frame = PositionTarget::FRAME_LOCAL_NED;
-  msg.type_mask = PositionTarget::IGNORE_AFX | PositionTarget::IGNORE_AFY | PositionTarget::IGNORE_AFZ;
+  msg.type_mask = 0.0;
   msg.position.x = position(0);
   msg.position.y = position(1);
   msg.position.z = position(2);
   msg.velocity.x = velocity(0);
   msg.velocity.y = velocity(1);
   msg.velocity.z = velocity(2);
-  msg.yaw_rate = -curvature;
+  auto curvature_vector = Eigen::Vector3d(0.0, 0.0, curvature);
+  auto projected_velocity = Eigen::Vector3d(velocity(0), velocity(1), 0.0);
+  Eigen::Vector3d lateral_acceleration = projected_velocity.squaredNorm() * curvature_vector.cross(projected_velocity);
+  msg.acceleration_or_force.x = lateral_acceleration(0);
+  msg.acceleration_or_force.y = lateral_acceleration(1);
+  msg.acceleration_or_force.z = lateral_acceleration(2);
 
   position_setpoint_pub_.publish(msg);
 
