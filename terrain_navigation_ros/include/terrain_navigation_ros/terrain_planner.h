@@ -164,7 +164,7 @@ class TerrainPlanner {
   bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};
-  bool problem_udpated_{true};
+  bool problem_updated_{true};
   bool found_solution_{false};
 };
 

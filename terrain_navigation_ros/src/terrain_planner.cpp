@@ -229,17 +229,14 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
         start_position = current_segment.states.back().position;
         start_velocity = current_segment.states.back().velocity;
 
-        /// Only update the problem when the problem is updated or solution is not found
-        // Check if the start position of the problem has been updated
-        // if ((start_position - last_planning_position_).norm() > FLT_EPSILON) {
-        //   problem_udpated_ = true;
-        // }
-        // last_planning_position_ = start_position;
+        /// Only update the problem when the goal is updated
+        if (problem_updated_) {
+          problem_updated_ = false;
+          global_planner_->setupProblem(start_position, start_velocity, goal_pos_);
+        }
 
         TrajectorySegments planner_solution_path;
-        if (problem_udpated_ || !found_solution_) {
-          problem_udpated_ = false;
-          global_planner_->setupProblem(start_position, start_velocity, goal_pos_);
+        if (!found_solution_) {
           found_solution_ = global_planner_->Solve(1.0, planner_solution_path);
 
           /// TODO: Improve solution even if a solution have been found
@@ -571,7 +568,7 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   bool result = terrain_map_->Load(map_path_, align_location, map_color_path_);
   if (result) {
     global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
-    problem_udpated_ = true;
+    problem_updated_ = true;
     found_solution_ = false;
   }
   res.success = result;
@@ -592,7 +589,7 @@ bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, pla
   new_goal = maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
   mcts_planner_->setGoal(new_goal);
   goal_pos_ = maneuver_library_->getGoalPosition();
-  problem_udpated_ = true;
+  problem_updated_ = true;
   found_solution_ = false;
 
   res.success = true;
