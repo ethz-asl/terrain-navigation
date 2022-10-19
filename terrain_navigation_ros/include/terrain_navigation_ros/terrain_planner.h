@@ -159,6 +159,7 @@ class TerrainPlanner {
   Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
   Eigen::Vector3d last_planning_position_{Eigen::Vector3d::Zero()};
+  Eigen::Vector3d previous_start_position_{Eigen::Vector3d::Zero()};
 
   std::string map_path_{};
   std::string map_color_path_{};

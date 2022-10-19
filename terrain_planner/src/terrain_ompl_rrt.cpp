@@ -76,7 +76,7 @@ void TerrainOmplRrt::setBoundsFromMap(const grid_map::GridMap& map) {
   const double map_width_y = map.getLength().y();
   double roi_ratio = 0.5;
   Eigen::Vector3d lower_bounds{
-      Eigen::Vector3d(-map_pos(0) - roi_ratio * map_width_x, map_pos(1) - roi_ratio * map_width_y, min_elevation)};
+      Eigen::Vector3d(map_pos(0) - roi_ratio * map_width_x, map_pos(1) - roi_ratio * map_width_y, min_elevation)};
   Eigen::Vector3d upper_bounds{
       Eigen::Vector3d(map_pos(0) + roi_ratio * map_width_x, map_pos(1) + roi_ratio * map_width_y, max_elevation)};
   std::cout << "[TerrainOmplRrt] Upper bounds: " << upper_bounds.transpose() << std::endl;

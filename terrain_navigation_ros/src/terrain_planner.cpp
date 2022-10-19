@@ -233,9 +233,15 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
         start_position = current_segment.states.back().position;
         start_velocity = current_segment.states.back().velocity;
 
+        if ((start_position != previous_start_position_) && !found_solution_) {
+          std::cout << "Start position changed! Updating problem" << std::endl;
+          problem_updated_ = true;
+        }
+
         /// Only update the problem when the goal is updated
         if (problem_updated_) {
           problem_updated_ = false;
+          previous_start_position_ = start_position;
           global_planner_->setupProblem(start_position, start_velocity, goal_pos_);
         }
 
