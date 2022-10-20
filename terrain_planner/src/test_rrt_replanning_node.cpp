@@ -221,10 +221,11 @@ int main(int argc, char** argv) {
   Eigen::Vector3d start_vel{Eigen::Vector3d(10.0, 0.0, 0.0)};
   Eigen::Vector3d goal{Eigen::Vector3d(300.0, 300.0, 0.0)};
   goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
+  Eigen::Vector3d goal_vel{Eigen::Vector3d(10.0, 0.0, 0.0)};
 
   // Repeatedly publish results
   std::vector<Eigen::Vector3d> path;
-  planner->setupProblem(start, start_vel, goal);
+  planner->setupProblem(start, start_vel, goal, goal_vel);
   while (true) {
     planner->Solve(1.0, path);
     terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
@@ -232,8 +233,8 @@ int main(int argc, char** argv) {
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
     grid_map_pub.publish(message);
     publishTrajectory(path_pub, path);
-    publishPositionSetpoints(start_pos_pub, start, {15.0, 0.0, 0.0});
-    publishPositionSetpoints(goal_pos_pub, goal, {15.0, 0.0, 0.0});
+    publishPositionSetpoints(start_pos_pub, start, start_vel);
+    publishPositionSetpoints(goal_pos_pub, goal, goal_vel);
     publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
     ros::Duration(1.0).sleep();
   }

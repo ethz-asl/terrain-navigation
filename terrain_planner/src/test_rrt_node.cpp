@@ -235,7 +235,10 @@ int main(int argc, char** argv) {
                                          getRandom(map_pos(1) - 0.5 * map_width_y, map_pos(1) + 0.5 * map_width_y),
                                          0.0)};
     goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
-    planner->setupProblem(start, start_vel, goal);
+    double goal_yaw = getRandom(-M_PI, M_PI);
+    Eigen::Vector3d goal_vel = 10.0 * Eigen::Vector3d(std::cos(goal_yaw), std::sin(goal_yaw), 0.0);
+
+    planner->setupProblem(start, start_vel, goal, goal_vel);
     planner->Solve(1.0, path);
 
     // Repeatedly publish results
@@ -245,7 +248,7 @@ int main(int argc, char** argv) {
     grid_map_pub.publish(message);
     publishTrajectory(path_pub, path.position());
     publishPositionSetpoints(start_pos_pub, start, start_vel);
-    publishPositionSetpoints(goal_pos_pub, goal, {15.0, 0.0, 0.0});
+    publishPositionSetpoints(goal_pos_pub, goal, goal_vel);
     publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
     if (!random) {
       break;

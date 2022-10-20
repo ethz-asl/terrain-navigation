@@ -9,7 +9,7 @@ TerrainOmplRrt::~TerrainOmplRrt() {
 }
 
 void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
-                                  const Eigen::Vector3d& goal) {
+                                  const Eigen::Vector3d& goal, const Eigen::Vector3d& goal_vel) {
   problem_setup_->clear();
 
   problem_setup_->setDefaultPlanner();
@@ -50,6 +50,9 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   goal_ompl->setX(goal(0));
   goal_ompl->setY(goal(1));
   goal_ompl->setZ(goal(2));
+  double goal_yaw = std::atan2(goal_vel(1), goal_vel(0));
+  goal_ompl->setYaw(goal_yaw);
+
   problem_setup_->setStartAndGoalStates(start_ompl, goal_ompl);
   problem_setup_->setup();
 }

@@ -242,7 +242,8 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
         if (problem_updated_) {
           problem_updated_ = false;
           previous_start_position_ = start_position;
-          global_planner_->setupProblem(start_position, start_velocity, goal_pos_);
+          Eigen::Vector3d goal_velocity(10.0, 0.0, 0.0);
+          global_planner_->setupProblem(start_position, start_velocity, goal_pos_, goal_velocity);
         }
 
         TrajectorySegments planner_solution_path;
