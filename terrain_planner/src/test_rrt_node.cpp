@@ -197,8 +197,10 @@ int main(int argc, char** argv) {
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
 
   std::string map_path, color_file_path;
+  bool random{false};
   nh_private.param<std::string>("map_path", map_path, "");
   nh_private.param<std::string>("color_file_path", color_file_path, "");
+  nh_private.param<bool>("random", random, false);
 
   // Load terrain map from defined tif paths
   auto terrain_map = std::make_shared<TerrainMap>();
@@ -209,7 +211,7 @@ int main(int argc, char** argv) {
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerOffset(150.0, "max_elevation");
 
-  std::vector<Eigen::Vector3d> path;
+  TrajectorySegments path;
   double terrain_altitude{100.0};
   while (true) {
     // Initialize planner with loaded terrain map
@@ -241,10 +243,13 @@ int main(int argc, char** argv) {
     grid_map_msgs::GridMap message;
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
     grid_map_pub.publish(message);
-    publishTrajectory(path_pub, path);
-    publishPositionSetpoints(start_pos_pub, start, {15.0, 0.0, 0.0});
+    publishTrajectory(path_pub, path.position());
+    publishPositionSetpoints(start_pos_pub, start, start_vel);
     publishPositionSetpoints(goal_pos_pub, goal, {15.0, 0.0, 0.0});
     publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
+    if (!random) {
+      break;
+    }
     ros::Duration(1.0).sleep();
   }
   ros::spin();
