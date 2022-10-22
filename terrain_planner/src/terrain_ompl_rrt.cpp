@@ -128,69 +128,94 @@ bool TerrainOmplRrt::Solve(double time_budget, std::vector<Eigen::Vector3d>& pat
   return false;
 }
 
-void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeometric path,
-                                                      TrajectorySegments& trajectory_segments) const {
-  trajectory_segments.segments.clear();
-  path.interpolate();
-  std::vector<ompl::base::State*>& state_vector = path.getStates();
-  double prev_yaw;
-  Trajectory trajectory;
-  double prev_curvature = std::numeric_limits<double>::infinity();
-  bool is_arc_segment{false};
-  double maximum_curvature = 1 / problem_setup_->getGeometricComponentStateSpace()
+bool TerrainOmplRrt::getSolutionPath(std::vector<Eigen::Vector3d>& path) {
+  if (problem_setup_->haveExactSolutionPath()) {
+    solutionPathToTrajectoryPoints(problem_setup_->getSolutionPath(), path);
+    return true;
+  }
+  return false;
+}
+
+double TerrainOmplRrt::getSegmentCurvature(std::shared_ptr<ompl::OmplSetup> problem_setup,
+                                           fw_planning::spaces::DubinsPath& dubins_path, const size_t start_idx) const {
+  double segment_curvature{0.0};
+  double maximum_curvature = 1 / problem_setup->getGeometricComponentStateSpace()
                                      ->as<fw_planning::spaces::DubinsAirplaneStateSpace>()
                                      ->getMinTurningRadius();
-  Eigen::Vector3d prev_position{Eigen::Vector3d::Zero()};  // TODO: Invalidate with nans?
-  for (ompl::base::State* state_ptr : state_vector) {
-    // Get states from solution path
-    Eigen::Vector3d position = dubinsairplanePosition(state_ptr);
-    double yaw = dubinsairplaneYaw(state_ptr);
+  switch (
+      dubins_path
+          .getType()[problem_setup->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->convert_idx(
+              start_idx)]) {
+    case fw_planning::spaces::DubinsPath::DUBINS_LEFT:
+      segment_curvature = -maximum_curvature;
+      break;
+    case fw_planning::spaces::DubinsPath::DUBINS_RIGHT:
+      segment_curvature = maximum_curvature;
+      break;
+    case fw_planning::spaces::DubinsPath::DUBINS_STRAIGHT:
+      segment_curvature = 0.0;
+      break;
+  }
+  return segment_curvature;
+}
 
-    if (prev_position.norm() < 0.1) {
-      // First segment
-      prev_position = position;
-      continue;
-    }
+void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeometric path,
+                                                      TrajectorySegments& trajectory_segments,
+                                                      double resolution) const {
+  trajectory_segments.segments.clear();
 
-    const Eigen::Vector3d velocity = (position - prev_position).transpose();
-    const Eigen::Vector2d velocity_2d = Eigen::Vector2d(velocity(0), velocity(1)).normalized();
-    State state;
-    state.position = position;
-    state.velocity = velocity.normalized();
-    state.attitude = Eigen::Vector4d(std::cos(yaw / 2), 0.0, 0.0, std::sin(yaw / 2));
-    trajectory.states.emplace_back(state);
+  std::vector<ompl::base::State*>& state_vector = path.getStates();
 
-    double heading = std::atan2(velocity_2d(1), velocity_2d(0));
-    double error = heading - yaw;
-    if (error > M_PI)
-      error -= M_PI * 2.0;
-    else if (error > M_PI)
-      error += M_PI * 2.0;
+  for (size_t idx = 0; idx < state_vector.size() - 1; idx++) {
+    auto from = state_vector[idx];    // Start of the segment
+    auto to = state_vector[idx + 1];  // End of the segment
 
-    double curvature{0.0};
-    if (std::abs(yaw - heading) > 0.0000001) {  // Arc segments
-                                                /// TODO: Get curvature from planner
-      curvature = maximum_curvature * (heading - yaw) / std::abs(heading - yaw);
-    } else {  // Straight segments
-      curvature = 0.0;
-    }
+    fw_planning::spaces::DubinsPath dubins_path;
+    fw_planning::spaces::DubinsAirplaneStateSpace::SegmentStarts segmentStarts;
+    problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->calculateSegments(
+        from, to, dubins_path, segmentStarts);
 
-    if ((std::abs(prev_curvature - curvature) > 0.0001) && !trajectory.states.empty() &&
-        std::isfinite(prev_curvature)) {
-      // Segment type has changed
-      trajectory_segments.segments.push_back(trajectory);
-      trajectory_segments.segments.back().curvature = prev_curvature;
-      trajectory.states.clear();
-    }
+    ompl::base::State* segment_start_state = problem_setup_->getStateSpace()->allocState();
+    ompl::base::State* segment_end_state = problem_setup_->getStateSpace()->allocState();
 
-    prev_yaw = yaw;
-    prev_curvature = curvature;
-    prev_position = position;
-    if (state_ptr == state_vector.back()) {
-      if (!trajectory.states.empty()) {
-        trajectory_segments.segments.push_back(trajectory);
-        trajectory_segments.segments.back().curvature = prev_curvature;
-        trajectory.states.clear();
+    const double total_length = dubins_path.length_2D();
+    const double dt = resolution / dubins_path.length_2D();
+    double progress{0.0};
+    for (size_t start_idx = 0; start_idx < segmentStarts.segmentStarts.size() - 1; start_idx++) {
+      if (dubins_path.getSegmentLength(start_idx) > 0.0) {
+        double segment_progress = dubins_path.getSegmentLength(start_idx) / total_length;
+        // Read segment start and end statess
+        segmentStart2omplState(segmentStarts.segmentStarts[start_idx], segment_start_state);
+        if ((start_idx + 1) == (segmentStarts.segmentStarts.size() - 1)) {
+          segment_end_state = to;
+        } else {
+          segmentStart2omplState(segmentStarts.segmentStarts[start_idx + 1], segment_end_state);
+        }
+
+        // Append to trajectory
+        Trajectory trajectory;
+        trajectory.curvature = getSegmentCurvature(problem_setup_, dubins_path, start_idx);
+        ompl::base::State* state = problem_setup_->getStateSpace()->allocState();
+        ompl::base::State* lookahead_state = problem_setup_->getStateSpace()->allocState();
+        double yaw;
+        for (double t = progress; t <= progress + segment_progress; t += dt) {
+          State segment_state;
+          problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->interpolate(
+              dubins_path, segmentStarts, t, state);
+          Eigen::Vector3d position = dubinsairplanePosition(state);
+          yaw = dubinsairplaneYaw(state);
+          Eigen::Vector3d velocity = Eigen::Vector3d(std::cos(yaw), std::sin(yaw), 0.0);
+          segment_state.position = position;
+          segment_state.velocity = velocity;
+          segment_state.attitude = Eigen::Vector4d(std::cos(yaw / 2.0), 0.0, 0.0, std::sin(yaw / 2.0));
+          trajectory.states.emplace_back(segment_state);
+        }
+
+        // Do not append trajectory if the segment is too short
+        if (trajectory.states.size() > 1) {
+          trajectory_segments.segments.push_back(trajectory);
+        }
+        progress += segment_progress;
       }
     }
   }
@@ -200,7 +225,6 @@ void TerrainOmplRrt::solutionPathToTrajectoryPoints(ompl::geometric::PathGeometr
                                                     std::vector<Eigen::Vector3d>& trajectory_points) const {
   trajectory_points.clear();
   path.interpolate();
-  // trajectory_points->reserve(path.getStateCount());
 
   std::vector<ompl::base::State*>& state_vector = path.getStates();
 

@@ -6,8 +6,9 @@
     <node pkg="terrain_planner" type="test_rrt_node" name="rrt_planner" output="screen">
         <param name="map_path" value="$(find terrain_planner)/../resources/sertig.tif"/>
         <param name="color_file_path" value="$(find terrain_planner)/../resources/sertig_color.tif"/>
+        <param name="random" value="false"/>
     </node>
     <group if="$(arg visualization)">
-        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config_ompl.rviz" />
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config_ompl_segments.rviz" />
     </group>
 </launch>

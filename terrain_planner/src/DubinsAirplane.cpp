@@ -244,6 +244,14 @@ void DubinsAirplaneStateSpace::interpolate(const ob::State* from, const ob::Stat
   interpolate(from, to, t, firstTime, path, segmentStarts, state);
 }
 
+void DubinsAirplaneStateSpace::calculateSegments(const ob::State* from, const ob::State* to, DubinsPath& path,
+                                                 SegmentStarts& segmentStarts) const {
+  // compute the path if interpolate is called the first time.
+  dubins(from, to, path);
+  // compute the segment starts
+  calculateSegmentStarts(from, path, segmentStarts);
+}
+
 void DubinsAirplaneStateSpace::interpolate(const ob::State* from, const ob::State* to, double t, bool& firstTime,
                                            DubinsPath& path, SegmentStarts& segmentStarts, ob::State* state) const {
   // compute the path if interpolate is called the first time.

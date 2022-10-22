@@ -30,8 +30,10 @@ class TerrainOmplRrt {
   void setMap(std::shared_ptr<TerrainMap> map) { map_ = std::move(map); }
   bool Solve(double time_budget, TrajectorySegments& path);
   bool Solve(double time_budget, std::vector<Eigen::Vector3d>& path);
-  void solutionPathToTrajectorySegments(ompl::geometric::PathGeometric path,
-                                        TrajectorySegments& trajectory_segments) const;
+  double getSegmentCurvature(std::shared_ptr<ompl::OmplSetup> problem_setup,
+                             fw_planning::spaces::DubinsPath& dubins_path, const size_t start_idx) const;
+  void solutionPathToTrajectorySegments(ompl::geometric::PathGeometric path, TrajectorySegments& trajectory_segments,
+                                        double resolution = 0.05) const;
   void solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric path,
                                       std::vector<Eigen::Vector3d>& trajectory_points) const;
   std::shared_ptr<ompl::base::PlannerData> getPlannerData() { return planner_data_; };
@@ -39,6 +41,7 @@ class TerrainOmplRrt {
   ompl::base::StateSamplerPtr allocTerrainStateSampler(const ompl::base::StateSpace* space) {
     return std::make_shared<ompl::TerrainStateSampler>(space, map_->getGridMap());
   }
+  bool getSolutionPath(std::vector<Eigen::Vector3d>& path);
   double getSolutionTime() { return solve_duration_; };
   static Eigen::Vector3d dubinsairplanePosition(ompl::base::State* state_ptr) {
     Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
@@ -49,6 +52,13 @@ class TerrainOmplRrt {
   static double dubinsairplaneYaw(ompl::base::State* state_ptr) {
     double yaw = state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getYaw();
     return yaw;
+  }
+  static inline void segmentStart2omplState(fw_planning::spaces::DubinsAirplaneStateSpace::SegmentStarts::Start start,
+                                            ompl::base::State* state) {
+    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(start.x);
+    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(start.y);
+    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start.z);
+    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start.yaw);
   }
 
  private:

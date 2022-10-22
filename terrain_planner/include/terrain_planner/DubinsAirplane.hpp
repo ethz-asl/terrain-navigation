@@ -281,6 +281,32 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
   virtual void interpolate(const ob::State* from, const ob::State* to, double t, bool& firstTime, DubinsPath& path,
                            SegmentStarts& segmentStarts, ob::State* state) const;
 
+  /** \brief interpolate
+   * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the known
+   * (non-optimal) Dubins airplane path \a path.
+   *
+   * @param[in] path: Known dubins airplane path.
+   * @param[in] segmentStarts: Known starts of the segments of the dubins airplane path.
+   * @param[in] t: Fraction of the length of the path.
+   * @param[out] state: Interpolated state.
+   */
+  virtual void interpolate(const DubinsPath& path, const SegmentStarts& segmentStarts, double t,
+                           ob::State* state) const;
+
+  /** \brief calculateSegments
+   * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the \a path.
+   *
+   * This function is called by virtual void interpolate(const ob::State *from, const ob::State *to, const double t,
+   * ob::State *state) const; and is used in the DubinsMotionValidator for more efficient state validation
+   *
+   * @param[in] from: Start state
+   * @param[in] to: End state
+   * @param[out] path: The computed path between start and end state.
+   * @param[out] SegmentStarts: The computed segment starts of the dubins path.
+   */
+  void calculateSegments(const ob::State* from, const ob::State* to, DubinsPath& path,
+                         SegmentStarts& segmentStarts) const;
+
   /** \brief enforceBounds
    * Bring the state within the bounds of the state space.
    */
@@ -433,6 +459,11 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   void resetDurationsAndCtrs();
 
+  /** \brief convert_idx
+   * Converts the input segment index (0-5) to the corresponding path segment index (0-2).
+   */
+  unsigned int convert_idx(unsigned int i) const;
+
  protected:
   /** \brief dubins
    * Compute the (non-optimal) Dubins airplane path from SE(2)xR3 state state1 to SE(2)xR3 state state2
@@ -527,18 +558,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   double computeOptRratio(double fabsHdist, double L, double fabsTanGamma, int k) const;
 
-  /** \brief interpolate
-   * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the known
-   * (non-optimal) Dubins airplane path \a path.
-   *
-   * @param[in] path: Known dubins airplane path.
-   * @param[in] segmentStarts: Known starts of the segments of the dubins airplane path.
-   * @param[in] t: Fraction of the length of the path.
-   * @param[out] state: Interpolated state.
-   */
-  virtual void interpolate(const DubinsPath& path, const SegmentStarts& segmentStarts, double t,
-                           ob::State* state) const;
-
   /** \brief interpolateWithWind
    * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the known
    * (non-optimal) Dubins airplane path \a path with wind.
@@ -567,11 +586,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   void getStateOnCircle(const ob::State* from, int rl /* right (0), left (1)*/, int ud /* up(0), down(1) */, double t,
                         ob::State* state) const;
-
-  /** \brief convert_idx
-   * Converts the input segment index (0-5) to the corresponding path segment index (0-2).
-   */
-  unsigned int convert_idx(unsigned int i) const;
 
   // TODO: Check if it makes sense to use mutable class variables for the following functions to speed it up.
   /** \brief t_lsr

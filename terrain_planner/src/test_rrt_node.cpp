@@ -184,6 +184,33 @@ void publishTrajectory(ros::Publisher& pub, std::vector<Eigen::Vector3d> traject
   pub.publish(msg);
 }
 
+void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
+  visualization_msgs::MarkerArray msg;
+
+  std::vector<visualization_msgs::Marker> marker;
+  visualization_msgs::Marker mark;
+  mark.action = visualization_msgs::Marker::DELETEALL;
+  marker.push_back(mark);
+  msg.markers = marker;
+  pub.publish(msg);
+
+  std::vector<visualization_msgs::Marker> segment_markers;
+  int i = 0;
+  for (auto& segment : trajectory.segments) {
+    Eigen::Vector3d color = Eigen::Vector3d(1.0, 0.0, 0.0);
+    if (segment.curvature > 0.0) {
+      color = Eigen::Vector3d(0.0, 1.0, 0.0);
+    } else if (segment.curvature < 0.0) {
+      color = Eigen::Vector3d(0.0, 0.0, 1.0);
+    }
+    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, color));
+    segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().front(), i++, color));
+    segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().back(), i++, color));
+  }
+  msg.markers = segment_markers;
+  pub.publish(msg);
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ompl_rrt_planner");
   ros::NodeHandle nh("");
@@ -193,9 +220,10 @@ int main(int argc, char** argv) {
   auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
   auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
   auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
+  auto interpolate_path_pub = nh.advertise<nav_msgs::Path>("interpolated_path", 1, true);
+  auto path_segment_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
-
   std::string map_path, color_file_path;
   bool random{false};
   nh_private.param<std::string>("map_path", map_path, "");
@@ -212,6 +240,7 @@ int main(int argc, char** argv) {
   terrain_map->AddLayerOffset(150.0, "max_elevation");
 
   TrajectorySegments path;
+  std::vector<Eigen::Vector3d> interpolated_path;
   double terrain_altitude{100.0};
   while (true) {
     // Initialize planner with loaded terrain map
@@ -240,6 +269,7 @@ int main(int argc, char** argv) {
 
     planner->setupProblem(start, start_vel, goal, goal_vel);
     planner->Solve(1.0, path);
+    planner->getSolutionPath(interpolated_path);
 
     // Repeatedly publish results
     terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
@@ -247,6 +277,8 @@ int main(int argc, char** argv) {
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
     grid_map_pub.publish(message);
     publishTrajectory(path_pub, path.position());
+    publishTrajectory(interpolate_path_pub, interpolated_path);
+    publishPathSegments(path_segment_pub, path);
     publishPositionSetpoints(start_pos_pub, start, start_vel);
     publishPositionSetpoints(goal_pos_pub, goal, goal_vel);
     publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
