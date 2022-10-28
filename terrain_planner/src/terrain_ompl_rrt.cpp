@@ -233,15 +233,11 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
         }
       } else {
         segmentStart2omplState(segmentStarts.segmentStarts[start_idx], segment_start_state);
-        std::cout << "  -  start idx: " << start_idx << "[Zero segment]" << std::endl;
-        std::cout << "    - segment length: " << dubins_path.getSegmentLength(start_idx) << std::endl;
-        std::cout << "    - segment start: " << dubinsairplanePosition(segment_start_state).transpose() << std::endl;
         if ((start_idx + 1) == (segmentStarts.segmentStarts.size() - 1)) {
           segment_end_state = to;
         } else {
           segmentStart2omplState(segmentStarts.segmentStarts[start_idx + 1], segment_end_state);
         }
-        std::cout << "    - segment end: " << dubinsairplanePosition(segment_end_state).transpose() << std::endl;
       }
     }
   }
