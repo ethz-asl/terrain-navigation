@@ -177,8 +177,8 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
     ompl::base::State* segment_start_state = problem_setup_->getStateSpace()->allocState();
     ompl::base::State* segment_end_state = problem_setup_->getStateSpace()->allocState();
 
-    const double total_length = dubins_path.length_3D();
-    const double dt = resolution / dubins_path.length_3D();
+    const double total_length = dubins_path.length_2D();
+    const double dt = resolution / dubins_path.length_2D();
     double progress{0.0};
     for (size_t start_idx = 0; start_idx < segmentStarts.segmentStarts.size() - 1; start_idx++) {
       if (dubins_path.getSegmentLength(start_idx) > 0.0) {
