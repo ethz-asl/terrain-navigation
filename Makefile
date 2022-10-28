@@ -9,10 +9,11 @@ format:
 config:
 	catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
 
-build:
+build: config
 	catkin build ${package} mav_planning_rviz
 
 build-test:
+	catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True
 	catkin build terrain_navigation terrain_planner --no-deps -i --catkin-make-args tests
 
 test: build-test
