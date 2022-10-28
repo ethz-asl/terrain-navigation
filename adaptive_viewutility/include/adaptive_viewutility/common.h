@@ -70,7 +70,7 @@ visualization_msgs::Marker utility2MarkerMsg(const double utility, const Eigen::
   return marker;
 }
 
-visualization_msgs::Marker normals2ArrowsMsg(const Eigen::Vector3d &position, const Eigen::Vector3d &normal, int id) {
+visualization_msgs::Marker vector2ArrowsMsg(const Eigen::Vector3d &position, const Eigen::Vector3d &normal, int id) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();

@@ -39,7 +39,7 @@ class TerrainOmplRrt {
   std::shared_ptr<ompl::base::PlannerData> getPlannerData() { return planner_data_; };
   std::shared_ptr<ompl::OmplSetup> getProblemSetup() { return problem_setup_; };
   ompl::base::StateSamplerPtr allocTerrainStateSampler(const ompl::base::StateSpace* space) {
-    return std::make_shared<ompl::TerrainStateSampler>(space, map_->getGridMap());
+    return std::make_shared<ompl::TerrainStateSampler>(space, map_->getGridMap(), max_altitude_, min_altitude_);
   }
   bool getSolutionPath(std::vector<Eigen::Vector3d>& path);
   double getSolutionTime() { return solve_duration_; };
@@ -60,10 +60,16 @@ class TerrainOmplRrt {
     state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start.z);
     state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start.yaw);
   }
+  void setAltitudeLimits(const double max_altitude, const double min_altitude) {
+    max_altitude_ = max_altitude;
+    min_altitude_ = min_altitude;
+  }
 
  private:
   std::shared_ptr<ompl::OmplSetup> problem_setup_;
   std::shared_ptr<TerrainMap> map_;
+  double min_altitude_{50.0};
+  double max_altitude_{150.0};
   std::shared_ptr<ompl::base::PlannerData> planner_data_;
   Eigen::Vector3d lower_bound_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d upper_bound_{Eigen::Vector3d::Zero()};

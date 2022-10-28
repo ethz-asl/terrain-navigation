@@ -72,6 +72,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   vehicle_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_pose_marker", 1, true);
   planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status", 1, true);
   viewpoint_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
+  path_segment_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
   tree_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
@@ -109,6 +110,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   global_planner_ = std::make_shared<TerrainOmplRrt>();
   global_planner_->setMap(terrain_map_);
+  global_planner_->setAltitudeLimits(max_elevation_, min_elevation_);
 
   planner_profiler_ = std::make_shared<Profiler>("planner");
 }
@@ -143,7 +145,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         Eigen::Vector3d reference_tangent;
         double reference_curvature{0.0};
         reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
-                                             reference_curvature, 0.1 * 15.0);
+                                             reference_curvature, 0.1);
         publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
         /// TODO: Trigger camera when viewpoint reached
         /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
@@ -181,8 +183,8 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   if (local_origin_received_ && !map_initialized_) {
     std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
     map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
-    terrain_map_->AddLayerDistanceTransform(50.0, "distance_surface");
-    terrain_map_->AddLayerOffset(150.0, "max_elevation");
+    terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
+    terrain_map_->AddLayerOffset(max_elevation_, "max_elevation");
     if (map_initialized_) {
       std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
       viewutility_map_->initializeFromGridmap();
@@ -298,6 +300,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
 
   double planner_time = planner_profiler_->toc();
   publishTrajectory(reference_primitive_.position());
+  publishPathSegments(path_segment_pub_, reference_primitive_);
   MapPublishOnce();
   publishGoal(maneuver_library_->getGoalPosition());
 
@@ -397,7 +400,7 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   msg.velocity.x = velocity(0);
   msg.velocity.y = velocity(1);
   msg.velocity.z = velocity(2);
-  auto curvature_vector = Eigen::Vector3d(0.0, 0.0, curvature);
+  auto curvature_vector = Eigen::Vector3d(0.0, 0.0, -curvature);
   auto projected_velocity = Eigen::Vector3d(velocity(0), velocity(1), 0.0);
   Eigen::Vector3d lateral_acceleration = projected_velocity.squaredNorm() * curvature_vector.cross(projected_velocity);
   msg.acceleration_or_force.x = lateral_acceleration(0);
@@ -433,6 +436,33 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   marker.pose.orientation.z = std::sin(0.5 * yaw);
 
   position_target_pub_.publish(marker);
+}
+
+void TerrainPlanner::publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory) {
+  visualization_msgs::MarkerArray msg;
+
+  std::vector<visualization_msgs::Marker> marker;
+  visualization_msgs::Marker mark;
+  mark.action = visualization_msgs::Marker::DELETEALL;
+  marker.push_back(mark);
+  msg.markers = marker;
+  pub.publish(msg);
+
+  std::vector<visualization_msgs::Marker> segment_markers;
+  int i = 0;
+  for (auto &segment : trajectory.segments) {
+    Eigen::Vector3d color = Eigen::Vector3d(1.0, 0.0, 0.0);
+    if (segment.curvature > 0.0) {  // Green is DUBINS_LEFT
+      color = Eigen::Vector3d(0.0, 1.0, 0.0);
+    } else if (segment.curvature < 0.0) {  // Blue is DUBINS_RIGHT
+      color = Eigen::Vector3d(0.0, 0.0, 1.0);
+    }
+    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, color));
+    segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().front(), i++, color));
+    segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().back(), i++, color));
+  }
+  msg.markers = segment_markers;
+  pub.publish(msg);
 }
 
 void TerrainPlanner::publishGoal(const Eigen::Vector3d &position) {

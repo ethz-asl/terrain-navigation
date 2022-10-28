@@ -198,13 +198,14 @@ void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
   int i = 0;
   for (auto& segment : trajectory.segments) {
     Eigen::Vector3d color = Eigen::Vector3d(1.0, 0.0, 0.0);
-    if (segment.curvature > 0.0) {
+    if (segment.curvature > 0.0) {  // Green is DUBINS_LEFT
       color = Eigen::Vector3d(0.0, 1.0, 0.0);
-    } else if (segment.curvature < 0.0) {
+    } else if (segment.curvature < 0.0) {  // Blue is DUBINS_RIGHT
       color = Eigen::Vector3d(0.0, 0.0, 1.0);
     }
     segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, color));
-    segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().front(), i++, color));
+    segment_markers.insert(segment_markers.begin(),
+                           vector2ArrowsMsg(segment.position().front(), 5.0 * segment.velocity().front(), i++, color));
     segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().back(), i++, color));
   }
   msg.markers = segment_markers;
@@ -246,6 +247,7 @@ int main(int argc, char** argv) {
     // Initialize planner with loaded terrain map
     auto planner = std::make_shared<TerrainOmplRrt>();
     planner->setMap(terrain_map);
+    planner->setAltitudeLimits(150.0, 50.0);
     /// TODO: Get bounds from gridmap
     planner->setBoundsFromMap(terrain_map->getGridMap());
 
@@ -268,7 +270,10 @@ int main(int argc, char** argv) {
     Eigen::Vector3d goal_vel = 10.0 * Eigen::Vector3d(std::cos(goal_yaw), std::sin(goal_yaw), 0.0);
 
     planner->setupProblem(start, start_vel, goal, goal_vel);
-    planner->Solve(1.0, path);
+    bool found_solution{false};
+    while (!found_solution) {
+      found_solution = planner->Solve(1.0, path);
+    }
     planner->getSolutionPath(interpolated_path);
 
     // Repeatedly publish results

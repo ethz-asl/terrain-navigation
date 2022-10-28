@@ -136,7 +136,7 @@ void AdaptiveViewUtility::NormalPublishOnce(const ros::Publisher &pub) {
     normal << gridmap.at("elevation_normal_x", index), gridmap.at("elevation_normal_y", index),
         gridmap.at("elevation_normal_z", index);
 
-    normals_vector.insert(normals_vector.begin(), normals2ArrowsMsg(cell_pos, normal, i));
+    normals_vector.insert(normals_vector.begin(), vector2ArrowsMsg(cell_pos, normal, i));
     i++;
   }
 

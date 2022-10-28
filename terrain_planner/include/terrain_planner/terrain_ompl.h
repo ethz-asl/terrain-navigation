@@ -50,7 +50,9 @@ class TerrainValidityChecker : public base::StateValidityChecker {
 
 class TerrainStateSampler : public base::StateSampler {
  public:
-  TerrainStateSampler(const ompl::base::StateSpace* si, const grid_map::GridMap& map) : StateSampler(si), map_(map) {
+  TerrainStateSampler(const ompl::base::StateSpace* si, const grid_map::GridMap& map, const double max_altitude = 150.0,
+                      const double min_altitude = 50.0)
+      : StateSampler(si), map_(map), max_altitude_(max_altitude), min_altitude_(min_altitude) {
     // name_ = "my sampler";
   }
 
@@ -60,8 +62,6 @@ class TerrainStateSampler : public base::StateSampler {
     const Eigen::Vector2d map_pos = map_.getPosition();
     const double map_width_x = map_.getLength().x();
     const double map_width_y = map_.getLength().y();
-    double min_altitude = 50.0;
-    double max_altitude = 150.0;
 
     double x = rng_.uniformReal(map_pos(0) - 0.5 * map_width_x, map_pos(1) + 0.5 * map_width_x);
     double y = rng_.uniformReal(map_pos(1) - 0.5 * map_width_y, map_pos(1) + 0.5 * map_width_y);
@@ -72,7 +72,7 @@ class TerrainStateSampler : public base::StateSampler {
     if (map_.isInside(Eigen::Vector2d(x, y))) {
       terrain_elevation = map_.atPosition("elevation", Eigen::Vector2d(x, y));
     }
-    double z = rng_.uniformReal(min_altitude, max_altitude) + terrain_elevation;
+    double z = rng_.uniformReal(min_altitude_, max_altitude_) + terrain_elevation;
 
     state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(x);
     state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(y);
@@ -94,6 +94,8 @@ class TerrainStateSampler : public base::StateSampler {
  protected:
   ompl::RNG rng_;
   const grid_map::GridMap& map_;
+  double max_altitude_{150.0};
+  double min_altitude_{50.0};
 };
 }  // namespace ompl
 

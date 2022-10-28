@@ -128,7 +128,8 @@ visualization_msgs::Marker utility2MarkerMsg(const double utility, const Eigen::
   return marker;
 }
 
-visualization_msgs::Marker normals2ArrowsMsg(const Eigen::Vector3d &position, const Eigen::Vector3d &normal, int id) {
+visualization_msgs::Marker vector2ArrowsMsg(const Eigen::Vector3d &position, const Eigen::Vector3d &normal, int id,
+                                            Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0)) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
@@ -136,27 +137,26 @@ visualization_msgs::Marker normals2ArrowsMsg(const Eigen::Vector3d &position, co
   marker.id = id;
   marker.type = visualization_msgs::Marker::ARROW;
   marker.action = visualization_msgs::Marker::ADD;
-  marker.pose.position.x = position(0);
-  marker.pose.position.y = position(1);
-  marker.pose.position.z = position(2);
+  std::vector<geometry_msgs::Point> points;
+  geometry_msgs::Point head;
+  head.x = position(0);
+  head.y = position(1);
+  head.z = position(2);
+  points.push_back(head);
+  geometry_msgs::Point tail;
+  tail.x = position(0) + normal(0);
+  tail.y = position(1) + normal(1);
+  tail.z = position(2) + normal(2);
+  points.push_back(tail);
 
-  const Eigen::Vector3d arrow_direction = Eigen::Vector3d::UnitX();
-  const Eigen::Vector3d normal_vector = normal.normalized();
-  Eigen::Vector3d u = arrow_direction.cross(normal_vector);
-  double theta = std::acos(normal_vector.dot(arrow_direction));
-
-  // TODO: Convert arrow vector to orientation of arrow
-  marker.pose.orientation.x = sin(0.5 * theta) * u(0);
-  marker.pose.orientation.y = sin(0.5 * theta) * u(1);
-  marker.pose.orientation.z = sin(0.5 * theta) * u(2);
-  marker.pose.orientation.w = cos(0.5 * theta);
-  marker.scale.x = 5.0;
-  marker.scale.y = 1.0;
-  marker.scale.z = 1.0;
+  marker.points = points;
+  marker.scale.x = 1.0;
+  marker.scale.y = 2.0;
+  marker.scale.z = 0.0;
   marker.color.a = 1.0;
-  marker.color.r = 1.0;
-  marker.color.g = 0.0;
-  marker.color.b = 0.0;
+  marker.color.r = color(0);
+  marker.color.g = color(1);
+  marker.color.b = color(2);
   return marker;
 }
 

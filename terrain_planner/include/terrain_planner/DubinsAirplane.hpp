@@ -254,6 +254,15 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   double euclidean_distance(const ob::State* state1, const ob::State* state2) const;
 
+  /** \brief dubins
+   * Compute the (non-optimal) Dubins airplane path from SE(2)xR3 state state1 to SE(2)xR3 state state2
+   *
+   * @param[in] state1: Start state
+   * @param[in] state2: Goal state
+   * @param[out] dp: Computed dubins path.
+   */
+  void dubins(const ob::State* state1, const ob::State* state2, DubinsPath& dp) const;
+
   /** \brief interpolate
    * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the path
    *
@@ -465,15 +474,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
   unsigned int convert_idx(unsigned int i) const;
 
  protected:
-  /** \brief dubins
-   * Compute the (non-optimal) Dubins airplane path from SE(2)xR3 state state1 to SE(2)xR3 state state2
-   *
-   * @param[in] state1: Start state
-   * @param[in] state2: Goal state
-   * @param[out] dp: Computed dubins path.
-   */
-  void dubins(const ob::State* state1, const ob::State* state2, DubinsPath& dp) const;
-
   /** \brief dubins
    * Compute the 2D dubins path using path classification for the long distance case and
    * no classification for the short distance case.

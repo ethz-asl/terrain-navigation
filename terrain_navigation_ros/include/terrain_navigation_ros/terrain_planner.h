@@ -100,6 +100,7 @@ class TerrainPlanner {
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
   void publishTree(const ros::Publisher &pub, std::shared_ptr<ompl::base::PlannerData> planner_data,
                    std::shared_ptr<ompl::OmplSetup> problem_setup);
+  void publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory);
   void publishGoal(const Eigen::Vector3d &position);
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -116,6 +117,7 @@ class TerrainPlanner {
   ros::Publisher goal_pub_;
   ros::Publisher viewpoint_pub_;
   ros::Publisher tree_pub_;
+  ros::Publisher path_segment_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;
@@ -165,6 +167,8 @@ class TerrainPlanner {
   std::string map_color_path_{};
   std::string mesh_resource_path_{};
   std::string resource_path_{};
+  double max_elevation_{150.0};
+  double min_elevation_{50.0};
   bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};
