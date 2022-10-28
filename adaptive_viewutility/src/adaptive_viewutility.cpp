@@ -196,7 +196,7 @@ void AdaptiveViewUtility::LoadMap(const std::string &path, const std::string col
     throw std::invalid_argument("Cannot find file: " + path);
   }
 
-  if (file_extension == "obj") {
+  if (file_extension == "obj" || file_extension == "ply") {
     viewutility_map_->initializeFromMesh(path, target_map_resolution_);
   } else if (file_extension == "tif") {
     bool loaded = terrain_map_->initializeFromGeotiff(path, false);

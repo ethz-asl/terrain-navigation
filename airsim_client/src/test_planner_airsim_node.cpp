@@ -127,14 +127,6 @@ int main(int argc, char **argv) {
     data_logger->setKeys({"timestamp", "coverage", "quality", "image_count", "position_x", "position_y", "position_z",
                           "attitude_w", "attitude_x", "attitude_y", "attitude_z"});
 
-    std::shared_ptr<DataLogger> camera_logger = std::make_shared<DataLogger>();
-    camera_logger->setKeys({"file", "X", "Y", "Z"});
-    camera_logger->setSeparator(" ");
-
-    std::shared_ptr<DataLogger> data_logger = std::make_shared<DataLogger>();
-    data_logger->setKeys({"timestamp", "coverage", "quality", "image_count", "position_x", "position_y", "position_z",
-                          "attitude_w", "attitude_x", "attitude_y", "attitude_z"});
-
     bool terminate_mapping = false;
     double simulated_time{0.0};
     double elapsed_time{0.0};

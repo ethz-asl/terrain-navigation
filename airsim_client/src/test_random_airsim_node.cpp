@@ -163,6 +163,8 @@ int main(int argc, char **argv) {
   nh_private.param<std::string>("viewpoint_path", viewpoint_path, "");
   nh_private.param<std::string>("output_directory_path", output_dir_path, "output");
 
+  ros::Publisher viewpoint_pub = nh.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
+
   std::string image_directory{""};
   nh_private.param<std::string>("image_directory", image_directory, image_directory);
 
@@ -260,7 +262,7 @@ int main(int argc, char **argv) {
 
       pipeline_perf.toc();
       adaptive_viewutility->MapPublishOnce();
-      // adaptive_viewutility->ViewpointPublishOnce();
+      adaptive_viewutility->publishViewpoint(viewpoint_pub, Eigen::Vector3d(0.0, 0.0, 1.0));
       adaptive_viewutility->publishCandidatePaths(candidate_viewpoints);
 
       double planning_horizon = 1.0;

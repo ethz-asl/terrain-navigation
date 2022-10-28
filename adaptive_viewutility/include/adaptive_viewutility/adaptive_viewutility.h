@@ -118,6 +118,6 @@ class AdaptiveViewUtility {
   Eigen::Vector3d vehicle_velocity_;
   std::vector<Eigen::Vector3d> vehicle_position_history_;
   std::vector<Eigen::Vector4d> vehicle_orientation_history_;
-  double target_map_resolution_{5.0};
+  double target_map_resolution_{1.0};
 };
 #endif
