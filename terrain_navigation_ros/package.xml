@@ -42,6 +42,7 @@
   <run_depend>terrain_navigation</run_depend>
   <run_depend>terrain_planner</run_depend>
   <run_depend>adaptive_viewutility</run_depend>
+  <run_depend>terrain_models</run_depend>
   <export>
   </export>
 </package>
