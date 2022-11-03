@@ -131,6 +131,12 @@ class Trajectory {
     }
     wrap_2pi(psi);
     wrap_2pi(angle_pos);
+
+    double residual_pi = std::max(2 * M_PI - psi, 0.0);
+
+    if (angle_pos > psi + 0.5 * residual_pi && residual_pi > 0.0) {
+      angle_pos = angle_pos - 2 * M_PI;
+    }
     double theta = angle_pos / psi;
     return theta;
   }
