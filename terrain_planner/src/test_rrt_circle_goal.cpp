@@ -73,8 +73,43 @@ void publishPositionSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& 
   tf2::Quaternion q;
   q.setRPY(0, 0, std::atan2(velocity.y(), velocity.x()));
   marker.pose.orientation = tf2::toMsg(q);
-  visualization_msgs::MarkerArray msg;
+  pub.publish(marker);
+}
 
+void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.header.frame_id = "map";
+  marker.id = 0;
+  marker.header.stamp = ros::Time::now();
+  std::vector<geometry_msgs::Point> points;
+  for (double t = 0.0; t <= 1.0; t += 0.02) {
+    geometry_msgs::Point point;
+    point.x = position.x() + radius * std::cos(t * 2 * M_PI);
+    point.y = position.y() + radius * std::sin(t * 2 * M_PI);
+    point.z = position.z();
+    points.push_back(point);
+  }
+  geometry_msgs::Point start_point;
+  start_point.x = position.x() + radius * std::cos(0.0);
+  start_point.y = position.y() + radius * std::sin(0.0);
+  start_point.z = position.z();
+  points.push_back(start_point);
+
+  marker.points = points;
+  marker.scale.x = 5.0;
+  marker.scale.y = 5.0;
+  marker.scale.z = 5.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
   pub.publish(marker);
 }
 
@@ -91,33 +126,34 @@ void publishTrajectory(ros::Publisher& pub, std::vector<Eigen::Vector3d> traject
   pub.publish(msg);
 }
 
-void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
-  visualization_msgs::MarkerArray msg;
+void getDubinsShortestPath(std::shared_ptr<fw_planning::spaces::DubinsAirplaneStateSpace>& dubins_ss,
+                           const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
+                           const double goal_yaw, std::vector<Eigen::Vector3d>& path) {
+  ompl::base::State* from = dubins_ss->allocState();
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(start_pos.x());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(start_pos.y());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start_pos.z());
+  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start_yaw);
 
-  std::vector<visualization_msgs::Marker> marker;
-  visualization_msgs::Marker mark;
-  mark.action = visualization_msgs::Marker::DELETEALL;
-  marker.push_back(mark);
-  msg.markers = marker;
-  pub.publish(msg);
+  ompl::base::State* to = dubins_ss->allocState();
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(goal_pos.x());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(goal_pos.y());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(goal_pos.z());
+  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(goal_yaw);
 
-  std::vector<visualization_msgs::Marker> segment_markers;
-  int i = 0;
-  for (auto& segment : trajectory.segments) {
-    Eigen::Vector3d color = Eigen::Vector3d(1.0, 0.0, 0.0);
-    if (segment.curvature > 0.0) {  // Green is DUBINS_LEFT
-      color = Eigen::Vector3d(0.0, 1.0, 0.0);
-    } else if (segment.curvature < 0.0) {  // Blue is DUBINS_RIGHT
-      color = Eigen::Vector3d(0.0, 0.0, 1.0);
-    }
-    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, color));
-    segment_markers.insert(segment_markers.begin(),
-                           vector2ArrowsMsg(segment.position().front(), 5.0 * segment.velocity().front(), i++, color));
-    segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().back(), i++, color));
+  ompl::base::State* state = dubins_ss->allocState();
+  double dt = 0.02;
+  for (double t = 0.0; t <= 1.0 + dt; t += dt) {
+    dubins_ss->interpolate(from, to, t, state);
+    auto interpolated_state =
+        Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
+                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
+                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
+    path.push_back(interpolated_state);
   }
-  msg.markers = segment_markers;
-  pub.publish(msg);
 }
+
+double mod2pi(double x) { return x - 2 * M_PI * floor(x * (0.5 / M_PI)); }
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ompl_rrt_planner");
@@ -128,15 +164,12 @@ int main(int argc, char** argv) {
   auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
   auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
   auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
-  auto interpolate_path_pub = nh.advertise<nav_msgs::Path>("interpolated_path", 1, true);
-  auto path_segment_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
+
   std::string map_path, color_file_path;
-  bool random{false};
   nh_private.param<std::string>("map_path", map_path, "");
   nh_private.param<std::string>("color_file_path", color_file_path, "");
-  nh_private.param<bool>("random", random, false);
 
   // Load terrain map from defined tif paths
   auto terrain_map = std::make_shared<TerrainMap>();
@@ -147,8 +180,7 @@ int main(int argc, char** argv) {
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerOffset(150.0, "max_elevation");
 
-  TrajectorySegments path;
-  std::vector<Eigen::Vector3d> interpolated_path;
+  std::vector<Eigen::Vector3d> path;
   double terrain_altitude{100.0};
 
   int num_experiments{20};
@@ -156,7 +188,6 @@ int main(int argc, char** argv) {
     // Initialize planner with loaded terrain map
     auto planner = std::make_shared<TerrainOmplRrt>();
     planner->setMap(terrain_map);
-    planner->setAltitudeLimits(150.0, 50.0);
     /// TODO: Get bounds from gridmap
     planner->setBoundsFromMap(terrain_map->getGridMap());
 
@@ -164,37 +195,27 @@ int main(int argc, char** argv) {
     const double map_width_x = terrain_map->getGridMap().getLength().x();
     const double map_width_y = terrain_map->getGridMap().getLength().y();
 
-    Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y, 0.0)};
+    Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.3 * map_width_x, map_pos(1) - 0.3 * map_width_y, 0.0)};
     start(2) =
         terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
-    double start_yaw = getRandom(-M_PI, M_PI);
-    Eigen::Vector3d start_vel = 10.0 * Eigen::Vector3d(std::cos(start_yaw), std::sin(start_yaw), 0.0);
     Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
     goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
-    double goal_yaw = getRandom(-M_PI, M_PI);
-    Eigen::Vector3d goal_vel = 10.0 * Eigen::Vector3d(std::cos(goal_yaw), std::sin(goal_yaw), 0.0);
+    planner->setupProblem(start, goal);
+    planner->Solve(1.0, path);
 
-    planner->setupProblem(start, start_vel, goal, goal_vel);
-    bool found_solution{false};
-    while (!found_solution) {
-      found_solution = planner->Solve(1.0, path);
-    }
-    planner->getSolutionPath(interpolated_path);
+    double radius = 66.6667;
 
     // Repeatedly publish results
     terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
     grid_map_msgs::GridMap message;
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
     grid_map_pub.publish(message);
-    publishTrajectory(path_pub, path.position());
-    publishTrajectory(interpolate_path_pub, interpolated_path);
-    publishPathSegments(path_segment_pub, path);
-    publishPositionSetpoints(start_pos_pub, start, start_vel);
-    publishPositionSetpoints(goal_pos_pub, goal, goal_vel);
+    publishTrajectory(path_pub, path);
+
+    /// TODO: Publish a circle instead of a goal marker!
+    publishCircleSetpoints(start_pos_pub, start, radius);
+    publishCircleSetpoints(goal_pos_pub, goal, radius);
     publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
-    if (!random) {
-      break;
-    }
     ros::Duration(1.0).sleep();
   }
   ros::spin();

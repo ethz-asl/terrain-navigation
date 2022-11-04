@@ -15,11 +15,14 @@
 
 #include "terrain_planner/ompl_setup.h"
 
+#include <ompl/base/goals/GoalStates.h>
+
 class TerrainOmplRrt {
  public:
   TerrainOmplRrt();
   virtual ~TerrainOmplRrt();
 
+  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal);
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal,
                     const Eigen::Vector3d& goal_vel);
   void setBounds(const Eigen::Vector3d& lower_bound, const Eigen::Vector3d& upper_bound) {
@@ -71,6 +74,7 @@ class TerrainOmplRrt {
   double min_altitude_{50.0};
   double max_altitude_{150.0};
   std::shared_ptr<ompl::base::PlannerData> planner_data_;
+  std::shared_ptr<ompl::base::GoalStates> goal_states_;
   Eigen::Vector3d lower_bound_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d upper_bound_{Eigen::Vector3d::Zero()};
   double solve_duration_{0.0};

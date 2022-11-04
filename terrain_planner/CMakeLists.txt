@@ -82,6 +82,12 @@ add_executable(test_rrt_node
 add_dependencies(test_rrt_node ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_rrt_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
 
+add_executable(test_rrt_circle_goal
+  src/test_rrt_circle_goal.cpp
+)
+add_dependencies(test_rrt_circle_goal terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(test_rrt_circle_goal ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+
 add_executable(test_ompl_dubins
   src/test_ompl_dubins.cpp
 )
