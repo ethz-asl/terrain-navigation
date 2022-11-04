@@ -61,6 +61,7 @@
 #include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/mcts_planner.h"
 #include "terrain_planner/primitive_planner.h"
+#include "terrain_planner/visualization.h"
 
 #include <planner_msgs/SetString.h>
 #include <planner_msgs/SetVector3.h>
@@ -98,8 +99,6 @@ class TerrainPlanner {
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
-  void publishTree(const ros::Publisher &pub, std::shared_ptr<ompl::base::PlannerData> planner_data,
-                   std::shared_ptr<ompl::OmplSetup> problem_setup);
   void publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory);
   void publishGoal(const Eigen::Vector3d &position);
   ros::NodeHandle nh_;
