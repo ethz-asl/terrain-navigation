@@ -11,6 +11,9 @@
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/Vector3.h>
 #include <nav_msgs/Path.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -93,9 +96,9 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
               Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
                               state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
                               state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
-          points.push_back(toMsg(interpolated_state));
+          points.push_back(tf2::toMsg(interpolated_state));
         }
-        points.push_back(toMsg(Eigen::Vector3d(neighbor_vertex[0], neighbor_vertex[1], neighbor_vertex[2])));
+        points.push_back(tf2::toMsg(Eigen::Vector3d(neighbor_vertex[0], neighbor_vertex[1], neighbor_vertex[2])));
         edge_marker.points = points;
         edge_marker.action = visualization_msgs::Marker::ADD;
         edge_marker.pose.orientation.w = 1.0;
