@@ -114,9 +114,11 @@ int main(int argc, char** argv) {
                           path);
 
     publishTrajectory(path_pub, path);
-    Eigen::Vector3d start_velocity(std::cos(start_yaw[idx % start_yaw.size()]), std::sin(start_yaw[idx % start_yaw.size()]), 0.0);
+    Eigen::Vector3d start_velocity(std::cos(start_yaw[idx % start_yaw.size()]),
+                                   std::sin(start_yaw[idx % start_yaw.size()]), 0.0);
     publishPositionSetpoints(start_pos_pub, start_pos, start_velocity);
-    Eigen::Vector3d goal_velocity(std::cos(goal_yaw[idx % goal_yaw.size()]), std::sin(goal_yaw[idx % goal_yaw.size()]), 0.0);
+    Eigen::Vector3d goal_velocity(std::cos(goal_yaw[idx % goal_yaw.size()]), std::sin(goal_yaw[idx % goal_yaw.size()]),
+                                  0.0);
     publishPositionSetpoints(goal_pos_pub, goal_pos, goal_velocity);
     ros::Duration(1.0).sleep();
     idx++;

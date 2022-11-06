@@ -1,0 +1,15 @@
+<launch>
+    <arg name="visualization" default="false"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+
+    <node pkg="terrain_planner_benchmark" type="terrain_planner_benchmark_node" name="benchmark_planner" output="screen">
+        <param name="map_path" value="$(find terrain_planner)/../resources/hinwil.tif"/>
+        <param name="color_file_path" value="$(find terrain_planner)/../resources/hinwil_color.tif"/>
+        <param name="output_path" value="$(find terrain_planner)/../output/output.csv"/>
+        <param name="random" value="true"/>
+    </node>
+    <group if="$(arg visualization)">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config_ompl_segments.rviz" />
+    </group>
+</launch>

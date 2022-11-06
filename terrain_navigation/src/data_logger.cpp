@@ -50,7 +50,7 @@ void DataLogger::writeToFile(const std::string path) {
   // Write data to files
   std::cout << "[DataLogger] Writing data to file! " << path << std::endl;
   std::ofstream output_file;
-  output_file.open(path, std::ios::app);
+  output_file.open(path, std::ios::trunc);
   if (print_header_) {
     for (auto key : keys_) {
       output_file << key << field_seperator;

@@ -1,0 +1,29 @@
+<package>
+  <name>terrain_planner_benchmark</name>
+  <version>0.0.1</version>
+  <description>Benchmarking framework for terrain planners</description>
+
+  <maintainer email="jalim@ethz.ch">Jaeyoung Lim</maintainer>
+
+  <author>Jaeyoung Lim</author>
+
+  <license>BSD-3</license>
+
+  <url type="website">https://github.com/Jaeyoung-Lim/steep-terrain-navigation</url>
+  <url type="bugtracker">https://github.com/Jaeyoung-Lim/steep-terrain-navigation/issues</url>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>eigen_catkin</build_depend>
+  <build_depend>grid_map_core</build_depend>
+  <build_depend>grid_map_cv</build_depend>
+  <build_depend>grid_map_ros</build_depend>
+  <build_depend>grid_map_msgs</build_depend>
+  <build_depend>grid_map_pcl</build_depend>
+  <build_depend>grid_map_geo</build_depend>
+  <build_depend>terrain_navigation</build_depend>
+  <build_depend>terrain_planner</build_depend>
+  <run_depend>eigen_catkin</run_depend>
+  <export>
+  </export>
+</package>

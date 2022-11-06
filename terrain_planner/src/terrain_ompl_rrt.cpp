@@ -194,6 +194,16 @@ bool TerrainOmplRrt::Solve(double time_budget, std::vector<Eigen::Vector3d>& pat
   return false;
 }
 
+bool TerrainOmplRrt::getSolutionPathLength(double& path_length) {
+  if (problem_setup_->haveExactSolutionPath()) {
+    ompl::geometric::PathGeometric path = problem_setup_->getSolutionPath();
+    path.interpolate();
+    path_length = path.length();
+    return true;
+  }
+  return false;
+}
+
 bool TerrainOmplRrt::getSolutionPath(std::vector<Eigen::Vector3d>& path) {
   if (problem_setup_->haveExactSolutionPath()) {
     solutionPathToTrajectoryPoints(problem_setup_->getSolutionPath(), path);

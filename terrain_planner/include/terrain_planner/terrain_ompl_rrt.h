@@ -44,6 +44,7 @@ class TerrainOmplRrt {
   ompl::base::StateSamplerPtr allocTerrainStateSampler(const ompl::base::StateSpace* space) {
     return std::make_shared<ompl::TerrainStateSampler>(space, map_->getGridMap(), max_altitude_, min_altitude_);
   }
+  bool getSolutionPathLength(double& path_length);
   bool getSolutionPath(std::vector<Eigen::Vector3d>& path);
   double getSolutionTime() { return solve_duration_; };
   static Eigen::Vector3d dubinsairplanePosition(ompl::base::State* state_ptr) {

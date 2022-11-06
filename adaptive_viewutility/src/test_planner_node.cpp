@@ -38,8 +38,8 @@
  */
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
-#include "terrain_navigation/data_logger.h"
 #include "adaptive_viewutility/performance_tracker.h"
+#include "terrain_navigation/data_logger.h"
 #include "terrain_navigation/profiler.h"
 
 void writeGridmapToImage(const grid_map::GridMap &map, const std::string layer, const std::string &file_path) {

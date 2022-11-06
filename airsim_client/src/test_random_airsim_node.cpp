@@ -39,9 +39,9 @@
 
 #include <ctime>
 #include "adaptive_viewutility/adaptive_viewutility.h"
-#include "terrain_navigation/data_logger.h"
 #include "adaptive_viewutility/performance_tracker.h"
 #include "airsim_client/airsim_client.h"
+#include "terrain_navigation/data_logger.h"
 #include "terrain_navigation/profiler.h"
 
 void addViewpoint(Eigen::Vector3d pos, Eigen::Vector3d vel, Eigen::Vector4d att, Trajectory &trajectory) {
