@@ -50,47 +50,6 @@
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
 
-void publishPositionSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position,
-                              const Eigen::Vector3d& velocity) {
-  visualization_msgs::Marker marker;
-  marker.header.stamp = ros::Time::now();
-  marker.type = visualization_msgs::Marker::ARROW;
-  marker.header.frame_id = "map";
-  marker.id = 0;
-  marker.action = visualization_msgs::Marker::DELETEALL;
-  pub.publish(marker);
-
-  marker.header.stamp = ros::Time::now();
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.scale.x = 10.0;
-  marker.scale.y = 2.0;
-  marker.scale.z = 2.0;
-  marker.color.a = 0.5;  // Don't forget to set the alpha!
-  marker.color.r = 0.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
-  marker.pose.position = tf2::toMsg(position);
-  tf2::Quaternion q;
-  q.setRPY(0, 0, std::atan2(velocity.y(), velocity.x()));
-  marker.pose.orientation = tf2::toMsg(q);
-  visualization_msgs::MarkerArray msg;
-
-  pub.publish(marker);
-}
-
-void publishTrajectory(ros::Publisher& pub, std::vector<Eigen::Vector3d> trajectory) {
-  nav_msgs::Path msg;
-  std::vector<geometry_msgs::PoseStamped> posestampedhistory_vector;
-  Eigen::Vector4d orientation(1.0, 0.0, 0.0, 0.0);
-  for (auto pos : trajectory) {
-    posestampedhistory_vector.insert(posestampedhistory_vector.begin(), vector3d2PoseStampedMsg(pos, orientation));
-  }
-  msg.header.stamp = ros::Time::now();
-  msg.header.frame_id = "map";
-  msg.poses = posestampedhistory_vector;
-  pub.publish(msg);
-}
-
 void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
   visualization_msgs::MarkerArray msg;
 

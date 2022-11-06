@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(terrain_navigation)
-add_definitions(-std=c++11)
+add_definitions(-std=c++17)
 
 find_package(catkin REQUIRED COMPONENTS
     eigen_catkin
@@ -22,6 +22,7 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
+  src/data_logger.cpp
   src/profiler.cpp
   src/terrain_map.cpp
 )

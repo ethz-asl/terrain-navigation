@@ -47,48 +47,9 @@
 
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
+#include "terrain_planner/visualization.h"
 
 double mod2pi(double x) { return x - 2 * M_PI * floor(x * (0.5 / M_PI)); }
-
-void publishPositionSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double& yaw) {
-  visualization_msgs::Marker marker;
-  marker.header.stamp = ros::Time::now();
-  marker.type = visualization_msgs::Marker::ARROW;
-  marker.header.frame_id = "map";
-  marker.id = 0;
-  marker.action = visualization_msgs::Marker::DELETEALL;
-  pub.publish(marker);
-
-  marker.header.stamp = ros::Time::now();
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.scale.x = 10.0;
-  marker.scale.y = 2.0;
-  marker.scale.z = 2.0;
-  marker.color.a = 0.5;  // Don't forget to set the alpha!
-  marker.color.r = 0.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
-  marker.pose.position = tf2::toMsg(position);
-  tf2::Quaternion q;
-  q.setRPY(0, 0, yaw);
-  marker.pose.orientation = tf2::toMsg(q);
-  visualization_msgs::MarkerArray msg;
-
-  pub.publish(marker);
-}
-
-void publishTrajectory(ros::Publisher& pub, std::vector<Eigen::Vector3d> trajectory) {
-  nav_msgs::Path msg;
-  std::vector<geometry_msgs::PoseStamped> posestampedhistory_vector;
-  Eigen::Vector4d orientation(1.0, 0.0, 0.0, 0.0);
-  for (auto pos : trajectory) {
-    posestampedhistory_vector.insert(posestampedhistory_vector.begin(), vector3d2PoseStampedMsg(pos, orientation));
-  }
-  msg.header.stamp = ros::Time::now();
-  msg.header.frame_id = "map";
-  msg.poses = posestampedhistory_vector;
-  pub.publish(msg);
-}
 
 void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
   visualization_msgs::Marker marker;
@@ -245,8 +206,10 @@ int main(int argc, char** argv) {
     // Visualize
     publishTrajectory(path_pub, path_candidate_1);
     publishTrajectory(path_pub_2, path_candidate_2);
-    publishPositionSetpoints(start_pos_pub, start_pos, start_yaw);
-    publishPositionSetpoints(tangent_pos_pub, tangent_pos, tangent_yaw);
+    Eigen::Vector3d start_velocity(std::cos(start_yaw), std::sin(start_yaw), 0.0);
+    publishPositionSetpoints(start_pos_pub, start_pos, start_velocity);
+    Eigen::Vector3d tangent_velocity(std::cos(tangent_yaw), std::sin(tangent_yaw), 0.0);
+    publishPositionSetpoints(tangent_pos_pub, tangent_pos, tangent_velocity);
     publishCircleSetpoints(goal_pos_pub, goal_pos, goal_radius);
     start_yaw += 0.1;
     ros::Duration(1.0).sleep();

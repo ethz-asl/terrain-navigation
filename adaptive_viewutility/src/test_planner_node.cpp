@@ -38,7 +38,7 @@
  */
 
 #include "adaptive_viewutility/adaptive_viewutility.h"
-#include "adaptive_viewutility/data_logger.h"
+#include "terrain_navigation/data_logger.h"
 #include "adaptive_viewutility/performance_tracker.h"
 #include "terrain_navigation/profiler.h"
 

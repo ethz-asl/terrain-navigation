@@ -36,7 +36,7 @@
  *
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
-#include "adaptive_viewutility/data_logger.h"
+#include "terrain_navigation/data_logger.h"
 #include <fstream>
 #include <iostream>
 

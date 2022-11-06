@@ -38,7 +38,6 @@ include_directories(
 
 add_library(${PROJECT_NAME}
   src/adaptive_viewutility.cpp
-  src/data_logger.cpp
   src/exploration_map.cpp
   src/geometricprior_map.cpp
   src/performance_tracker.cpp
