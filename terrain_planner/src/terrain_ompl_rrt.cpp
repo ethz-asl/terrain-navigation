@@ -256,14 +256,14 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
     const double total_length = dubins_path.length_2D();
     const double dt = resolution / dubins_path.length_2D();
     double progress{0.0};
-    for (size_t start_idx = 0; start_idx < segmentStarts.segmentStarts.size() - 1; start_idx++) {
+    for (size_t start_idx = 0; start_idx < segmentStarts.segmentStarts.size(); start_idx++) {
       if (dubins_path.getSegmentLength(start_idx) > 0.0) {
         double segment_progress = dubins_path.getSegmentLength(start_idx) / total_length;
         // Read segment start and end statess
         segmentStart2omplState(segmentStarts.segmentStarts[start_idx], segment_start_state);
-        if ((start_idx + 1) == (segmentStarts.segmentStarts.size() - 1)) {
+        if ((start_idx + 1) > (segmentStarts.segmentStarts.size() - 1)) {
           segment_end_state = to;
-        } else if ((start_idx + 1) == (segmentStarts.segmentStarts.size() - 2) &&
+        } else if ((start_idx + 1) > (segmentStarts.segmentStarts.size() - 2) &&
                    dubins_path.getSegmentLength(start_idx + 1) == 0.0) {
           segment_end_state = to;
         } else {
@@ -289,8 +289,9 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
           trajectory.states.emplace_back(segment_state);
           track_progress = t;
         }
-        if (((start_idx + 1) == (segmentStarts.segmentStarts.size() - 1)) ||
-            ((start_idx + 1) == (segmentStarts.segmentStarts.size() - 2) &&
+        // Append end state
+        if (((start_idx + 1) > (segmentStarts.segmentStarts.size() - 1)) ||
+            ((start_idx + 1) > (segmentStarts.segmentStarts.size() - 2) &&
              dubins_path.getSegmentLength(start_idx + 1) == 0.0)) {
           // Append segment with last state
           State end_state;
@@ -306,13 +307,6 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
         // Do not append trajectory if the segment is too short
         if (trajectory.states.size() > 1) {
           trajectory_segments.segments.push_back(trajectory);
-        }
-      } else {
-        segmentStart2omplState(segmentStarts.segmentStarts[start_idx], segment_start_state);
-        if ((start_idx + 1) == (segmentStarts.segmentStarts.size() - 1)) {
-          segment_end_state = to;
-        } else {
-          segmentStart2omplState(segmentStarts.segmentStarts[start_idx + 1], segment_end_state);
         }
       }
     }
