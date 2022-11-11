@@ -185,6 +185,9 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
     terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
     terrain_map_->AddLayerOffset(max_elevation_, "max_elevation");
+    double radius = 66.667;
+    terrain_map_->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
+    terrain_map_->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
     if (map_initialized_) {
       std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
       viewutility_map_->initializeFromGridmap();
@@ -629,14 +632,27 @@ bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &re
   return true;
 }
 
+bool TerrainPlanner::validateGoal(const Eigen::Vector3d goal) {
+  return (terrain_map_->getGridMap().atPosition("ics_+", goal.head(2)) <
+          terrain_map_->getGridMap().atPosition("ics_-", goal.head(2)))
+             ? true
+             : false;
+}
+
 bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
   Eigen::Vector3d new_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
-  new_goal = maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
-  mcts_planner_->setGoal(new_goal);
-  goal_pos_ = maneuver_library_->getGoalPosition();
-  problem_updated_ = true;
-  found_solution_ = false;
+  bool is_goal_safe = validateGoal(new_goal);
+  if (is_goal_safe) {
+    new_goal = maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
+    mcts_planner_->setGoal(new_goal);
+    goal_pos_ = maneuver_library_->getGoalPosition();
+    problem_updated_ = true;
+    found_solution_ = false;
 
-  res.success = true;
-  return true;
+    res.success = true;
+    return true;
+  } else {
+    res.success = false;
+    return false;
+  }
 }

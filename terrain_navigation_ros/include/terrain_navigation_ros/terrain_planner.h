@@ -89,6 +89,7 @@ class TerrainPlanner {
   bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
+  bool validateGoal(const Eigen::Vector3d goal);
 
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
