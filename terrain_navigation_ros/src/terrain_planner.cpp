@@ -245,7 +245,8 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
           problem_updated_ = false;
           previous_start_position_ = start_position;
           Eigen::Vector3d goal_velocity(10.0, 0.0, 0.0);
-          global_planner_->setupProblem(start_position, start_velocity, goal_pos_, goal_velocity);
+          /// TODO: Get start position and goal velocity
+          global_planner_->setupProblem(start_position, start_velocity, goal_pos_);
         }
 
         TrajectorySegments planner_solution_path;
@@ -258,15 +259,16 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
             updated_segment.segments.clear();
             updated_segment.appendSegment(current_segment);
             updated_segment.appendSegment(planner_solution_path);
-            Eigen::Vector3d emergency_rates(0.0, 0.0, 0.3);
-            double horizon = 2 * M_PI / emergency_rates(2);
             // expandPrimitives(motion_primitive_tree_, emergency_rates, horizon);
             Eigen::Vector3d end_position = planner_solution_path.lastSegment().states.back().position;
             Eigen::Vector3d end_velocity = planner_solution_path.lastSegment().states.back().velocity;
-
+            Eigen::Vector3d radial_vector = (end_position - goal_pos_).normalized();
+            double goal_radius = 66.6667;
+            Eigen::Vector3d emergency_rates = 20.0 * radial_vector.cross(end_velocity.normalized()) / goal_radius;
+            double horizon = 2 * M_PI / std::abs(emergency_rates(2));
             // Append a loiter at the end of the planned path
             Trajectory loiter_trajectory =
-                maneuver_library_->generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
+                maneuver_library_->generateArcTrajectory(-emergency_rates, horizon, end_position, end_velocity);
             updated_segment.appendSegment(loiter_trajectory);
             reference_primitive_ = updated_segment;
           }

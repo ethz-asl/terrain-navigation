@@ -2,6 +2,7 @@
 #define TERRAIN_PLANNER_VISUALIZATION_H
 
 #include "terrain_navigation/trajectory.h"
+#include "terrain_planner/common.h"
 #include "terrain_planner/ompl_setup.h"
 
 #include <Eigen/Dense>

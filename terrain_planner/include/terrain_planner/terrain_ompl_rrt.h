@@ -23,6 +23,7 @@ class TerrainOmplRrt {
   virtual ~TerrainOmplRrt();
 
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal);
+  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal);
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal,
                     const Eigen::Vector3d& goal_vel);
   void setBounds(const Eigen::Vector3d& lower_bound, const Eigen::Vector3d& upper_bound) {

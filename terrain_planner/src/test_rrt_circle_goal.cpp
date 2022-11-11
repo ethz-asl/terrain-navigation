@@ -161,7 +161,9 @@ int main(int argc, char** argv) {
         terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
     Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
     goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
-    planner->setupProblem(start, goal);
+    double start_yaw = getRandom(-M_PI, M_PI);
+    Eigen::Vector3d start_vel = 10.0 * Eigen::Vector3d(std::cos(start_yaw), std::sin(start_yaw), 0.0);
+    planner->setupProblem(start, start_vel, goal);
     planner->Solve(1.0, path);
 
     double radius = 66.6667;
