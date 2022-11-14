@@ -38,12 +38,13 @@
  */
 
 #include "terrain_planner/maneuver_library.h"
+#include "terrain_planner/visualization.h"
 
 #include <terrain_navigation/terrain_map.h>
+#include "terrain_navigation/data_logger.h"
 
 #include <grid_map_msgs/GridMap.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
-#include "adaptive_viewutility/data_logger.h"
 
 void addErrorLayer(const std::string layer_name, const std::string query_layer, const std::string reference_layer,
                    grid_map::GridMap& map) {
@@ -136,7 +137,6 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh_private("~");
 
   ros::Publisher grid_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
-  ros::Publisher yaw_pub_ = nh.advertise<visaulization_msgs::GridMap>("grid_map", 1, true);
 
   std::string map_path, map_color_path, output_file_path;
   bool visualize{true};
@@ -180,8 +180,7 @@ int main(int argc, char** argv) {
       grid_map_msgs::GridMap message;
       grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
       grid_map_pub_.publish(message);
-      ///TODO: Publish arrow()
-
+      /// TODO: Publish arrow()
     }
   }
   ros::spin();
