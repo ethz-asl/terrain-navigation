@@ -39,34 +39,49 @@ class Primitive {
  public:
   Primitive(Trajectory &trajectory) { segment = trajectory; };
   virtual ~Primitive(){};
-  std::vector<std::shared_ptr<Primitive>> child_primitives;
   Eigen::Vector3d getEndofSegmentPosition() { return segment.states.back().position; }
   Eigen::Vector3d getEndofSegmentVelocity() { return segment.states.back().velocity; }
   bool valid() { return validity; }
   bool has_child() { return !child_primitives.empty(); }
+
+  /**
+   * @brief Check if primitive has valid child
+   *
+   * @return true  Primitive has a child and at least one child is valid
+   * @return false Primitive does not have a child or does not have a valid child
+   */
   bool has_validchild() {
     if (!has_child()) {
-      return true;
+      return false;  // Return false if there is no child
     } else {
       for (auto &child : child_primitives) {
-        if (child->valid()) return true;
+        if (child->valid()) {
+          return true;
+        }
       }
       return false;
     }
   }
+
+  /**
+   * @brief Get the Motion Primitives object
+   *
+   * @return std::vector<TrajectorySegments>
+   */
   std::vector<TrajectorySegments> getMotionPrimitives() {
     std::vector<TrajectorySegments> all_primitives;
     if (has_child()) {
-      std::vector<TrajectorySegments> extended_primitives;
-      for (auto &child : child_primitives) {
-        extended_primitives = child->getMotionPrimitives();
+      int i = 0;
+      for (const auto &child : child_primitives) {
+        std::vector<TrajectorySegments> extended_primitives = child->getMotionPrimitives();
         // Append current segment
         for (auto &primitive : extended_primitives) {
           primitive.prependSegment(segment);
+          primitive.validity = validity && primitive.validity;
           all_primitives.push_back(primitive);
         }
+        i++;
       }
-      return all_primitives;
     } else {  // Append primitive segments
       TrajectorySegments trajectory_segments;
       trajectory_segments.appendSegment(segment);
@@ -106,6 +121,16 @@ class Primitive {
       if (child->valid()) return child;
     }
   }
+
+  std::shared_ptr<Primitive> copy() const {
+    auto copied_primitive = std::make_shared<Primitive>(*this);
+    copied_primitive->child_primitives.clear();
+    for (const auto &child : child_primitives) {
+      auto copied_child = child->copy();
+      copied_primitive->child_primitives.push_back(copied_child);
+    }
+    return copied_primitive;
+  }
   int depth{0};
   double utility{0.0};
   int visits{0};
@@ -113,6 +138,7 @@ class Primitive {
   bool validity{true};
   bool evaluation{false};
   Trajectory segment;
+  std::vector<std::shared_ptr<Primitive>> child_primitives;
 
  private:
 };

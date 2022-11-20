@@ -44,7 +44,6 @@
 #include <iostream>
 
 ManeuverLibrary::ManeuverLibrary() {
-  terrain_map_ = std::make_shared<TerrainMap>();
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.0));
@@ -124,40 +123,54 @@ void ManeuverLibrary::expandPrimitives(std::shared_ptr<Primitive> primitive, std
   }
 }
 
-bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> primitive,
+bool ManeuverLibrary::updateValidity(std::shared_ptr<Primitive> &primitive) {
+  bool segment_valid = primitive->validity;
+
+  // Check recursively if there the leaf has a valid child
+  // If there are no valid child available, there the leaf is invalidated
+  if (primitive->has_child()) {
+    // If the primitive segment is valid and has a child it needs to have at least one child that is valid
+    bool has_valid_child{false};
+    for (auto &child : primitive->child_primitives) {
+      if (updateValidity(child)) {
+        has_valid_child = true;
+      }
+    }
+    primitive->validity = has_valid_child && segment_valid;
+  }
+  return primitive->validity;
+}
+
+bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> &primitive,
                                           std::vector<TrajectorySegments> &valid_primitives, bool check_valid_child) {
   bool valid_segment{true};
   // Check collision with terrain
   Trajectory &current_trajectory = primitive->segment;
-
   valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "distance_surface", true);
   // Check collision with maximum terrain altitude
   if (check_max_altitude_) {
     valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "max_elevation", false);
   }
   primitive->validity = valid_segment;
-  if (valid_segment) {
-    if (primitive->has_child() && check_valid_child) {
-      // If the primitive segment is valid and has a child it needs to have at least one child that is valid
-      bool has_valid_child{false};
-      for (auto &child : primitive->child_primitives) {
-        std::vector<TrajectorySegments> child_segments;
-        if (checkCollisionsTree(child, child_segments)) {
-          has_valid_child = true;
-          for (auto &child : child_segments) {
-            TrajectorySegments valid_segments;
-            child.prependSegment(current_trajectory);
-            valid_primitives.push_back(valid_segments);
-          }
-        }
-      }
-      primitive->validity = has_valid_child;
-    } else {
-      TrajectorySegments valid_segments;
-      valid_segments.appendSegment(current_trajectory);
-    }
-  }
 
+  // Check recursively if there the leaf has a valid child
+  // If there are no valid child available, there the leaf is invalidated
+  if (primitive->has_child()) {
+    // If the primitive segment is valid and has a child it needs to have at least one child that is valid
+    bool has_valid_child{false};
+    for (auto &child : primitive->child_primitives) {
+      std::vector<TrajectorySegments> child_segments;
+      if (checkCollisionsTree(child, child_segments)) {
+        has_valid_child = true;
+        // for (auto &child : child_segments) {
+        //   TrajectorySegments valid_segments;
+        //   child.prependSegment(current_trajectory);
+        //   valid_primitives.push_back(valid_segments);
+        // }
+      }
+    }
+    primitive->validity = has_valid_child && valid_segment;
+  }
   return primitive->validity;
 }
 

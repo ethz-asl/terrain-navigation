@@ -79,6 +79,14 @@ class ManeuverLibrary {
    * @param map terrain map pointer
    */
   void setTerrainMap(std::shared_ptr<TerrainMap> map) { terrain_map_ = map; };
+
+  /**
+   * @brief Check if assigned terrain map exists
+   *
+   * @return true
+   * @return false
+   */
+  bool hasTerrainMap() { return bool(terrain_map_); };
   Eigen::Vector3d setTerrainRelativeGoalPosition(const Eigen::Vector3d& pos);
   void setMaxAltitudeConstraint(bool max_altitude_constraint) { check_max_altitude_ = max_altitude_constraint; }
   void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
@@ -86,6 +94,15 @@ class ManeuverLibrary {
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
   std::shared_ptr<TerrainMap>& getTerrainMap() { return terrain_map_; };
   void expandPrimitives(std::shared_ptr<Primitive> primitive, std::vector<Eigen::Vector3d> rates, double horizon);
+
+  /**
+   * @brief
+   *
+   * @param primitive
+   * @return true
+   * @return false
+   */
+  bool updateValidity(std::shared_ptr<Primitive>& primitive);
 
   /**
    * @brief Check collision of the current segment and child nodes
@@ -96,7 +113,7 @@ class ManeuverLibrary {
    * @return true
    * @return false
    */
-  bool checkCollisionsTree(std::shared_ptr<Primitive> primitive, std::vector<TrajectorySegments>& valid_primitives,
+  bool checkCollisionsTree(std::shared_ptr<Primitive>& primitive, std::vector<TrajectorySegments>& valid_primitives,
                            bool check_valid_child = true);
 
   static std::vector<ViewPoint> sampleViewPointFromTrajectorySegment(TrajectorySegments& segment);
