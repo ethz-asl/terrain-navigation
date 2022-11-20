@@ -59,7 +59,7 @@
 
 #include "terrain_planner/common.h"
 #include "terrain_planner/maneuver_library.h"
-#include "terrain_planner/mcts_planner.h"
+// #include "terrain_planner/mcts_planner.h"
 #include "terrain_planner/primitive_planner.h"
 #include "terrain_planner/visualization.h"
 
@@ -94,7 +94,6 @@ class TerrainPlanner {
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
                               std::vector<geometry_msgs::PoseStamped> &history_vector);
-  void publishCandidateManeuvers(const std::vector<TrajectorySegments> &candidate_maneuvers);
   void publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
                                 const double curvature);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
@@ -109,7 +108,6 @@ class TerrainPlanner {
   ros::Publisher vehicle_pose_pub_;
   ros::Publisher posehistory_pub_;
   ros::Publisher referencehistory_pub_;
-  ros::Publisher candidate_manuever_pub_;
   ros::Publisher position_setpoint_pub_;
   ros::Publisher position_target_pub_;
   ros::Publisher path_target_pub_;
@@ -143,7 +141,7 @@ class TerrainPlanner {
   PLANNER_MODE planner_mode_{PLANNER_MODE::EXHAUSTIVE};
 
   std::shared_ptr<ManeuverLibrary> maneuver_library_;
-  std::shared_ptr<MctsPlanner> mcts_planner_;
+  // std::shared_ptr<MctsPlanner> mcts_planner_;
   std::shared_ptr<PrimitivePlanner> primitive_planner_;
   std::shared_ptr<TerrainMap> terrain_map_;
   std::shared_ptr<ViewUtilityMap> viewutility_map_;

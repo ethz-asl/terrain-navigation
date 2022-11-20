@@ -184,7 +184,7 @@ visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, 
   marker.scale.x = 0.5;
   marker.scale.y = 1.0;
   marker.scale.z = 1.0;
-  marker.color.a = 0.2;
+  marker.color.a = 0.5;
   if (!trajectory.valid()) {
     marker.color.r = 1.0;
     marker.color.g = 0.0;

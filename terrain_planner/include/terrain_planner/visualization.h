@@ -20,6 +20,29 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+void publishCandidateManeuvers(const ros::Publisher& pub, const std::vector<TrajectorySegments>& candidate_maneuvers,
+                               bool visualize_invalid_trajectories = false) {
+  visualization_msgs::MarkerArray msg;
+
+  std::vector<visualization_msgs::Marker> marker;
+  visualization_msgs::Marker mark;
+  mark.action = visualization_msgs::Marker::DELETEALL;
+  marker.push_back(mark);
+  msg.markers = marker;
+  pub.publish(msg);
+
+  std::vector<visualization_msgs::Marker> maneuver_library_vector;
+  int i = 0;
+  for (auto maneuver : candidate_maneuvers) {
+    if (maneuver.valid() || visualize_invalid_trajectories) {
+      maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));
+    }
+    i++;
+  }
+  msg.markers = maneuver_library_vector;
+  pub.publish(msg);
+}
+
 void publishPositionSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position,
                               const Eigen::Vector3d& velocity) {
   visualization_msgs::Marker marker;

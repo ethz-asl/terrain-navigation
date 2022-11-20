@@ -45,7 +45,6 @@ include_directories(
 
 add_library(${PROJECT_NAME}
   src/maneuver_library.cpp
-  src/mcts_planner.cpp
   src/primitive_planner.cpp
   src/terrain_ompl.cpp
   src/terrain_ompl_rrt.cpp
@@ -63,18 +62,6 @@ add_executable(test_distance_surface
 )
 add_dependencies(test_distance_surface ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_distance_surface ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
-
-add_executable(test_mcts
-  src/test_mcts.cpp
-)
-add_dependencies(test_mcts ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_mcts ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
-
-add_executable(test_mcts_mapping
-  src/test_mcts_mapping.cpp
-)
-add_dependencies(test_mcts_mapping ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_mcts_mapping ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
 
 add_executable(test_rrt_node
   src/test_rrt_node.cpp
@@ -125,8 +112,7 @@ if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test 
       test/main.cpp
-      test/test_maneuver_library.cpp
-      test/test_mcts_planner.cpp)
+      test/test_maneuver_library.cpp)
 
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}

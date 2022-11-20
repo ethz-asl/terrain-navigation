@@ -62,7 +62,6 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
   referencehistory_pub_ = nh_.advertise<nav_msgs::Path>("reference/path", 10);
-  candidate_manuever_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("visualization_marker", 1, true);
   position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
   goal_pub_ = nh_.advertise<visualization_msgs::Marker>("goal_marker", 1, true);
   mavstate_sub_ =
@@ -105,8 +104,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   maneuver_library_->setTerrainMap(terrain_map_);
   primitive_planner_->setTerrainMap(terrain_map_);
 
-  mcts_planner_ = std::make_shared<MctsPlanner>();
-  mcts_planner_->setViewUtilityMap(viewutility_map_);
+  // mcts_planner_ = std::make_shared<MctsPlanner>();
+  // mcts_planner_->setViewUtilityMap(viewutility_map_);
 
   global_planner_ = std::make_shared<TerrainOmplRrt>();
   global_planner_->setMap(terrain_map_);
@@ -217,17 +216,6 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   plan_time_ = ros::Time::now();
   planner_mode_ = PLANNER_MODE::GLOBAL;
   switch (planner_mode_) {
-    case PLANNER_MODE::MCTS: {
-      double utility = viewutility_map_->CalculateViewUtility(added_viewpoint_list, true);
-      viewpoints_.insert(viewpoints_.end(), added_viewpoint_list.begin(), added_viewpoint_list.end());
-      added_viewpoint_list.clear();
-      TrajectorySegments candidate_primitive =
-          mcts_planner_->solve(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
-      if (candidate_primitive.valid()) {
-        reference_primitive_ = candidate_primitive;
-      }
-      break;
-    }
     case PLANNER_MODE::GLOBAL: {
       /// TODO: Handle start states with loiter circles
       Eigen::Vector3d start_position = vehicle_position_;
@@ -290,7 +278,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
       primitive_planner_->setGoalPosition(goal_pos_);
       reference_primitive_ =
           primitive_planner_->solve(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
-      publishCandidateManeuvers(primitive_planner_->getMotionPrimitives());
+      publishCandidateManeuvers(tree_pub_, primitive_planner_->getMotionPrimitives());
 
       break;
     case PLANNER_MODE::RANDOM:
@@ -366,29 +354,6 @@ void TerrainPlanner::publishPositionHistory(ros::Publisher &pub, const Eigen::Ve
   msg.poses = history_vector;
 
   pub.publish(msg);
-}
-
-void TerrainPlanner::publishCandidateManeuvers(const std::vector<TrajectorySegments> &candidate_maneuvers) {
-  visualization_msgs::MarkerArray msg;
-
-  std::vector<visualization_msgs::Marker> marker;
-  visualization_msgs::Marker mark;
-  mark.action = visualization_msgs::Marker::DELETEALL;
-  marker.push_back(mark);
-  msg.markers = marker;
-  candidate_manuever_pub_.publish(msg);
-
-  std::vector<visualization_msgs::Marker> maneuver_library_vector;
-  int i = 0;
-  bool visualize_invalid_trajectories = false;
-  for (auto maneuver : candidate_maneuvers) {
-    if (maneuver.valid() || visualize_invalid_trajectories) {
-      maneuver_library_vector.insert(maneuver_library_vector.begin(), trajectory2MarkerMsg(maneuver, i));
-    }
-    i++;
-  }
-  msg.markers = maneuver_library_vector;
-  candidate_manuever_pub_.publish(msg);
 }
 
 void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
@@ -644,7 +609,7 @@ bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, pla
   bool is_goal_safe = validateGoal(new_goal);
   if (is_goal_safe) {
     new_goal = maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
-    mcts_planner_->setGoal(new_goal);
+    // mcts_planner_->setGoal(new_goal);
     goal_pos_ = maneuver_library_->getGoalPosition();
     problem_updated_ = true;
     found_solution_ = false;
