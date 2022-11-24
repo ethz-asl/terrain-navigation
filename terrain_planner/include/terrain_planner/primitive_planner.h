@@ -20,15 +20,25 @@ class PrimitivePlanner : public Planner {
   };
 
   /**
-   * @brief Solve MCTS with a given time budget
+   * @brief Primitive planner
    *
    * @param current_pos
    * @param current_vel
    * @param current_att
    * @param current_path
    */
-  virtual TrajectorySegments solve(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
-                                   const Eigen::Vector4d current_att, TrajectorySegments& current_path) override;
+  virtual void setup(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
+                     const Eigen::Vector4d current_att, TrajectorySegments& current_path) override;
+
+  /**
+   * @brief Solve exhaustively with motion primitive trees
+   *
+   * @param current_pos
+   * @param current_vel
+   * @param current_att
+   * @param current_path
+   */
+  virtual TrajectorySegments solve(const double time = 0.0) override;
 
   std::vector<TrajectorySegments>& getMotionPrimitives() { return maneuver_library_->getMotionPrimitives(); };
   bool checkViewUtilityTree(std::shared_ptr<Primitive> primitive);

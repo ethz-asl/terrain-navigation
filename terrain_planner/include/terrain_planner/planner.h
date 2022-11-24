@@ -15,8 +15,9 @@ class Planner {
   Planner(){};
   virtual ~Planner(){};
   void setTerrainMap(std::shared_ptr<TerrainMap> map) { terrain_map_ = map; };
-  virtual TrajectorySegments solve(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
-                                   const Eigen::Vector4d current_att, TrajectorySegments &current_path) = 0;
+  virtual void setup(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
+                     const Eigen::Vector4d current_att, TrajectorySegments &current_path) = 0;
+  virtual TrajectorySegments solve(const double time = 0.0) = 0;
   void setGoal(const Eigen::Vector3d goal) { goal_ = goal; };
 
  protected:

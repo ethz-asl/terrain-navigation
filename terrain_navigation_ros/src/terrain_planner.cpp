@@ -276,8 +276,8 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     }
     case PLANNER_MODE::EXHAUSTIVE:
       primitive_planner_->setGoalPosition(goal_pos_);
-      reference_primitive_ =
-          primitive_planner_->solve(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
+      primitive_planner_->setup(vehicle_position_, vehicle_velocity_, vehicle_attitude_, reference_primitive_);
+      reference_primitive_ = primitive_planner_->solve();
       publishCandidateManeuvers(tree_pub_, primitive_planner_->getMotionPrimitives());
 
       break;
