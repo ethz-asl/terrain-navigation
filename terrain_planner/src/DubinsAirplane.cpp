@@ -570,15 +570,16 @@ void DubinsAirplaneStateSpace::dubins(double d, double alpha, double beta, Dubin
     // distance cases.
     path.setClassification(classifyPath(alpha, beta));
 
-    bool long_path_case = d > (sqrtf(4.0 - pow(ca + cb, 2.0)) + fabs(sa) + fabs(sb));
-
-    if (long_path_case) {  // sufficient condition for optimality of CSC path type
-      ++long_ctr_;
-      calcDubPathWithClassification(path, d, alpha, beta, sa, sb, ca, cb);
-    } else {  // path of type CCC or CSC will be optimal
-      ++short_ctr_;
-      calcDubPathWithoutClassification(path, d, alpha, beta, sa, sb, ca, cb);
+    if (enable_classification_) {
+      bool long_path_case = d > (sqrtf(4.0 - pow(ca + cb, 2.0)) + fabs(sa) + fabs(sb));
+      if (long_path_case) {  // sufficient condition for optimality of CSC path type
+        ++long_ctr_;
+        calcDubPathWithClassification(path, d, alpha, beta, sa, sb, ca, cb);
+        return;
+      }
     }
+    ++short_ctr_;
+    calcDubPathWithoutClassification(path, d, alpha, beta, sa, sb, ca, cb);
   }
 }
 

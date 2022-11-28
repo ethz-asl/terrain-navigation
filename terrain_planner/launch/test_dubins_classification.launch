@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+
+    <node pkg="terrain_planner" type="test_dubins_classification" name="test_ompl_dubins" output="screen">
+        <param name="file_path" value="$(find terrain_planner)/../output/timing.csv"/>
+    </node>
+</launch>

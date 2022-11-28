@@ -109,6 +109,8 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   const int MAX_ITER = 12;
 
+  bool enable_classification_{true};
+
  public:
   /** \brief The state in the DA2 state space, consisting of
    * position = (x, y, z), and heading = (yaw) */
@@ -341,6 +343,12 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   void setMinTurningRadius(double r_min);
 
+  /**
+   * @brief set enable set of the dubins set classification
+   *
+   */
+  void setEnableSetClassification(bool enable) { enable_classification_ = enable; };
+
   /** \brief getMinTurningRadius
    * Return the value of the minimum turning radius.
    */
@@ -473,7 +481,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   unsigned int convert_idx(unsigned int i) const;
 
- protected:
   /** \brief dubins
    * Compute the 2D dubins path using path classification for the long distance case and
    * no classification for the short distance case.
@@ -485,6 +492,7 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   void dubins(double d, double alpha, double beta, DubinsPath& path) const;
 
+ protected:
   /** \brief calcDubPathWithClassification
    * Compute the dubins airplane path with path classification.
    *
