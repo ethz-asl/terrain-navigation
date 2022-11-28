@@ -73,8 +73,8 @@ int main(int argc, char** argv) {
     ///TODO: Randomly generate states
     fw_planning::spaces::DubinsPath dp;
     double d{10.0};
-    double alpha{1.0};
-    double beta{0.5};
+    double alpha = getRandom(0, 2 * M_PI);
+    double beta = getRandom(0, 2 * M_PI);
     std::unordered_map<std::string, std::any> state;
     for (auto& key : keys) {
       if (key == "unclassified_time") {
