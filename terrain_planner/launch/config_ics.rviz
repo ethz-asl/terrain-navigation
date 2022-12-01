@@ -7,10 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /Path1
-        - /GridMap1
-        - /GridMap2
-        - /GridMap4
-        - /GridMap5
+        - /Marker1
       Splitter Ratio: 0.5
     Tree Height: 848
   - Class: rviz/Selection
@@ -107,8 +104,8 @@ Visualization Manager:
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
       Color: 200; 200; 200
-      Color Layer: color
-      Color Transformer: ColorLayer
+      Color Layer: circle_error
+      Color Transformer: IntensityLayer
       Enabled: true
       Height Layer: elevation
       Height Transformer: GridMapLayer
@@ -120,7 +117,7 @@ Visualization Manager:
       Min Intensity: 0
       Name: GridMap
       Show Grid Lines: false
-      Topic: /grid_map
+      Topic: /reference_map
       Unreliable: false
       Use Rainbow: true
       Value: true
@@ -162,10 +159,10 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /position_target
+      Marker Topic: /yaw
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -176,69 +173,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Alpha: 0.20000000298023224
-      Autocompute Intensity Bounds: false
-      Class: grid_map_rviz_plugin/GridMap
-      Color: 0; 0; 255
-      Color Layer: error_surface
-      Color Transformer: FlatColor
-      Enabled: false
-      Height Layer: distance_surface
-      Height Transformer: GridMapLayer
-      History Length: 1
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 10
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: GridMap
-      Show Grid Lines: false
-      Topic: /grid_map
-      Unreliable: false
-      Use Rainbow: true
-      Value: false
-    - Alpha: 0.5
-      Autocompute Intensity Bounds: true
-      Class: grid_map_rviz_plugin/GridMap
-      Color: 138; 226; 52
-      Color Layer: error
-      Color Transformer: IntensityLayer
-      Enabled: true
-      Height Layer: ics_+
-      Height Transformer: Layer
-      History Length: 1
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 10
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: GridMap
-      Show Grid Lines: false
-      Topic: /grid_map
-      Unreliable: false
-      Use Rainbow: true
-      Value: true
-    - Alpha: 0.5
-      Autocompute Intensity Bounds: true
-      Class: grid_map_rviz_plugin/GridMap
-      Color: 173; 127; 168
-      Color Layer: elevation
-      Color Transformer: FlatColor
-      Enabled: false
-      Height Layer: ics_-
-      Height Transformer: Layer
-      History Length: 1
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 10
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: GridMap
-      Show Grid Lines: true
-      Topic: /grid_map
-      Unreliable: false
-      Use Rainbow: true
-      Value: false
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -267,25 +201,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3013.11669921875
+      Distance: 4206.39453125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 75.57390594482422
-        Y: 45.83418655395508
-        Z: 160.1855926513672
+        X: -99.90162658691406
+        Y: 932.5133056640625
+        Z: -230.46328735351562
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8897963762283325
+      Pitch: 0.7897982001304626
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.576371192932129
+      Yaw: 5.927672386169434
     Saved: ~
 Window Geometry:
   Displays:

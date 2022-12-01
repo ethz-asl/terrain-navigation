@@ -52,7 +52,7 @@ void addErrorLayer(const std::string layer_name, const std::string query_layer, 
 
   for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index index = *iterator;
-    map.at(layer_name, index) = double(map.at(query_layer, index) - map.at(reference_layer, index));
+    map.at(layer_name, index) = map.at(query_layer, index) > map.at(reference_layer, index);
   }
 }
 
@@ -82,7 +82,8 @@ bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const 
     if (!map.isInside(Eigen::Vector2d(position.x(), position.y()))) {
       // Handle outside states as part of collision surface
       // Consider it as a collision when the circle trajectory is outside of the map
-      return true;
+      continue;
+      // return true;
     };
     double min_collisionaltitude = map.atPosition("distance_surface", Eigen::Vector2d(position.x(), position.y()));
     if (min_collisionaltitude > lower_altitude) lower_altitude = min_collisionaltitude;
@@ -136,7 +137,9 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
 
-  ros::Publisher grid_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
+  auto grid_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
+  auto reference_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("reference_map", 1, true);
+  auto yaw_pub = nh.advertise<visualization_msgs::Marker>("yaw", 1, true);
 
   std::string map_path, map_color_path, output_file_path;
   bool visualize{true};
@@ -144,32 +147,54 @@ int main(int argc, char** argv) {
   nh_private.param<std::string>("color_file_path", map_color_path, "resources/cadastre.tif");
   nh_private.param<std::string>("output_file_path", output_file_path, "resources/output.csv");
   nh_private.param<bool>("visualize", visualize, true);
-  std::shared_ptr<TerrainMap> terrain_map = std::make_shared<TerrainMap>();
-  terrain_map->Load(map_path, false, map_color_path);
-  terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
-  terrain_map->AddLayerOffset(150.0, "max_elevation");
+
+  std::shared_ptr<TerrainMap> reference_map = std::make_shared<TerrainMap>();
+  reference_map->Load(map_path, false, map_color_path);
+  reference_map->AddLayerDistanceTransform(50.0, "distance_surface");
+  reference_map->AddLayerOffset(150.0, "max_elevation");
+  double width = reference_map->getGridMap().getLength().y();
+  reference_map->getGridMap().setPosition(Eigen::Vector2d(0.0, 1.5 * width));
+
+  calculateCircleICS("circle_error", reference_map, 60.0);
+  double circle_coverage = getCoverage("circle_error", 0.0, reference_map->getGridMap());
+  std::cout << "  - coverage: " << circle_coverage << std::endl;
+
+  grid_map_msgs::GridMap message;
+  grid_map::GridMapRosConverter::toMessage(reference_map->getGridMap(), message);
+  reference_map_pub_.publish(message);
 
   std::cout << "Valid yaw terminal state coverage" << std::endl;
   auto data_logger = std::make_shared<DataLogger>();
   data_logger->setKeys({"yaw", "yaw_coverage", "circle_coverage"});
   std::cout << "Valid circlular terminal state coverage" << std::endl;
-  calculateCircleICS("circle_error", terrain_map, 60.0);
-  double circle_coverage = getCoverage("circle_error", 0.0, terrain_map->getGridMap());
-  std::cout << "  - coverage: " << circle_coverage << std::endl;
+
+  std::shared_ptr<TerrainMap> terrain_map = std::make_shared<TerrainMap>();
+  terrain_map->Load(map_path, false, map_color_path);
+  terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
+  terrain_map->AddLayerOffset(150.0, "max_elevation");
 
   for (double yaw = 0.0; yaw < 2 * M_PI; yaw += 0.125 * M_PI) {
     calculateYawICS("yaw_error", terrain_map->getGridMap(), yaw, 0.25);
     double coverage = getCoverage("yaw_error", 0.0, terrain_map->getGridMap());
     std::cout << "  - yaw: " << yaw << std::endl;
     std::cout << "  - coverage: " << coverage << std::endl;
+
     std::unordered_map<std::string, std::any> state;
     state.insert(std::pair<std::string, double>("yaw", yaw));
     state.insert(std::pair<std::string, double>("yaw_coverage", coverage));
     state.insert(std::pair<std::string, double>("circle_coverage", circle_coverage));
     data_logger->record(state);
+
     grid_map_msgs::GridMap message;
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
     grid_map_pub_.publish(message);
+    grid_map_msgs::GridMap message2;
+    grid_map::GridMapRosConverter::toMessage(reference_map->getGridMap(), message2);
+    reference_map_pub_.publish(message2);
+
+    Eigen::Vector3d pos(0.0, 0.0, 400.0);
+    Eigen::Vector3d vel(std::cos(yaw), std::sin(yaw), 0.0);
+    publishPositionSetpoints(yaw_pub, pos, vel, Eigen::Vector3d(200.0, 40.0, 40.0));
   }
 
   data_logger->setPrintHeader(true);
@@ -180,7 +205,9 @@ int main(int argc, char** argv) {
       grid_map_msgs::GridMap message;
       grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
       grid_map_pub_.publish(message);
-      /// TODO: Publish arrow()
+      grid_map_msgs::GridMap message2;
+      grid_map::GridMapRosConverter::toMessage(reference_map->getGridMap(), message2);
+      reference_map_pub_.publish(message2);
     }
   }
   ros::spin();

@@ -44,7 +44,8 @@ void publishCandidateManeuvers(const ros::Publisher& pub, const std::vector<Traj
 }
 
 void publishPositionSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position,
-                              const Eigen::Vector3d& velocity) {
+                              const Eigen::Vector3d& velocity,
+                              const Eigen::Vector3d scale = Eigen::Vector3d(10.0, 2.0, 2.0)) {
   visualization_msgs::Marker marker;
   marker.header.stamp = ros::Time::now();
   marker.type = visualization_msgs::Marker::ARROW;
@@ -55,9 +56,9 @@ void publishPositionSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& 
 
   marker.header.stamp = ros::Time::now();
   marker.action = visualization_msgs::Marker::ADD;
-  marker.scale.x = 10.0;
-  marker.scale.y = 2.0;
-  marker.scale.z = 2.0;
+  marker.scale.x = scale(0);
+  marker.scale.y = scale(1);
+  marker.scale.z = scale(2);
   marker.color.a = 0.5;  // Don't forget to set the alpha!
   marker.color.r = 0.0;
   marker.color.g = 0.0;
