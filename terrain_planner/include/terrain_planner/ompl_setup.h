@@ -18,7 +18,7 @@ class OmplSetup : public geometric::SimpleSetup {
   OmplSetup() : geometric::SimpleSetup(base::StateSpacePtr(new fw_planning::spaces::DubinsAirplaneStateSpace())) {}
 
   void setDefaultObjective() {
-    getProblemDefinition()->setOptimizationObjective(
+    setOptimizationObjective(
         ompl::base::OptimizationObjectivePtr(new ompl::base::PathLengthOptimizationObjective(getSpaceInformation())));
   }
 

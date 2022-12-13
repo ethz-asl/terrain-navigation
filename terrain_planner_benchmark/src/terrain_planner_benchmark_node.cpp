@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 
   auto benchmark = std::make_shared<TerrainPlannerBenchmark>();
 
-  int num_experiments{5};
+  int num_experiments{100};
   benchmark->setMap(terrain_map);
 
   /// TODO: Configure benchmarking options
@@ -91,7 +91,5 @@ int main(int argc, char** argv) {
 
   /// TODO: write benchmark results to file
   benchmark->writeResultstoFile(output_file_path);
-
-  ros::spin();
   return 0;
 }

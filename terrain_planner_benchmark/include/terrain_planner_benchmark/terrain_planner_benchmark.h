@@ -10,6 +10,7 @@
 
 struct BenchmarkResult {
   int id;
+  bool found_solution;
   std::string planning_method;
   double path_length;
 };

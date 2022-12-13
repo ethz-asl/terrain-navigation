@@ -2,12 +2,6 @@
 
 #include "terrain_planner/terrain_ompl_rrt.h"
 
-/** \brief mod2pi
- * Sets the input angle to the corresponding angle between 0 and 2pi.
- * TODO Move it to a general file as this function can be used in many different functions/classes
- */
-inline double mod2pi(double x) { return x - 2 * M_PI * floor(x * 1 / (2 * M_PI)); }
-
 // Constructor
 TerrainOmplRrt::TerrainOmplRrt() { problem_setup_ = std::make_shared<ompl::OmplSetup>(); }
 TerrainOmplRrt::~TerrainOmplRrt() {
@@ -50,7 +44,8 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
     start_ompl->setX(start_pos(0) + radius * std::cos(theta));
     start_ompl->setY(start_pos(1) + radius * std::sin(theta));
     start_ompl->setZ(start_pos(2));
-    double start_yaw = mod2pi(theta + M_PI_2);
+    double start_yaw = theta + M_PI_2;
+    wrap_pi(start_yaw);
     start_ompl->setYaw(start_yaw);
     problem_setup_->addStartState(start_ompl);
   }
@@ -62,16 +57,21 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
     goal_ompl->setX(goal(0) + radius * std::cos(theta));
     goal_ompl->setY(goal(1) + radius * std::sin(theta));
     goal_ompl->setZ(goal(2));
-    double goal_yaw = mod2pi(theta + M_PI_2);
+    double goal_yaw = theta + M_PI_2;
+    wrap_pi(goal_yaw);
     goal_ompl->setYaw(goal_yaw);
     goal_states_->addState(goal_ompl);
-    goal_yaw = mod2pi(theta - M_PI_2);
+    goal_yaw = theta - M_PI_2;
+    wrap_pi(goal_yaw);
     goal_ompl->setYaw(goal_yaw);
     goal_states_->addState(goal_ompl);  // Add additional state for bidirectional tangents
   }
   problem_setup_->setGoal(goal_states_);
 
   problem_setup_->setup();
+
+  auto planner_ptr = problem_setup_->getPlanner();
+  std::cout << "Planner Range: " << planner_ptr->as<ompl::geometric::RRTstar>()->getRange() << std::endl;
 }
 
 void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
@@ -122,10 +122,12 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
     goal_ompl->setX(goal(0) + radius * std::cos(theta));
     goal_ompl->setY(goal(1) + radius * std::sin(theta));
     goal_ompl->setZ(goal(2));
-    double goal_yaw = mod2pi(theta + M_PI_2);
+    double goal_yaw = theta + M_PI_2;
+    wrap_pi(goal_yaw);
     goal_ompl->setYaw(goal_yaw);
     goal_states_->addState(goal_ompl);
-    goal_yaw = mod2pi(theta - M_PI_2);
+    goal_yaw = theta - M_PI_2;
+    wrap_pi(goal_yaw);
     goal_ompl->setYaw(goal_yaw);
     goal_states_->addState(goal_ompl);  // Add additional state for bidirectional tangents
   }
