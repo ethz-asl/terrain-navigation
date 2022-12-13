@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 
   auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
 
-  std::vector<std::string> keys({"unclassified_time", "classified_time"});
+  std::vector<std::string> keys({"exhaustive", "classified"});
 
   auto logger = std::make_shared<DataLogger>();
   logger->setPrintHeader(true);
@@ -70,20 +70,24 @@ int main(int argc, char** argv) {
 
   int num_experiments{100};
   for (int idx = 0; idx < num_experiments; idx++) {
-    ///TODO: Randomly generate states
+    /// TODO: Randomly generate states
     fw_planning::spaces::DubinsPath dp;
     double d{10.0};
     double alpha = getRandom(0, 2 * M_PI);
     double beta = getRandom(0, 2 * M_PI);
     std::unordered_map<std::string, std::any> state;
     for (auto& key : keys) {
-      if (key == "unclassified_time") {
+      if (key == "exhaustive") {
         dubins_ss->setEnableSetClassification(false);
       } else {
         dubins_ss->setEnableSetClassification(true);
       }
       auto start = std::chrono::steady_clock::now();
       dubins_ss->dubins(d, alpha, beta, dp);
+      if (!isfinite(dp.length_2D())) {
+        std::cout << "Length is invalid!" << std::endl;
+        std::cout << "  - key: " << key << std::endl;
+      }
       auto end = std::chrono::steady_clock::now();
       double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       state.insert(std::pair<std::string, double>(key, duration));
