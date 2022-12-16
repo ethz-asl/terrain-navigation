@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 
   auto benchmark = std::make_shared<TerrainPlannerBenchmark>();
 
-  int num_experiments{100};
+  int num_experiments{10};
   benchmark->setMap(terrain_map);
 
   /// TODO: Configure benchmarking options

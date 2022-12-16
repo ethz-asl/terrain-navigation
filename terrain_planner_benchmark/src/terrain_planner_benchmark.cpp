@@ -37,7 +37,10 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
 
       Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.3 * map_width_x, map_pos(1) - 0.3 * map_width_y, 0.0)};
       start(2) = map_->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
-      Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
+      // Sertig
+      // Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
+      // Dischma
+      Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.3 * map_width_x, map_pos(1) + 0.3 * map_width_y, 0.0)};
       goal(2) = map_->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
 
       if (method == "circle_goal") {
@@ -49,7 +52,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
         Eigen::Vector3d goal_vel = 10.0 * Eigen::Vector3d(std::cos(goal_yaw), std::sin(goal_yaw), 0.0);
         planner->setupProblem(start, start_vel, goal, goal_vel);
       }
-      bool found_solution = planner->Solve(1.0, path);
+      bool found_solution = planner->Solve(10.0, path);
       // planner->getSolutionPath(interpolated_path);
       double solution_path_length{NAN};
       double path_length{0.0};
