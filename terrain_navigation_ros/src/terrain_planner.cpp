@@ -183,7 +183,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
     map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
     terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
-    terrain_map_->AddLayerOffset(max_elevation_, "max_elevation");
+    terrain_map_->AddLayerDistanceTransform(max_elevation_, "max_elevation");
     double radius = 66.667;
     terrain_map_->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
     terrain_map_->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");

@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
     terrain_map->addColorFromGeotiff(color_file_path);
   }
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
-  terrain_map->AddLayerOffset(150.0, "max_elevation");
+  terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
 
   TrajectorySegments path;
   std::vector<Eigen::Vector3d> interpolated_path;
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     // Initialize planner with loaded terrain map
     auto planner = std::make_shared<TerrainOmplRrt>();
     planner->setMap(terrain_map);
-    planner->setAltitudeLimits(150.0, 50.0);
+    planner->setAltitudeLimits(120.0, 50.0);
     /// TODO: Get bounds from gridmap
     planner->setBoundsFromMap(terrain_map->getGridMap());
 

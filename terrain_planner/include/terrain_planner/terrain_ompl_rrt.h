@@ -74,7 +74,7 @@ class TerrainOmplRrt {
   std::shared_ptr<ompl::OmplSetup> problem_setup_;
   std::shared_ptr<TerrainMap> map_;
   double min_altitude_{50.0};
-  double max_altitude_{150.0};
+  double max_altitude_{120.0};
   std::shared_ptr<ompl::base::PlannerData> planner_data_;
   std::shared_ptr<ompl::base::GoalStates> goal_states_;
   Eigen::Vector3d lower_bound_{Eigen::Vector3d::Zero()};

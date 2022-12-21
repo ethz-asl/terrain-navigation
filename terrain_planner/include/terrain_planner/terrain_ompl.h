@@ -50,7 +50,7 @@ class TerrainValidityChecker : public base::StateValidityChecker {
 
 class TerrainStateSampler : public base::StateSampler {
  public:
-  TerrainStateSampler(const ompl::base::StateSpace* si, const grid_map::GridMap& map, const double max_altitude = 150.0,
+  TerrainStateSampler(const ompl::base::StateSpace* si, const grid_map::GridMap& map, const double max_altitude = 120.0,
                       const double min_altitude = 50.0)
       : StateSampler(si), map_(map), max_altitude_(max_altitude), min_altitude_(min_altitude) {
     // name_ = "my sampler";
@@ -94,7 +94,7 @@ class TerrainStateSampler : public base::StateSampler {
  protected:
   ompl::RNG rng_;
   const grid_map::GridMap& map_;
-  double max_altitude_{150.0};
+  double max_altitude_{120.0};
   double min_altitude_{50.0};
 };
 }  // namespace ompl

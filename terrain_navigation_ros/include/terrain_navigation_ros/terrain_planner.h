@@ -165,7 +165,7 @@ class TerrainPlanner {
   std::string map_color_path_{};
   std::string mesh_resource_path_{};
   std::string resource_path_{};
-  double max_elevation_{150.0};
+  double max_elevation_{120.0};
   double min_elevation_{50.0};
   bool local_origin_received_{false};
   bool map_initialized_{false};

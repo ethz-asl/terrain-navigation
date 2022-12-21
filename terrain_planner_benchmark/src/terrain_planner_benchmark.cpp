@@ -25,7 +25,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
       // Initialize planner with loaded terrain map
       auto planner = std::make_shared<TerrainOmplRrt>();
       planner->setMap(map_);
-      planner->setAltitudeLimits(150.0, 50.0);
+      planner->setAltitudeLimits(120.0, 50.0);
       /// TODO: Get bounds from gridmap
       planner->setBoundsFromMap(map_->getGridMap());
 
