@@ -12,23 +12,23 @@ TrajectorySegments PrimitivePlanner::solve(const double time) {
   return best_primitive;
 }
 
-bool PrimitivePlanner::checkViewUtilityTree(std::shared_ptr<Primitive> primitive) {
-  if (primitive->valid()) {
-    std::vector<ViewPoint> primitive_viewpoints = maneuver_library_->sampleViewPointFromTrajectory(primitive->segment);
-    double view_utility = viewutility_map_->CalculateViewUtility(primitive_viewpoints, false);
-    primitive->utility = view_utility;
-  } else {
-    primitive->utility = 0.0;
-  }
+// bool PrimitivePlanner::checkViewUtilityTree(std::shared_ptr<Primitive> primitive) {
+//   if (primitive->valid()) {
+//     std::vector<ViewPoint> primitive_viewpoints =
+//     maneuver_library_->sampleViewPointFromTrajectory(primitive->segment); double view_utility =
+//     viewutility_map_->CalculateViewUtility(primitive_viewpoints, false); primitive->utility = view_utility;
+//   } else {
+//     primitive->utility = 0.0;
+//   }
 
-  if (primitive->has_child()) {
-    for (auto &child : primitive->child_primitives) {
-      checkViewUtilityTree(child);
-    }
-  }
+//   if (primitive->has_child()) {
+//     for (auto &child : primitive->child_primitives) {
+//       checkViewUtilityTree(child);
+//     }
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
 bool PrimitivePlanner::setGoalPosition(const Eigen::Vector3d position) {
   if (maneuver_library_) {

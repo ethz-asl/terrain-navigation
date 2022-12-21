@@ -99,7 +99,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   primitive_planner_ = std::make_shared<PrimitivePlanner>();
   terrain_map_ = std::make_shared<TerrainMap>();
-  viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
+  // viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
 
   maneuver_library_->setTerrainMap(terrain_map_);
   primitive_planner_->setTerrainMap(terrain_map_);
@@ -189,7 +189,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     terrain_map_->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
     if (map_initialized_) {
       std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
-      viewutility_map_->initializeFromGridmap();
+      // viewutility_map_->initializeFromGridmap();
       global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
     } else {
       std::cout << "[TerrainPlanner]   - Failed to load map: " << map_path_ << std::endl;
@@ -563,7 +563,7 @@ void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCapt
   /// TODO: Transform image tag into local position
   int id = viewpoints_.size();
   ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
-  if (viewutility_map_) viewutility_map_->UpdateUtility(viewpoint);
+  // if (viewutility_map_) viewutility_map_->UpdateUtility(viewpoint);
   viewpoints_.push_back(viewpoint);
   publishViewpoints(viewpoints_);
 }

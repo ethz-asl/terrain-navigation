@@ -33,7 +33,6 @@
   <build_depend>planner_msgs</build_depend>
   <build_depend>terrain_navigation</build_depend>
   <build_depend>terrain_planner</build_depend>
-  <build_depend>adaptive_viewutility</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>grid_map_visualization</run_depend>
@@ -41,8 +40,6 @@
   <run_depend>planner_msgs</run_depend>
   <run_depend>terrain_navigation</run_depend>
   <run_depend>terrain_planner</run_depend>
-  <run_depend>adaptive_viewutility</run_depend>
-  <run_depend>terrain_models</run_depend>
   <export>
   </export>
 </package>

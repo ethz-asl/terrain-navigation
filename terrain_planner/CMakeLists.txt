@@ -21,7 +21,6 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_pcl
   grid_map_geo
   terrain_navigation
-  adaptive_viewutility
 )
 
 catkin_package(
@@ -39,6 +38,7 @@ include_directories(
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
+  ${GDAL_INCLUDE_DIRS}
   ${GeographicLib_INCLUDE_DIRS}
   ${OMPL_INCLUDE_DIR}
 )
@@ -51,8 +51,8 @@ add_library(${PROJECT_NAME}
   src/DubinsPath.cpp
   src/DubinsAirplane.cpp
 )
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES} ${OMPL_LIBRARIES})
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES} ${OMPL_LIBRARIES})
 
 ############
 # BINARIES #
@@ -81,17 +81,17 @@ add_executable(test_ompl_dubins
 add_dependencies(test_ompl_dubins ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_ompl_dubins ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
 
-add_executable(test_ompl_dubins_to_circle
-  src/test_ompl_dubins_to_circle.cpp
-)
-add_dependencies(test_ompl_dubins_to_circle ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_ompl_dubins_to_circle ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+# add_executable(test_ompl_dubins_to_circle
+#   src/test_ompl_dubins_to_circle.cpp
+# )
+# add_dependencies(test_ompl_dubins_to_circle ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+# target_link_libraries(test_ompl_dubins_to_circle ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
 
-add_executable(test_dubins_classification
-  src/test_dubins_classification.cpp
-)
-add_dependencies(test_dubins_classification ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_dubins_classification ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+# add_executable(test_dubins_classification
+#   src/test_dubins_classification.cpp
+# )
+# add_dependencies(test_dubins_classification ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
+# target_link_libraries(test_dubins_classification ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
 
 
 add_executable(test_ics

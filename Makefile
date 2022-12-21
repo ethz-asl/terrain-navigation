@@ -19,11 +19,6 @@ build-test:
 test: build-test
 	Tools/run_tests.sh .
 
-analyze: clean
-	roslaunch adaptive_viewutility run_compare_mesh.launch
-	python3 Tools/visualize_mapdata.py output/map_data.csv
-	rm -f output/*.csv
-
 compare:
 	python3 Tools/visualize_comparisons.py ${path}
 
