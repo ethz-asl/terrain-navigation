@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NUM_RUNS=30
+NUM_RUNS=10
 
 source /opt/ros/noetic/setup.bash
 source ~/catkin_ws/devel/setup.bash
