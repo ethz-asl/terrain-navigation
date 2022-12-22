@@ -1,0 +1,9 @@
+benchmark1:
+  name: "Mythen"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/mythen.csv"
+benchmark2:
+  name: "Dischma"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/dischma_valley.csv"
+benchmark3:
+  name: "Gotthard"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/gotthard.csv"
