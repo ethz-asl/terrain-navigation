@@ -1,12 +1,15 @@
 <launch>
     <arg name="location" default="hinwil"/>
+    <arg name="runs" default="10"/>
 
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
 
-    <node pkg="terrain_planner_benchmark" type="terrain_planner_benchmark_node" name="benchmark_planner" output="screen">
+    <node pkg="terrain_planner_benchmark" type="terrain_planner_benchmark_node" name="benchmark_planner" output="screen" required="true">
+        <param name="location" value="$(arg location)"/>
         <param name="map_path" value="$(find terrain_models)/models/$(arg location).tif"/>
         <param name="color_file_path" value="$(find terrain_models)/models/$(arg location)_color.tif"/>
-        <param name="output_path" value="$(find terrain_planner)/../output/$(arg location).csv"/>
+        <param name="output_directory" value="$(find terrain_planner)/../output"/>
+        <param name="number_of_runs" value="$(arg runs)"/>
         <param name="random" value="true"/>
     </node>
 </launch>

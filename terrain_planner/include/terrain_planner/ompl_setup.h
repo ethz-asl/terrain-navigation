@@ -9,6 +9,8 @@
 #include <ompl/base/spaces/SE3StateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/informedtrees/BITstar.h>
+#include <ompl/geometric/planners/fmt/FMT.h>
 #include "ompl/base/SpaceInformation.h"
 
 namespace ompl {
@@ -22,9 +24,15 @@ class OmplSetup : public geometric::SimpleSetup {
         ompl::base::OptimizationObjectivePtr(new ompl::base::PathLengthOptimizationObjective(getSpaceInformation())));
   }
 
-  void setDefaultPlanner() { setRrtStar(); }
+  void setDefaultPlanner() {
+    // setRrtStar();
+    setBitStar();
+    // setFmtStar();
+  }
 
   void setRrtStar() { setPlanner(ompl::base::PlannerPtr(new ompl::geometric::RRTstar(getSpaceInformation()))); }
+  void setBitStar() { setPlanner(ompl::base::PlannerPtr(new ompl::geometric::BITstar(getSpaceInformation()))); }
+  void setFmtStar() { setPlanner(ompl::base::PlannerPtr(new ompl::geometric::FMT(getSpaceInformation()))); }
 
   const base::StateSpacePtr& getGeometricComponentStateSpace() const { return getStateSpace(); }
 

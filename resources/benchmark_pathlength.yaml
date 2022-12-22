@@ -1,9 +1,0 @@
-benchmark1:
-  name: "Sertig"
-  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/sertig.csv"
-benchmark2:
-  name: "Hinwil"
-  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/hinwil.csv"
-benchmark3:
-  name: "Dischma"
-  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/hinwil.csv"

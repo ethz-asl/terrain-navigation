@@ -66,10 +66,13 @@ int main(int argc, char** argv) {
   auto path_segment_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
-  std::string map_path, color_file_path, output_file_path;
+  std::string map_path, color_file_path, output_file_dir, location;
+  int number_of_runs;
   nh_private.param<std::string>("map_path", map_path, "");
+  nh_private.param<std::string>("location", location, "");
   nh_private.param<std::string>("color_file_path", color_file_path, "");
-  nh_private.param<std::string>("output_path", output_file_path, "");
+  nh_private.param<std::string>("output_directory", output_file_dir, "");
+  nh_private.param<int>("number_of_runs", number_of_runs, 10);
 
   // Load terrain map from defined tif paths
   auto terrain_map = std::make_shared<TerrainMap>();
@@ -82,14 +85,14 @@ int main(int argc, char** argv) {
 
   auto benchmark = std::make_shared<TerrainPlannerBenchmark>();
 
-  int num_experiments{10};
   benchmark->setMap(terrain_map);
 
   /// TODO: Configure benchmarking options
 
-  benchmark->runBenchmark(num_experiments);
+  benchmark->runBenchmark(number_of_runs);
 
   /// TODO: write benchmark results to file
+  std::string output_file_path = output_file_dir + "/" + location + "_goal_benchmark.csv";
   benchmark->writeResultstoFile(output_file_path);
   return 0;
 }

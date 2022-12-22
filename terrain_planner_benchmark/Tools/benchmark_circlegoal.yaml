@@ -1,0 +1,9 @@
+benchmark1:
+  name: "Mythen"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/mythen_goal_benchmark.csv"
+benchmark2:
+  name: "Dischma"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/dischma_valley_goal_benchmark.csv"
+benchmark3:
+  name: "Gotthard"
+  path: "/home/jaeyoung/catkin_ws/src/terrain-navigation/output/gotthard_goal_benchmark.csv"
