@@ -67,8 +67,38 @@ void publishPositionSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& 
   tf2::Quaternion q;
   q.setRPY(0, 0, std::atan2(velocity.y(), velocity.x()));
   marker.pose.orientation = tf2::toMsg(q);
-  visualization_msgs::MarkerArray msg;
 
+  pub.publish(marker);
+}
+
+void publishPath(const ros::Publisher& pub, std::vector<Eigen::Vector3d> path, Eigen::Vector3d color) {
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.header.frame_id = "map";
+  marker.id = 0;
+  marker.action = visualization_msgs::Marker::ADD;
+  std::vector<geometry_msgs::Point> points;
+  for (auto& position : path) {
+    geometry_msgs::Point point;
+    point.x = position(0);
+    point.y = position(1);
+    point.z = position(2);
+    points.push_back(point);
+  }
+  std::cout << "Points: " << points.size() << std::endl;
+  marker.points = points;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 10.0;
+  marker.scale.y = 10.0;
+  marker.scale.z = 10.0;
+  marker.color.a = 0.8;
+  marker.color.r = color.x();
+  marker.color.g = color.y();
+  marker.color.b = color.z();
   pub.publish(marker);
 }
 

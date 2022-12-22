@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /Path1
         - /Marker1
+        - /Marker2
       Splitter Ratio: 0.5
     Tree Height: 848
   - Class: rviz/Selection
@@ -167,10 +168,10 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /vehicle_pose_marker
+      Marker Topic: /circle
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -201,25 +202,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4206.39453125
+      Distance: 2005.525634765625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -99.90162658691406
-        Y: 932.5133056640625
-        Z: -230.46328735351562
+        X: -247.1019744873047
+        Y: 595.60107421875
+        Z: -288.70758056640625
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7897982001304626
+      Pitch: 0.7097986936569214
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.927672386169434
+      Yaw: 5.732657432556152
     Saved: ~
 Window Geometry:
   Displays:

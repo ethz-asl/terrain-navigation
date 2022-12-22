@@ -132,6 +132,27 @@ double getCoverage(const std::string layer_name, const double threshold, const g
   return coverage;
 }
 
+void publishCirclularPath(const ros::Publisher pub, const Eigen::Vector3d center_position, const double radius) {
+  // TODO: Publish circular trajectory
+  const int num_discretization = 100;
+  std::vector<Eigen::Vector3d> circle_path;
+  for (int i = 0; i <= num_discretization; i++) {
+    Eigen::Vector3d position;
+    position << center_position(0) + radius * std::cos(i * 2 * M_PI / double(num_discretization)),
+        center_position(1) + radius * std::sin(i * 2 * M_PI / double(num_discretization)), center_position(2);
+    circle_path.push_back(position);
+  }
+  publishPath(pub, circle_path, Eigen::Vector3d(0.0, 1.0, 0.0));
+}
+
+void writeGridmapToImage(const grid_map::GridMap& map, const std::string layer, const std::string& file_path) {
+  cv_bridge::CvImage image;
+  grid_map::GridMapRosConverter::toCvImage(map, layer, sensor_msgs::image_encodings::MONO8, image);
+  if (!cv::imwrite(file_path.c_str(), image.image, {cv::IMWRITE_PNG_STRATEGY_DEFAULT})) {
+    std::cout << "Failed to write map to image: " << file_path << std::endl;
+  }
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "terrain_planner");
   ros::NodeHandle nh("");
@@ -140,12 +161,14 @@ int main(int argc, char** argv) {
   auto grid_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto reference_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("reference_map", 1, true);
   auto yaw_pub = nh.advertise<visualization_msgs::Marker>("yaw", 1, true);
+  auto circle_pub = nh.advertise<visualization_msgs::Marker>("circle", 1, true);
 
-  std::string map_path, map_color_path, output_file_path;
+  std::string map_path, map_color_path, output_file_dir, location;
   bool visualize{true};
+  nh_private.param<std::string>("location", location, "dischma");
   nh_private.param<std::string>("map_path", map_path, "resources/cadastre.tif");
   nh_private.param<std::string>("color_file_path", map_color_path, "resources/cadastre.tif");
-  nh_private.param<std::string>("output_file_path", output_file_path, "resources/output.csv");
+  nh_private.param<std::string>("output_file_dir", output_file_dir, "resources/output.csv");
   nh_private.param<bool>("visualize", visualize, true);
 
   std::shared_ptr<TerrainMap> reference_map = std::make_shared<TerrainMap>();
@@ -153,15 +176,20 @@ int main(int argc, char** argv) {
   reference_map->AddLayerDistanceTransform(50.0, "distance_surface");
   reference_map->AddLayerDistanceTransform(120.0, "max_elevation");
   double width = reference_map->getGridMap().getLength().y();
-  reference_map->getGridMap().setPosition(Eigen::Vector2d(0.0, 1.5 * width));
+  Eigen::Vector2d reference_map_position = Eigen::Vector2d(0.0, 1.5 * width);
+  reference_map->getGridMap().setPosition(reference_map_position);
 
   calculateCircleICS("circle_error", reference_map, 60.0);
   double circle_coverage = getCoverage("circle_error", 0.0, reference_map->getGridMap());
   std::cout << "  - coverage: " << circle_coverage << std::endl;
-
+  Eigen::Vector3d marker_position{Eigen::Vector3d(reference_map_position(0), reference_map_position(1), 400.0)};
+  publishCirclularPath(circle_pub, marker_position, 200.0);
   grid_map_msgs::GridMap message;
   grid_map::GridMapRosConverter::toMessage(reference_map->getGridMap(), message);
   reference_map_pub_.publish(message);
+
+  std::string reference_map_path = output_file_dir + "/" + location + "_circle_goal.png";
+  writeGridmapToImage(reference_map->getGridMap(), "circle_error", reference_map_path);
 
   std::cout << "Valid yaw terminal state coverage" << std::endl;
   auto data_logger = std::make_shared<DataLogger>();
@@ -195,9 +223,12 @@ int main(int argc, char** argv) {
     Eigen::Vector3d pos(0.0, 0.0, 400.0);
     Eigen::Vector3d vel(std::cos(yaw), std::sin(yaw), 0.0);
     publishPositionSetpoints(yaw_pub, pos, vel, Eigen::Vector3d(200.0, 40.0, 40.0));
+    std::string terrain_map_path = output_file_dir + "/" + location + "_yaw_" + std::to_string(yaw) + ".png";
+    writeGridmapToImage(terrain_map->getGridMap(), "yaw_error", terrain_map_path);
   }
 
   data_logger->setPrintHeader(true);
+  std::string output_file_path = output_file_dir + "/" + location + ".csv";
   data_logger->writeToFile(output_file_path);
   if (visualize) {
     while (true) {
@@ -210,6 +241,5 @@ int main(int argc, char** argv) {
       reference_map_pub_.publish(message2);
     }
   }
-  ros::spin();
   return 0;
 }
