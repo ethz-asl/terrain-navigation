@@ -8,9 +8,9 @@
 
 #include <ompl/base/spaces/SE3StateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
-#include <ompl/geometric/planners/rrt/RRTstar.h>
-#include <ompl/geometric/planners/informedtrees/BITstar.h>
 #include <ompl/geometric/planners/fmt/FMT.h>
+#include <ompl/geometric/planners/informedtrees/BITstar.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
 #include "ompl/base/SpaceInformation.h"
 
 namespace ompl {

@@ -10,7 +10,7 @@ TerrainPlannerBenchmark::TerrainPlannerBenchmark() {
 
 TerrainPlannerBenchmark::~TerrainPlannerBenchmark() {}
 
-bool TerrainPlannerBenchmark::validateGoal(const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
+bool TerrainPlannerBenchmark::validateGoal(const Eigen::Vector3d goal, Eigen::Vector3d& valid_goal) {
   double upper_surface = map_->getGridMap().atPosition("ics_+", goal.head(2));
   double lower_surface = map_->getGridMap().atPosition("ics_-", goal.head(2));
   const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
@@ -51,7 +51,6 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
       } else {
         std::cout << "Specified start position is NOT valid" << std::endl;
       }
-
       Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
       Eigen::Vector3d updated_goal;
       if (validateGoal(goal, updated_goal)) {
@@ -70,7 +69,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
         Eigen::Vector3d goal_vel = 10.0 * Eigen::Vector3d(std::cos(goal_yaw), std::sin(goal_yaw), 0.0);
         planner->setupProblem(start, start_vel, goal, goal_vel);
       }
-      bool found_solution = planner->Solve(100.0, path);
+      bool found_solution = planner->Solve(200.0, path);
       // planner->getSolutionPath(interpolated_path);
       double solution_path_length{NAN};
       double path_length{0.0};
