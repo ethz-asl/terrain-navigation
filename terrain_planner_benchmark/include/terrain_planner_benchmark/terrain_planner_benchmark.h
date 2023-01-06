@@ -19,6 +19,7 @@ class TerrainPlannerBenchmark {
  public:
   TerrainPlannerBenchmark();
   ~TerrainPlannerBenchmark();
+  bool validateGoal(const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal);
   void runBenchmark(const int num_experiments);
   void setMap(std::shared_ptr<TerrainMap> map) { map_ = std::move(map); };
   void writeResultstoFile(const std::string& file_path);

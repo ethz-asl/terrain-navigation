@@ -1,5 +1,5 @@
 <launch>
-    <arg name="location" default="hinwil"/>
+    <arg name="location" default="dischma"/>
     <arg name="runs" default="10"/>
 
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>

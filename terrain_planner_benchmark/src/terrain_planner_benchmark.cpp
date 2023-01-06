@@ -10,6 +10,16 @@ TerrainPlannerBenchmark::TerrainPlannerBenchmark() {
 
 TerrainPlannerBenchmark::~TerrainPlannerBenchmark() {}
 
+bool TerrainPlannerBenchmark::validateGoal(const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
+  double upper_surface = map_->getGridMap().atPosition("ics_+", goal.head(2));
+  double lower_surface = map_->getGridMap().atPosition("ics_-", goal.head(2));
+  const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
+  valid_goal(0) = goal(0);
+  valid_goal(1) = goal(1);
+  valid_goal(2) = (upper_surface + lower_surface) / 2.0;
+  return is_goal_valid;
+}
+
 void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
   // Set start and end goals
   TrajectorySegments path;
@@ -29,16 +39,27 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
       /// TODO: Get bounds from gridmap
       planner->setBoundsFromMap(map_->getGridMap());
 
-      double terrain_altitude{85.0};
-
       const Eigen::Vector2d map_pos = map_->getGridMap().getPosition();
       const double map_width_x = map_->getGridMap().getLength().x();
       const double map_width_y = map_->getGridMap().getLength().y();
 
       Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y, 0.0)};
-      start(2) = map_->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
+      Eigen::Vector3d updated_start;
+      if (validateGoal(start, updated_start)) {
+        start = updated_start;
+        std::cout << "Specified start position is valid" << std::endl;
+      } else {
+        std::cout << "Specified start position is NOT valid" << std::endl;
+      }
+
       Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
-      goal(2) = map_->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
+      Eigen::Vector3d updated_goal;
+      if (validateGoal(goal, updated_goal)) {
+        goal = updated_goal;
+        std::cout << "Specified goal position is valid" << std::endl;
+      } else {
+        std::cout << "Specified goal position is NOT valid" << std::endl;
+      }
 
       if (method == "circle_goal") {
         planner->setupProblem(start, goal);
