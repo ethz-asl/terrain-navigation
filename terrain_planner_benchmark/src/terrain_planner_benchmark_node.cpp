@@ -82,6 +82,9 @@ int main(int argc, char** argv) {
   }
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
+  double radius = 66.667;
+  terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
+  terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
 
   auto benchmark = std::make_shared<TerrainPlannerBenchmark>();
 
