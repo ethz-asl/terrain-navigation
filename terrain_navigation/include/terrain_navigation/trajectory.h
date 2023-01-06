@@ -141,6 +141,39 @@ class Trajectory {
     return theta;
   }
 
+  double getLength(double epsilon = 0.001) {
+    double length{0.0};
+    Eigen::Vector3d segment_start = states.front().position;
+    Eigen::Vector3d segment_end = states.back().position;
+    if (states.size() == 1) {
+      return 0.0;
+    } else if (std::abs(curvature) < 0.0001) {
+      // Segment is a line segment
+      length = (segment_end - segment_start).norm();
+    } else {
+      // Compute closest point on a Arc segment
+      Eigen::Vector2d segment_start_2d = segment_start.head(2);
+      Eigen::Vector2d segment_end_2d = segment_end.head(2);
+      if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+        // Return full circle length
+        length = 2 * M_PI * (1 / curvature);
+      } else {
+        Eigen::Vector2d segment_start_2d = segment_start.head(2);
+        Eigen::Vector2d segment_start_tangent_2d = (states.front().velocity).normalized().head(2);
+        Eigen::Vector2d segment_end_2d = segment_end.head(2);
+
+        Eigen::Vector2d arc_center_2d = getArcCenter(segment_start_2d, segment_start_tangent_2d, curvature);
+        Eigen::Vector2d start_vector = (segment_start_2d - arc_center_2d).normalized();
+        Eigen::Vector2d end_vector = (segment_end_2d - arc_center_2d).normalized();
+
+        double psi = std::atan2(end_vector(1), end_vector(0)) - std::atan2(start_vector(1), start_vector(0));
+        wrap_2pi(psi);
+        length = (1 / std::abs(curvature)) * psi;
+      }
+    }
+    return length;
+  }
+
   std::vector<State> states;
   double curvature{0.0};
   double climb_rate{0.0};
@@ -332,6 +365,69 @@ class TrajectorySegments {
         segment.reached = true;
       }
     }
+  }
+
+  int getCurrentSegmentIndex(const Eigen::Vector3d &position, double epsilon = 0.1) {
+    double theta{-std::numeric_limits<double>::infinity()};
+
+    // Iterate through all segments
+    int segment_idx{-1};
+    for (auto &segment : segments) {
+      segment_idx++;
+      if (segment.reached && (&segment != &segments.back())) continue;
+      Eigen::Vector3d segment_start = segment.states.front().position;
+      Eigen::Vector3d segment_start_tangent = (segment.states.front().velocity).normalized();
+      Eigen::Vector3d segment_end = segment.states.back().position;
+      if (segment.states.size() == 1) {
+        // Segment only contains a single state, meaning that it is nor a line or a arc
+        theta = 1.0;
+      } else if (std::abs(segment.curvature) < 0.0001) {
+        // Compute closest point on a line segment
+        // Get Path Progress
+        theta = segment.getLineProgress(position, segment_start, segment_end);
+      } else {
+        // Compute closest point on a Arc segment
+        Eigen::Vector2d position_2d(position(0), position(1));
+        Eigen::Vector2d segment_start_2d = segment_start.head(2);
+        Eigen::Vector2d segment_start_tangent_2d = segment_start_tangent.head(2);
+        Eigen::Vector2d segment_end_2d = segment_end.head(2);
+        Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
+        if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+          arc_center = segment.getArcCenter(segment_start_2d, segment_start_tangent_2d, segment.curvature);
+          Eigen::Vector2d start_vector = (segment_start_2d - arc_center).normalized();
+          Eigen::Vector2d position_vector = position_2d - arc_center;
+          double angle_pos =
+              std::atan2(position_vector(1), position_vector(0)) - std::atan2(start_vector(1), start_vector(0));
+          wrap_2pi(angle_pos);
+          /// TODO: Check for the case for a helix!
+          theta = angle_pos / (2 * M_PI);
+        } else {
+          arc_center = segment.getArcCenter(segment_start_2d, segment_start_tangent_2d, segment.curvature);
+          theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
+        }
+      }
+      if (theta <= 0.0) {
+        /// theta can be negative on the start of the next segment
+        return segment_idx;
+      } else if (theta < 1.0) {  /// TODO: This is a magic number in terms of acceptance radius of end of segments
+        return segment_idx;
+      }
+    }
+    return segment_idx;
+  }
+
+  /**
+   * @brief Get total length of the trajetory segment
+   *
+   * @param start_idx start index of the segment the total length should be considered (default 0)
+   * @return double length of the trajectory segment
+   */
+  double getLength(const int start_idx = 0) {
+    double length{0.0};
+    for (int i = start_idx; i < segments.size(); i++) {
+      length += segments[i].getLength();
+    }
+    return length;
   }
 
   bool valid() { return validity; }

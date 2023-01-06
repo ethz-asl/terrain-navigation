@@ -4,6 +4,7 @@
 
 #include <ros/ros.h>
 #include <Eigen/Dense>
+#include <mutex>
 
 #include <grid_map_msgs/GridMap.h>
 #include <interactive_markers/interactive_marker_server.h>
@@ -32,6 +33,7 @@ class GoalMarker {
 
   Eigen::Vector3d goal_pos_{Eigen::Vector3d::Zero()};
   grid_map::GridMap map_;
+  std::mutex goal_mutex_;
 };
 
 #endif  // MAV_PLANNING_RVIZ_GOAL_MARKER_H_

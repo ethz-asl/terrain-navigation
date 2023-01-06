@@ -54,6 +54,7 @@
 #include <visualization_msgs/Marker.h>
 
 #include <Eigen/Dense>
+#include <mutex>
 
 #include <terrain_navigation/profiler.h>
 
@@ -150,6 +151,8 @@ class TerrainPlanner {
   TrajectorySegments reference_primitive_;
   mavros_msgs::State current_state_;
 
+  std::mutex goal_mutex_;  // protects g_i
+
   std::vector<Eigen::Vector3d> vehicle_position_history_;
   std::vector<ViewPoint> added_viewpoint_list;
   std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
@@ -167,11 +170,11 @@ class TerrainPlanner {
   std::string resource_path_{};
   double max_elevation_{120.0};
   double min_elevation_{50.0};
+  double goal_radius_{66.67};
   bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};
   bool problem_updated_{true};
-  bool found_solution_{false};
 };
 
 #endif

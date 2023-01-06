@@ -179,6 +179,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 }
 
 void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
   if (local_origin_received_ && !map_initialized_) {
     std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
     map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
@@ -226,26 +227,53 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
         start_position = current_segment.states.back().position;
         start_velocity = current_segment.states.back().velocity;
 
-        if ((start_position != previous_start_position_) && !found_solution_) {
+        if ((start_position != previous_start_position_)) {
           std::cout << "Start position changed! Updating problem" << std::endl;
           problem_updated_ = true;
         }
 
         /// Only update the problem when the goal is updated
+        bool new_problem = false;
         if (problem_updated_) {
-          problem_updated_ = false;
           previous_start_position_ = start_position;
           Eigen::Vector3d goal_velocity(10.0, 0.0, 0.0);
           /// TODO: Get start position and goal velocity
           global_planner_->setupProblem(start_position, start_velocity, goal_pos_);
+          problem_updated_ = false;
+          new_problem = true;
         }
 
         TrajectorySegments planner_solution_path;
-        if (!found_solution_) {
-          found_solution_ = global_planner_->Solve(1.0, planner_solution_path);
+        bool found_solution = global_planner_->Solve(1.0, planner_solution_path);
 
-          /// TODO: Improve solution even if a solution have been found
-          if (found_solution_) {
+        // If a solution is found, check if the new solution is better than the previous solution
+        if (found_solution) {
+          bool update_solution{false};
+
+          if (new_problem) {
+            new_problem = false;  // Since a solution is found, it is not a new problem anymore
+            update_solution = true;
+          } else {  /// Check if the found solution is a better solution
+            /// Get length of the new planner solution path
+            double new_solution_path_length = planner_solution_path.getLength();
+            std::cout << "-------------------" << std::endl;
+            std::cout << "  - new_solution_path_length: " << new_solution_path_length << std::endl;
+
+            /// Get length of the left solution path of the current path segment
+            const int current_idx = reference_primitive_.getCurrentSegmentIndex(vehicle_position_);
+            double current_solution_path_length = reference_primitive_.getLength(current_idx + 1);
+            double total_solution_path_length = reference_primitive_.getLength(0);
+            std::cout << "  - current idx: " << current_idx << std::endl;
+            std::cout << "    - current_solution total path_length: " << total_solution_path_length << std::endl;
+            std::cout << "    - current_solution_path_length: " << current_solution_path_length << std::endl;
+            /// Compare path length between the two path lengths
+            update_solution = bool(new_solution_path_length < current_solution_path_length);
+            std::cout << "  - Found better solution: " << update_solution << std::endl;
+          }
+
+          // If a better solution is found, update the path
+          if (update_solution) {
+            std::cout << "  - Updating soltuion" << std::endl;
             TrajectorySegments updated_segment;
             updated_segment.segments.clear();
             updated_segment.appendSegment(current_segment);
@@ -253,13 +281,14 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
             // expandPrimitives(motion_primitive_tree_, emergency_rates, horizon);
             Eigen::Vector3d end_position = planner_solution_path.lastSegment().states.back().position;
             Eigen::Vector3d end_velocity = planner_solution_path.lastSegment().states.back().velocity;
-            Eigen::Vector3d radial_vector = (end_position - goal_pos_).normalized();
-            double goal_radius = 66.6667;
-            Eigen::Vector3d emergency_rates = 20.0 * radial_vector.cross(end_velocity.normalized()) / goal_radius;
+            Eigen::Vector3d radial_vector = (end_position - goal_pos_);
+            radial_vector(2) = 0.0;  // Only consider horizontal loiters
+            Eigen::Vector3d emergency_rates =
+                20.0 * end_velocity.normalized().cross(radial_vector.normalized()) / radial_vector.norm();
             double horizon = 2 * M_PI / std::abs(emergency_rates(2));
             // Append a loiter at the end of the planned path
             Trajectory loiter_trajectory =
-                maneuver_library_->generateArcTrajectory(-emergency_rates, horizon, end_position, end_velocity);
+                maneuver_library_->generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
             updated_segment.appendSegment(loiter_trajectory);
             reference_primitive_ = updated_segment;
           }
@@ -582,7 +611,6 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   if (result) {
     global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
     problem_updated_ = true;
-    found_solution_ = false;
   }
   res.success = result;
   return true;
@@ -605,19 +633,23 @@ bool TerrainPlanner::validateGoal(const Eigen::Vector3d goal) {
 }
 
 bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
   Eigen::Vector3d new_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
+  /// TODO: Autoselect altitude based on distance surfaces
+  /// TODO: Publish candidate goal pose in case goal pose is invalid
+  /// TODO: Publish candidate loiter as a marker
   bool is_goal_safe = validateGoal(new_goal);
   if (is_goal_safe) {
+    goal_pos_ = new_goal;
     new_goal = maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
     // mcts_planner_->setGoal(new_goal);
-    goal_pos_ = maneuver_library_->getGoalPosition();
     problem_updated_ = true;
-    found_solution_ = false;
 
     res.success = true;
     return true;
   } else {
     res.success = false;
+    // publishGoal(candidate_goal_pub_, new_goal, goal_radius_, Eigen::Vector3d(1.0, 1.0, 0.0));
     return false;
   }
 }

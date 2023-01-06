@@ -28,6 +28,7 @@ GoalMarker::GoalMarker(const ros::NodeHandle &nh) : nh_(nh), marker_server_("goa
 GoalMarker::~GoalMarker() {}
 
 void GoalMarker::processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
   // TODO: Set goal position from menu
   if (feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE) {
     set_goal_marker_.pose = feedback->pose;
@@ -44,5 +45,6 @@ void GoalMarker::processSetPoseFeedback(const visualization_msgs::InteractiveMar
 }
 
 void GoalMarker::GridmapCallback(const grid_map_msgs::GridMap &msg) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
   grid_map::GridMapRosConverter::fromMessage(msg, map_);
 }
