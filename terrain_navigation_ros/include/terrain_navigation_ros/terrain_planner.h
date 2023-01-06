@@ -90,7 +90,7 @@ class TerrainPlanner {
   bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
-  bool validateGoal(const Eigen::Vector3d goal);
+  bool validateGoal(const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal);
 
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
@@ -101,7 +101,8 @@ class TerrainPlanner {
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
   void publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory);
-  void publishGoal(const Eigen::Vector3d &position);
+  void publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position,
+                   Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0));
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;
@@ -114,6 +115,7 @@ class TerrainPlanner {
   ros::Publisher path_target_pub_;
   ros::Publisher planner_status_pub_;
   ros::Publisher goal_pub_;
+  ros::Publisher candidate_goal_pub_;
   ros::Publisher viewpoint_pub_;
   ros::Publisher tree_pub_;
   ros::Publisher path_segment_pub_;

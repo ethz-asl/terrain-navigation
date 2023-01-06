@@ -64,6 +64,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   referencehistory_pub_ = nh_.advertise<nav_msgs::Path>("reference/path", 10);
   position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
   goal_pub_ = nh_.advertise<visualization_msgs::Marker>("goal_marker", 1, true);
+  candidate_goal_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_goal_marker", 1, true);
   mavstate_sub_ =
       nh_.subscribe("mavros/state", 1, &TerrainPlanner::mavstateCallback, this, ros::TransportHints().tcpNoDelay());
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
@@ -263,7 +264,6 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
             const int current_idx = reference_primitive_.getCurrentSegmentIndex(vehicle_position_);
             double current_solution_path_length = reference_primitive_.getLength(current_idx + 1);
             double total_solution_path_length = reference_primitive_.getLength(0);
-            std::cout << "  - current idx: " << current_idx << std::endl;
             std::cout << "    - current_solution total path_length: " << total_solution_path_length << std::endl;
             std::cout << "    - current_solution_path_length: " << current_solution_path_length << std::endl;
             /// Compare path length between the two path lengths
@@ -324,7 +324,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   publishTrajectory(reference_primitive_.position());
   publishPathSegments(path_segment_pub_, reference_primitive_);
   MapPublishOnce();
-  publishGoal(maneuver_library_->getGoalPosition());
+  publishGoal(goal_pub_, goal_pos_, Eigen::Vector3d(0.0, 1.0, 0.0));
 
   planner_msgs::NavigationStatus msg;
   msg.header.stamp = ros::Time::now();
@@ -464,14 +464,14 @@ void TerrainPlanner::publishPathSegments(ros::Publisher &pub, TrajectorySegments
   pub.publish(msg);
 }
 
-void TerrainPlanner::publishGoal(const Eigen::Vector3d &position) {
+void TerrainPlanner::publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, Eigen::Vector3d color) {
   visualization_msgs::Marker marker;
   marker.header.stamp = ros::Time::now();
   marker.type = visualization_msgs::Marker::SPHERE;
   marker.header.frame_id = "map";
   marker.id = 1;
   marker.action = visualization_msgs::Marker::DELETEALL;
-  goal_pub_.publish(marker);
+  pub.publish(marker);
 
   marker.header.stamp = ros::Time::now();
   marker.action = visualization_msgs::Marker::ADD;
@@ -479,9 +479,9 @@ void TerrainPlanner::publishGoal(const Eigen::Vector3d &position) {
   marker.scale.y = 20.0;
   marker.scale.z = 20.0;
   marker.color.a = 0.5;  // Don't forget to set the alpha!
-  marker.color.r = 1.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
+  marker.color.r = color(0);
+  marker.color.g = color(1);
+  marker.color.b = color(2);
   marker.pose.position.x = position(0);
   marker.pose.position.y = position(1);
   marker.pose.position.z = position(2);
@@ -490,7 +490,7 @@ void TerrainPlanner::publishGoal(const Eigen::Vector3d &position) {
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
 
-  goal_pub_.publish(marker);
+  pub.publish(marker);
 }
 
 void TerrainPlanner::mavstateCallback(const mavros_msgs::State::ConstPtr &msg) { current_state_ = *msg; }
@@ -625,23 +625,24 @@ bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &re
   return true;
 }
 
-bool TerrainPlanner::validateGoal(const Eigen::Vector3d goal) {
-  return (terrain_map_->getGridMap().atPosition("ics_+", goal.head(2)) <
-          terrain_map_->getGridMap().atPosition("ics_-", goal.head(2)))
-             ? true
-             : false;
+bool TerrainPlanner::validateGoal(const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
+  double upper_surface = terrain_map_->getGridMap().atPosition("ics_+", goal.head(2));
+  double lower_surface = terrain_map_->getGridMap().atPosition("ics_-", goal.head(2));
+  const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
+  valid_goal(0) = goal(0);
+  valid_goal(1) = goal(1);
+  valid_goal(2) = (upper_surface + lower_surface) / 2.0;
+  return is_goal_valid;
 }
 
 bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
-  Eigen::Vector3d new_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
-  /// TODO: Autoselect altitude based on distance surfaces
-  /// TODO: Publish candidate goal pose in case goal pose is invalid
+  Eigen::Vector3d candidate_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
   /// TODO: Publish candidate loiter as a marker
-  bool is_goal_safe = validateGoal(new_goal);
+  Eigen::Vector3d new_goal;
+  bool is_goal_safe = validateGoal(candidate_goal, new_goal);
   if (is_goal_safe) {
     goal_pos_ = new_goal;
-    new_goal = maneuver_library_->setTerrainRelativeGoalPosition(new_goal);
     // mcts_planner_->setGoal(new_goal);
     problem_updated_ = true;
 
@@ -649,7 +650,7 @@ bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, pla
     return true;
   } else {
     res.success = false;
-    // publishGoal(candidate_goal_pub_, new_goal, goal_radius_, Eigen::Vector3d(1.0, 1.0, 0.0));
+    publishGoal(candidate_goal_pub_, new_goal, Eigen::Vector3d(1.0, 0.0, 0.0));
     return false;
   }
 }

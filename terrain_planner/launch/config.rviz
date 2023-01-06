@@ -32,7 +32,7 @@ Panels:
     Topic: ""
   - Class: mav_planning_rviz/PlanningPanel
     Name: PlanningPanel
-    goal_altitude: 100
+    goal_altitude: ""
     namespace: ""
     odometry_topic: ""
     planner_name: ""
@@ -301,25 +301,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1005.0113525390625
+      Distance: 1591.5234375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -106.45623779296875
-        Y: 191.24456787109375
-        Z: 75.82999420166016
+        X: -527.2234497070312
+        Y: 109.4541244506836
+        Z: 130.5216827392578
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.32936346530914307
-      Target Frame: base_link
+      Pitch: 0.4093640446662903
+      Target Frame: map
       Value: Orbit (rviz)
-      Yaw: 4.6787004470825195
+      Yaw: 1.218686819076538
     Saved: ~
 Window Geometry:
   Displays:
