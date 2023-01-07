@@ -57,12 +57,6 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${Open
 ############
 # BINARIES #
 ############
-add_executable(test_distance_surface
-  src/test_distance_surface.cpp
-)
-add_dependencies(test_distance_surface ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_distance_surface ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
-
 add_executable(test_rrt_node
   src/test_rrt_node.cpp
 )
