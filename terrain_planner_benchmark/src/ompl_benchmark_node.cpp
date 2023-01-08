@@ -46,10 +46,12 @@
 
 #include "terrain_planner/terrain_ompl_rrt.h"
 
-ompl::base::PlannerPtr ConfigureRRTPlanner(const ompl::base::SpaceInformationPtr &si) {
+ompl::base::PlannerPtr ConfigureRRTPlanner(const ompl::base::SpaceInformationPtr &si, std::string name, double range) {
   ompl::geometric::RRTstar *rrt = new ompl::geometric::RRTstar(si);
-  rrt->setName("RRT*");
-  // rrt->setRange(100.0);
+
+  std::string experiment_name = name + "_" + std::to_string(range);
+  rrt->setName(experiment_name);
+  rrt->setRange(range);
   return ompl::base::PlannerPtr(rrt);
 }
 
@@ -58,6 +60,16 @@ ompl::base::PlannerPtr ConfigureBITPlanner(const ompl::base::SpaceInformationPtr
   bit->setName("BIT*");
   bit->setPruning(false);  // Pruning needs to be set to false, otherwise results in a segfault
   return ompl::base::PlannerPtr(bit);
+}
+
+bool validateGoal(grid_map::GridMap &map, const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
+  double upper_surface = map.atPosition("ics_+", goal.head(2));
+  double lower_surface = map.atPosition("ics_-", goal.head(2));
+  const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
+  valid_goal(0) = goal(0);
+  valid_goal(1) = goal(1);
+  valid_goal(2) = (upper_surface + lower_surface) / 2.0;
+  return is_goal_valid;
 }
 
 int main(int argc, char **argv) {
@@ -77,6 +89,9 @@ int main(int argc, char **argv) {
   }
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
+  double radius = 66.67;
+  terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
+  terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
 
   std::vector<Eigen::Vector3d> path;
   double terrain_altitude{100.0};
@@ -91,10 +106,23 @@ int main(int argc, char **argv) {
   const double map_width_x = terrain_map->getGridMap().getLength().x();
   const double map_width_y = terrain_map->getGridMap().getLength().y();
 
-  Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.3 * map_width_x, map_pos(1) - 0.3 * map_width_y, 0.0)};
-  start(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
-  Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.3 * map_width_x, map_pos(1) + 0.3 * map_width_y, 0.0)};
-  goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
+  /// TODO: Check if goal is valid
+  Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y, 0.0)};
+  Eigen::Vector3d updated_start;
+  if (validateGoal(terrain_map->getGridMap(), start, updated_start)) {
+    start = updated_start;
+    std::cout << "Specified start position is valid" << std::endl;
+  } else {
+    std::cout << "Specified start position is NOT valid" << std::endl;
+  }
+  Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
+  Eigen::Vector3d updated_goal;
+  if (validateGoal(terrain_map->getGridMap(), goal, updated_goal)) {
+    goal = updated_goal;
+    std::cout << "Specified goal position is valid" << std::endl;
+  } else {
+    std::cout << "Specified goal position is NOT valid" << std::endl;
+  }
   planner->setupProblem(start, goal);
 
   // Create a state space for the space we are planning in
@@ -110,8 +138,12 @@ int main(int argc, char **argv) {
 
   // For planners that we want to configure in specific ways,
   // the ompl::base::PlannerAllocator should be used:
-  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, std::placeholders::_1));
-  b.addPlannerAllocator(std::bind(&ConfigureBITPlanner, std::placeholders::_1));
+
+  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 400.0));
+  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 600.0));
+  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 800.0));
+  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 1000.0));
+  // b.addPlannerAllocator(std::bind(&ConfigureBITPlanner, std::placeholders::_1));
   // etc.
 
   // Now we can benchmark: 5 second time limit for each plan computation,
@@ -119,12 +151,13 @@ int main(int argc, char **argv) {
   // and true means that a text-mode progress bar should be displayed while
   // computation is running.
   ompl::tools::Benchmark::Request req;
-  req.maxTime = 150.0;
-  req.maxMem = 100.0;
-  req.runCount = 3;
+  req.maxTime = 500.0;
+  req.maxMem = 500.0;
+  req.runCount = 4;
   req.displayProgress = true;
   b.benchmark(req);
 
+  /// TODO: Write benchmarking log to a specific file
   // This will generate a file of the form ompl_host_time.log
   b.saveResultsToFile();
 
