@@ -13,6 +13,8 @@
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include "ompl/base/SpaceInformation.h"
 
+enum PlannerType { RRTSTAR, BITSTAR, FMTSTAR };
+
 namespace ompl {
 
 class OmplSetup : public geometric::SimpleSetup {
@@ -24,15 +26,27 @@ class OmplSetup : public geometric::SimpleSetup {
         ompl::base::OptimizationObjectivePtr(new ompl::base::PathLengthOptimizationObjective(getSpaceInformation())));
   }
 
-  void setDefaultPlanner() {
-    // setRrtStar();
-    setBitStar();
-    // setFmtStar();
+  void setDefaultPlanner(PlannerType planner_type = PlannerType::RRTSTAR) {
+    switch (planner_type) {
+      case PlannerType::RRTSTAR: {
+        auto planner = std::make_shared<ompl::geometric::RRTstar>(getSpaceInformation());
+        planner->setRange(600.0);
+        // planner->setGoalBias(goal_bias);
+        setPlanner(planner);
+        break;
+      }
+      case PlannerType::BITSTAR: {
+        auto planner = std::make_shared<ompl::geometric::BITstar>(getSpaceInformation());
+        setPlanner(planner);
+        break;
+      }
+      case PlannerType::FMTSTAR: {
+        auto planner = std::make_shared<ompl::geometric::FMT>(getSpaceInformation());
+        setPlanner(planner);
+        break;
+      }
+    }
   }
-
-  void setRrtStar() { setPlanner(ompl::base::PlannerPtr(new ompl::geometric::RRTstar(getSpaceInformation()))); }
-  void setBitStar() { setPlanner(ompl::base::PlannerPtr(new ompl::geometric::BITstar(getSpaceInformation()))); }
-  void setFmtStar() { setPlanner(ompl::base::PlannerPtr(new ompl::geometric::FMT(getSpaceInformation()))); }
 
   const base::StateSpacePtr& getGeometricComponentStateSpace() const { return getStateSpace(); }
 

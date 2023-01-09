@@ -114,6 +114,16 @@ void getDubinsShortestPath(std::shared_ptr<fw_planning::spaces::DubinsAirplaneSt
   }
 }
 
+bool validateGoal(std::shared_ptr<TerrainMap> map, const Eigen::Vector3d goal, Eigen::Vector3d& valid_goal) {
+  double upper_surface = map->getGridMap().atPosition("ics_+", goal.head(2));
+  double lower_surface = map->getGridMap().atPosition("ics_-", goal.head(2));
+  const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
+  valid_goal(0) = goal(0);
+  valid_goal(1) = goal(1);
+  valid_goal(2) = (upper_surface + lower_surface) / 2.0;
+  return is_goal_valid;
+}
+
 double mod2pi(double x) { return x - 2 * M_PI * floor(x * (0.5 / M_PI)); }
 
 int main(int argc, char** argv) {
@@ -140,55 +150,58 @@ int main(int argc, char** argv) {
   }
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
+  double radius = 66.667;
+  terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
+  terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
 
   std::vector<Eigen::Vector3d> path;
-  double terrain_altitude{100.0};
 
-  int num_experiments{1};
-  for (int i = 0; i < num_experiments; i++) {
-    // Initialize planner with loaded terrain map
-    auto planner = std::make_shared<TerrainOmplRrt>();
-    planner->setMap(terrain_map);
-    /// TODO: Get bounds from gridmap
-    planner->setBoundsFromMap(terrain_map->getGridMap());
+  // Initialize planner with loaded terrain map
+  auto planner = std::make_shared<TerrainOmplRrt>();
+  planner->setMap(terrain_map);
+  /// TODO: Get bounds from gridmap
+  planner->setBoundsFromMap(terrain_map->getGridMap());
 
-    const Eigen::Vector2d map_pos = terrain_map->getGridMap().getPosition();
-    const double map_width_x = terrain_map->getGridMap().getLength().x();
-    const double map_width_y = terrain_map->getGridMap().getLength().y();
+  const Eigen::Vector2d map_pos = terrain_map->getGridMap().getPosition();
+  const double map_width_x = terrain_map->getGridMap().getLength().x();
+  const double map_width_y = terrain_map->getGridMap().getLength().y();
 
-    Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.3 * map_width_x, map_pos(1) - 0.3 * map_width_y, 0.0)};
-    start(2) =
-        terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(start(0), start(1))) + terrain_altitude;
-    // Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.3 * map_width_x, map_pos(1) - 0.35 * map_width_y, 0.0)};
-    Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.3 * map_width_x, map_pos(1) + 0.3 * map_width_y, 0.0)};
-    goal(2) = terrain_map->getGridMap().atPosition("elevation", Eigen::Vector2d(goal(0), goal(1))) + terrain_altitude;
-    planner->setupProblem(start, goal);
-    int max_iter = 10;
-    int iter = 0;
-    while (!planner->Solve(1.0, path)) {
-      std::cout << "iter: " << iter << std::endl;
-      if (iter > max_iter) {
-        break;
-      } else {
-        iter++;
-      }
-    };
-
-    double radius = 66.6667;
-
-    // Repeatedly publish results
-    terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
-    grid_map_msgs::GridMap message;
-    grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
-    grid_map_pub.publish(message);
-    publishTrajectory(path_pub, path);
-
-    /// TODO: Publish a circle instead of a goal marker!
-    publishCircleSetpoints(start_pos_pub, start, radius);
-    publishCircleSetpoints(goal_pos_pub, goal, radius);
-    publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
-    ros::Duration(1.0).sleep();
+  Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.35 * map_width_y, 0.0)};
+  Eigen::Vector3d updated_start;
+  if (validateGoal(terrain_map, start, updated_start)) {
+    start = updated_start;
+    std::cout << "Specified start position is valid" << std::endl;
+  } else {
+    throw std::runtime_error("Specified start position is NOT valid");
   }
+  Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
+  Eigen::Vector3d updated_goal;
+  if (validateGoal(terrain_map, goal, updated_goal)) {
+    goal = updated_goal;
+    std::cout << "Specified goal position is valid" << std::endl;
+  } else {
+    throw std::runtime_error("Specified goal position is NOT valid");
+  }
+
+  planner->setupProblem(start, goal);
+  if (planner->Solve(200.0, path)) {
+    std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
+  } else {
+    std::cout << "[TestRRTCircleGoal] Unable to find solution" << std::endl;
+  }
+
+  // Repeatedly publish results
+  terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
+  grid_map_msgs::GridMap message;
+  grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
+  grid_map_pub.publish(message);
+  publishTrajectory(path_pub, path);
+
+  /// TODO: Publish a circle instead of a goal marker!
+  publishCircleSetpoints(start_pos_pub, start, radius);
+  publishCircleSetpoints(goal_pos_pub, goal, radius);
+  publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
+  ros::Duration(1.0).sleep();
   ros::spin();
   return 0;
 }

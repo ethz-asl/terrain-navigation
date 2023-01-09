@@ -43,13 +43,13 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
       const double map_width_x = map_->getGridMap().getLength().x();
       const double map_width_y = map_->getGridMap().getLength().y();
 
-      Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y, 0.0)};
+      Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.45 * map_width_y, 0.0)};
       Eigen::Vector3d updated_start;
       if (validateGoal(start, updated_start)) {
         start = updated_start;
         std::cout << "Specified start position is valid" << std::endl;
       } else {
-        std::cout << "Specified start position is NOT valid" << std::endl;
+        throw std::runtime_error("Specified start position is NOT valid");
       }
       Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
       Eigen::Vector3d updated_goal;
@@ -57,7 +57,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
         goal = updated_goal;
         std::cout << "Specified goal position is valid" << std::endl;
       } else {
-        std::cout << "Specified goal position is NOT valid" << std::endl;
+        throw std::runtime_error("Specified goal position is NOT valid");
       }
 
       if (method == "circle_goal") {
@@ -69,7 +69,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
         Eigen::Vector3d goal_vel = 10.0 * Eigen::Vector3d(std::cos(goal_yaw), std::sin(goal_yaw), 0.0);
         planner->setupProblem(start, start_vel, goal, goal_vel);
       }
-      bool found_solution = planner->Solve(200.0, path);
+      bool found_solution = planner->Solve(500.0, path);
       // planner->getSolutionPath(interpolated_path);
       double solution_path_length{NAN};
       double path_length{0.0};

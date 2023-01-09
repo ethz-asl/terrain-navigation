@@ -78,7 +78,7 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
                                   const Eigen::Vector3d& goal) {
   problem_setup_->clear();
 
-  problem_setup_->setDefaultPlanner();
+  problem_setup_->setDefaultPlanner(PlannerType::RRTSTAR);
   problem_setup_->setDefaultObjective();
   assert(map);
   problem_setup_->setTerrainCollisionChecking(map_->getGridMap());
