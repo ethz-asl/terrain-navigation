@@ -53,6 +53,6 @@ with open(sys.argv[1]) as file:
     ax.legend(loc="lower right")
 
 
-plt.legend()
+# plt.legend()
 plt.tight_layout()
 plt.show()
