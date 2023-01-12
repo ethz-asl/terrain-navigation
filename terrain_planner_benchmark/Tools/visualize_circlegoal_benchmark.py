@@ -23,7 +23,7 @@ def boxPlot(ax, idx, data):
 
     ax.set_ylabel('Path Length [m]')
     ax.yaxis.grid(True, which='major', alpha=0.5)
-    ticks = ['Hinwil', 'Sertig', 'Dischma']
+    ticks = ['Sargans', 'Dischma', 'Gotthard']
     ax.set_xticks([1.0, 3.0, 5.0], ticks)
     ax.set_xlim(0, len(ticks)*2)
 
