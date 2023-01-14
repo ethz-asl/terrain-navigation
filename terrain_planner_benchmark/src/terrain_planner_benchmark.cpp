@@ -10,16 +10,6 @@ TerrainPlannerBenchmark::TerrainPlannerBenchmark() {
 
 TerrainPlannerBenchmark::~TerrainPlannerBenchmark() {}
 
-bool TerrainPlannerBenchmark::validateGoal(const Eigen::Vector3d goal, Eigen::Vector3d& valid_goal) {
-  double upper_surface = map_->getGridMap().atPosition("ics_+", goal.head(2));
-  double lower_surface = map_->getGridMap().atPosition("ics_-", goal.head(2));
-  const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
-  valid_goal(0) = goal(0);
-  valid_goal(1) = goal(1);
-  valid_goal(2) = (upper_surface + lower_surface) / 2.0;
-  return is_goal_valid;
-}
-
 void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
   // Set start and end goals
   TrajectorySegments path;
@@ -45,7 +35,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
 
       Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.35 * map_width_y, 0.0)};
       Eigen::Vector3d updated_start;
-      if (validateGoal(start, updated_start)) {
+      if (validateGoal(map_->getGridMap(), start, updated_start)) {
         start = updated_start;
         std::cout << "Specified start position is valid" << std::endl;
       } else {
@@ -53,7 +43,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
       }
       Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
       Eigen::Vector3d updated_goal;
-      if (validateGoal(goal, updated_goal)) {
+      if (validateGoal(map_->getGridMap(), goal, updated_goal)) {
         goal = updated_goal;
         std::cout << "Specified goal position is valid" << std::endl;
       } else {

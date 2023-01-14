@@ -625,22 +625,12 @@ bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &re
   return true;
 }
 
-bool TerrainPlanner::validateGoal(const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
-  double upper_surface = terrain_map_->getGridMap().atPosition("ics_+", goal.head(2));
-  double lower_surface = terrain_map_->getGridMap().atPosition("ics_-", goal.head(2));
-  const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
-  valid_goal(0) = goal(0);
-  valid_goal(1) = goal(1);
-  valid_goal(2) = (upper_surface + lower_surface) / 2.0;
-  return is_goal_valid;
-}
-
 bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   Eigen::Vector3d candidate_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
   /// TODO: Publish candidate loiter as a marker
   Eigen::Vector3d new_goal;
-  bool is_goal_safe = validateGoal(candidate_goal, new_goal);
+  bool is_goal_safe = validateGoal(terrain_map_->getGridMap(), candidate_goal, new_goal);
   if (is_goal_safe) {
     goal_pos_ = new_goal;
     // mcts_planner_->setGoal(new_goal);
