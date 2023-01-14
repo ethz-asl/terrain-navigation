@@ -3,8 +3,8 @@ Description=Launch terrain navigation node as a service
 After=network.target systemd-udevd.service
 
 [Service]
-EnvironmentFile=/home/believer/catkin_ws/src/terrain-navigation/systemd/environment.conf
-ExecStart=/bin/bash /home/believer/catkin_ws/src/terrain-navigation/Tools/run_rosbag.sh
+EnvironmentFile=/home/ethzasl/catkin_ws/src/terrain-navigation/systemd/environment.conf
+ExecStart=/bin/bash /home/ethzasl/catkin_ws/src/terrain-navigation/Tools/run_rosbag.sh
 ProtectSystem=full
 
 [Install]

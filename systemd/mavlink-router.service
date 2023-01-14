@@ -3,7 +3,7 @@ Description=Launch mavlink router as a service
 After=network.target systemd-udevd.service
 
 [Service]
-ExecStart=/usr/bin/mavlink-routerd -c /home/believer/catkin_ws/src/terrain-navigation/Tools/mavlinkrouter.config
+ExecStart=/usr/bin/mavlink-routerd -c /home/ethzasl/catkin_ws/src/terrain-navigation/systemd/mavlinkrouter.config
 ProtectSystem=full
 
 [Install]
