@@ -71,14 +71,14 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   problem_setup_->setup();
 
   auto planner_ptr = problem_setup_->getPlanner();
-  std::cout << "Planner Range: " << planner_ptr->as<ompl::geometric::RRTstar>()->getRange() << std::endl;
+  // std::cout << "Planner Range: " << planner_ptr->as<ompl::geometric::RRTstar>()->getRange() << std::endl;
 }
 
 void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
                                   const Eigen::Vector3d& goal) {
   problem_setup_->clear();
 
-  problem_setup_->setDefaultPlanner(PlannerType::RRTSTAR);
+  problem_setup_->setDefaultPlanner();
   problem_setup_->setDefaultObjective();
   assert(map);
   problem_setup_->setTerrainCollisionChecking(map_->getGridMap());

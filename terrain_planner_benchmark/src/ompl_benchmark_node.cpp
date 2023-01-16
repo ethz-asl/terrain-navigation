@@ -38,7 +38,9 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include <ompl-1.5/ompl/geometric/planners/informedtrees/BITstar.h>
+#include <ompl/geometric/planners/informedtrees/ABITstar.h>
+#include <ompl/geometric/planners/informedtrees/BITstar.h>
+#include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/tools/benchmark/Benchmark.h>
 
@@ -46,19 +48,43 @@
 
 #include "terrain_planner/terrain_ompl_rrt.h"
 
-ompl::base::PlannerPtr ConfigureRRTPlanner(const ompl::base::SpaceInformationPtr &si, std::string name, double range) {
+ompl::base::PlannerPtr ConfigureRRTStarPlanner(const ompl::base::SpaceInformationPtr &si, std::string name,
+                                               double range) {
   ompl::geometric::RRTstar *rrt = new ompl::geometric::RRTstar(si);
-
-  std::string experiment_name = name + "_" + std::to_string(range);
-  rrt->setName(experiment_name);
+  rrt->setName(name);
   rrt->setRange(range);
   return ompl::base::PlannerPtr(rrt);
 }
 
-ompl::base::PlannerPtr ConfigureBITPlanner(const ompl::base::SpaceInformationPtr &si) {
+ompl::base::PlannerPtr ConfigureRRTConnectPlanner(const ompl::base::SpaceInformationPtr &si, std::string name,
+                                                  double range) {
+  ompl::geometric::RRTConnect *rrt_connect = new ompl::geometric::RRTConnect(si);
+  rrt_connect->setName(name);
+  rrt_connect->setRange(range);
+  return ompl::base::PlannerPtr(rrt_connect);
+}
+
+ompl::base::PlannerPtr ConfigureInformedRRTStarPlanner(const ompl::base::SpaceInformationPtr &si, std::string name,
+                                                       double range) {
+  ompl::geometric::InformedRRTstar *irrt = new ompl::geometric::InformedRRTstar(si);
+  irrt->setName(name);
+  irrt->setRange(range);
+  return ompl::base::PlannerPtr(irrt);
+}
+
+ompl::base::PlannerPtr ConfigureBITPlanner(const ompl::base::SpaceInformationPtr &si, std::string name, bool prune) {
   ompl::geometric::BITstar *bit = new ompl::geometric::BITstar(si);
-  bit->setName("BIT*");
-  bit->setPruning(false);  // Pruning needs to be set to false, otherwise results in a segfault
+  bit->setName(name);
+  // bit->setSamplesPerBatch(100);
+  bit->setPruning(prune);  // Pruning needs to be set to false, otherwise results in a segfault
+  return ompl::base::PlannerPtr(bit);
+}
+
+ompl::base::PlannerPtr ConfigureABITPlanner(const ompl::base::SpaceInformationPtr &si, std::string name, bool prune) {
+  ompl::geometric::ABITstar *bit = new ompl::geometric::ABITstar(si);
+  bit->setName(name);
+  // bit->setSamplesPerBatch(100);
+  bit->setPruning(prune);  // Pruning needs to be set to false, otherwise results in a segfault
   return ompl::base::PlannerPtr(bit);
 }
 
@@ -107,7 +133,7 @@ int main(int argc, char **argv) {
   const double map_width_y = terrain_map->getGridMap().getLength().y();
 
   /// TODO: Check if goal is valid
-  Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.4 * map_width_y, 0.0)};
+  Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.35 * map_width_y, 0.0)};
   Eigen::Vector3d updated_start;
   if (validateGoal(terrain_map->getGridMap(), start, updated_start)) {
     start = updated_start;
@@ -139,11 +165,12 @@ int main(int argc, char **argv) {
   // For planners that we want to configure in specific ways,
   // the ompl::base::PlannerAllocator should be used:
 
-  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 400.0));
-  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 600.0));
-  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 800.0));
-  b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 1000.0));
-  // b.addPlannerAllocator(std::bind(&ConfigureBITPlanner, std::placeholders::_1));
+  // b.addPlannerAllocator(std::bind(&ConfigureRRTPlanner, ss.getSpaceInformation(), "RRTStar", 400.0));
+  b.addPlannerAllocator(std::bind(&ConfigureBITPlanner, ss.getSpaceInformation(), "BIT*", true));
+  b.addPlannerAllocator(std::bind(&ConfigureABITPlanner, ss.getSpaceInformation(), "ABIT*", true));
+  b.addPlannerAllocator(std::bind(&ConfigureRRTStarPlanner, ss.getSpaceInformation(), "RRT*", 600.0));
+  b.addPlannerAllocator(std::bind(&ConfigureRRTConnectPlanner, ss.getSpaceInformation(), "RRT-Connect", 600.0));
+  b.addPlannerAllocator(std::bind(&ConfigureInformedRRTStarPlanner, ss.getSpaceInformation(), "Informed-RRT*", 600.0));
   // etc.
 
   // Now we can benchmark: 5 second time limit for each plan computation,
@@ -152,8 +179,8 @@ int main(int argc, char **argv) {
   // computation is running.
   ompl::tools::Benchmark::Request req;
   req.maxTime = 500.0;
-  req.maxMem = 500.0;
-  req.runCount = 4;
+  req.maxMem = 1000;
+  req.runCount = 10;
   req.displayProgress = true;
   b.benchmark(req);
 
