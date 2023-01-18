@@ -119,11 +119,6 @@ void publishTree(const ros::Publisher& pub, std::shared_ptr<ompl::base::PlannerD
                  std::shared_ptr<ompl::OmplSetup> problem_setup) {
   visualization_msgs::MarkerArray marker_array;
   std::vector<visualization_msgs::Marker> marker;
-  visualization_msgs::Marker mark;
-  mark.action = visualization_msgs::Marker::DELETEALL;
-  marker.push_back(mark);
-  marker_array.markers = marker;
-  pub.publish(marker_array);
 
   planner_data->decoupleFromPlanner();
 

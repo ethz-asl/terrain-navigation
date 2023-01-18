@@ -120,7 +120,6 @@ int main(int argc, char **argv) {
   terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
 
   std::vector<Eigen::Vector3d> path;
-  double terrain_altitude{100.0};
 
   auto planner = std::make_shared<TerrainOmplRrt>();
 
