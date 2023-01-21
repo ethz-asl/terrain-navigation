@@ -22,8 +22,37 @@ class TerrainOmplRrt {
   TerrainOmplRrt();
   virtual ~TerrainOmplRrt();
 
+  /**
+   * @brief Configure OMPL problem descriptions
+   *
+   */
+  void configureProblem();
+
+  /**
+   * @brief Setup problem with center position of start and goal loiter circles
+   *
+   * @param start_pos center of the start loiter position
+   * @param goal center of the goal loiter position
+   */
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal);
+
+  /**
+   * @brief Setup problem with position, velocity of the start and center of the goal loiter circle
+   *
+   * @param start_pos position of the start state
+   * @param start_vel velocity of the start state
+   * @param goal center of the goal loiter position
+   */
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal);
+
+  /**
+   * @brief Setup problem with position, velocity of the start and goal state
+   *
+   * @param start_pos position of the start state
+   * @param start_vel velocity of the start state
+   * @param goal position of the goal state
+   * @param goal_vel velocity of the goal state
+   */
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal,
                     const Eigen::Vector3d& goal_vel);
   void setBounds(const Eigen::Vector3d& lower_bound, const Eigen::Vector3d& upper_bound) {
