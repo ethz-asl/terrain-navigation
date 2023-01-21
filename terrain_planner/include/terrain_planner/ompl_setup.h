@@ -12,10 +12,11 @@
 #include <ompl/geometric/planners/informedtrees/BITstar.h>
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
+#include <ompl/geometric/planners/rrt/RRTstarConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include "ompl/base/SpaceInformation.h"
 
-enum PlannerType { RRTSTAR, INFORMED_RRTSTAR, RRTCONNECT, BITSTAR, FMTSTAR };
+enum PlannerType { RRTSTAR, INFORMED_RRTSTAR, RRTCONNECT, RRTSTAR_CONNECT, BITSTAR, FMTSTAR };
 
 namespace ompl {
 
@@ -28,7 +29,7 @@ class OmplSetup : public geometric::SimpleSetup {
         ompl::base::OptimizationObjectivePtr(new ompl::base::PathLengthOptimizationObjective(getSpaceInformation())));
   }
 
-  void setDefaultPlanner(PlannerType planner_type = PlannerType::RRTSTAR) {
+  void setDefaultPlanner(PlannerType planner_type = PlannerType::RRTSTAR_CONNECT) {
     switch (planner_type) {
       case PlannerType::RRTSTAR: {
         auto planner = std::make_shared<ompl::geometric::RRTstar>(getSpaceInformation());
@@ -46,6 +47,13 @@ class OmplSetup : public geometric::SimpleSetup {
       }
       case PlannerType::INFORMED_RRTSTAR: {
         auto planner = std::make_shared<ompl::geometric::InformedRRTstar>(getSpaceInformation());
+        planner->setRange(600.0);
+        // planner->setGoalBias(goal_bias);
+        setPlanner(planner);
+        break;
+      }
+      case PlannerType::RRTSTAR_CONNECT: {
+        auto planner = std::make_shared<ompl::geometric::RRTstarConnect>(getSpaceInformation());
         planner->setRange(600.0);
         // planner->setGoalBias(goal_bias);
         setPlanner(planner);
