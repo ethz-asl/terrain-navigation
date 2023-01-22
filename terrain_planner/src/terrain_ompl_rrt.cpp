@@ -15,9 +15,9 @@ void TerrainOmplRrt::configureProblem() {
   problem_setup_->setDefaultObjective();
   assert(map);
   problem_setup_->setTerrainCollisionChecking(map_->getGridMap());
-  problem_setup_->getStateSpace()->setStateSamplerAllocator(
-      std::bind(&TerrainOmplRrt::allocTerrainStateSampler, this, std::placeholders::_1));
-  problem_setup_->getStateSpace()->allocStateSampler();
+  // problem_setup_->getStateSpace()->setStateSamplerAllocator(
+  //     std::bind(&TerrainOmplRrt::allocTerrainStateSampler, this, std::placeholders::_1));
+  // problem_setup_->getStateSpace()->allocStateSampler();
   ompl::base::RealVectorBounds bounds(3);
   bounds.setLow(0, lower_bound_.x());
   bounds.setLow(1, lower_bound_.y());
@@ -172,7 +172,6 @@ void TerrainOmplRrt::setBoundsFromMap(const grid_map::GridMap& map) {
 
 bool TerrainOmplRrt::Solve(double time_budget, TrajectorySegments& path) {
   if (problem_setup_->solve(time_budget)) {
-    std::cout << "Found solution:" << std::endl;
     // problem_setup_.getSolutionPath().print(std::cout);
     // problem_setup_.simplifySolution();
     // problem_setup_.getSolutionPath().print(std::cout);
@@ -184,6 +183,7 @@ bool TerrainOmplRrt::Solve(double time_budget, TrajectorySegments& path) {
   }
 
   if (problem_setup_->haveExactSolutionPath()) {
+    std::cout << "Found Exact solution!" << std::endl;
     solutionPathToTrajectorySegments(problem_setup_->getSolutionPath(), path);
     return true;
   }

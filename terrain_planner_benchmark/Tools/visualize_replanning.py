@@ -25,7 +25,13 @@ def main():
     directory=sys.argv[1]
     # The FullLoader parameter handles the conversion from YAML
     # scalar values to Python the dictionary format
-    n = 5 # Number of colors
+    n = 0
+    for filename in os.listdir(directory):
+        f = os.path.join(directory, filename)
+        if os.path.isfile(f): # checking if it is a file
+            if fnmatch.fnmatch(filename, '*solution_*'):
+                n = n+1
+
     new_colors = [plt.get_cmap('Blues')(1. * (i+2)/(n+2)) for i in range(n)]
 
     plt.rc('axes', 
@@ -33,8 +39,9 @@ def main():
 
     fig = plt.figure("Coverage")
     ax = plt.axes(projection='3d')
-
-    for filename in os.listdir(directory):
+    dir_list = os.listdir(directory)
+    dir_list.sort()
+    for filename in dir_list:
         f = os.path.join(directory, filename)
         if os.path.isfile(f): # checking if it is a file
             if fnmatch.fnmatch(filename, '*solution_*'):
