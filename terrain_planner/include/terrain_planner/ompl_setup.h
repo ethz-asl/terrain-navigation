@@ -12,8 +12,8 @@
 #include <ompl/geometric/planners/informedtrees/BITstar.h>
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/geometric/planners/rrt/RRTstarConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/RRTstarConnect.h>
 #include "ompl/base/SpaceInformation.h"
 
 enum PlannerType { RRTSTAR, INFORMED_RRTSTAR, RRTCONNECT, RRTSTAR_CONNECT, BITSTAR, FMTSTAR };

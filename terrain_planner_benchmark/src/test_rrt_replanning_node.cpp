@@ -46,9 +46,13 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
+#include "terrain_navigation/data_logger.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
+
+#include <any>
+#include <chrono>
 
 void writeToFile(const std::string path, std::vector<Eigen::Vector3d> solution_path) {
   // Write data to files
@@ -64,7 +68,7 @@ void writeToFile(const std::string path, std::vector<Eigen::Vector3d> solution_p
   output_file << "\n";
 
   for (auto& data : solution_path) {
-      output_file << data.x() << field_seperator << data.y() << field_seperator << data.z() << field_seperator;
+    output_file << data.x() << field_seperator << data.y() << field_seperator << data.z() << field_seperator;
     output_file << "\n";
   }
 
@@ -89,6 +93,9 @@ int main(int argc, char** argv) {
   nh_private.param<std::string>("map_path", map_path, "");
   nh_private.param<std::string>("color_file_path", color_file_path, "");
   nh_private.param<std::string>("output_directory", output_directory, "");
+
+  auto data_logger = std::make_shared<DataLogger>();
+  data_logger->setKeys({"time", "path_length"});
 
   // Load terrain map from defined tif paths
   auto terrain_map = std::make_shared<TerrainMap>();
@@ -137,7 +144,12 @@ int main(int argc, char** argv) {
 
   int i = 0;
 
-  while (true) {
+  auto start_time = std::chrono::steady_clock::now();
+
+  double simulation_time{0.0};
+  double max_simulation_time{100.0};
+
+  while (simulation_time < max_simulation_time) {
     /// TODO: Time budget based on segment length
     if (reference_primitive_.segments.empty()) {
       // Does not have an initial problem yet
@@ -175,6 +187,9 @@ int main(int argc, char** argv) {
         }
       }
 
+      auto end = std::chrono::steady_clock::now();
+      simulation_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start_time).count() / 1000.0;
+
       // If a better solution is found, update the path
       if (update_solution) {
         update_solution = false;
@@ -186,6 +201,10 @@ int main(int argc, char** argv) {
         // planner->setupProblem(segment_start, segment_start_vel, goal);
         std::string file_path = output_directory + "/solution_" + std::to_string(i) + ".csv";
         writeToFile(file_path, reference_primitive_.position());
+        std::unordered_map<std::string, std::any> state;
+        state.insert(std::pair<std::string, double>("time", simulation_time));
+        state.insert(std::pair<std::string, double>("path_length", reference_primitive_.getLength()));
+        data_logger->record(state);
         i++;
       }
     }
@@ -200,6 +219,10 @@ int main(int argc, char** argv) {
     publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
     ros::Duration(1.0).sleep();
   }
+  data_logger->setPrintHeader(true);
+  std::string output_file_path = output_directory + "/" + location + "_replanning.csv";
+  data_logger->writeToFile(output_file_path);
+
   ros::spin();
   return 0;
 }
