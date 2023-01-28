@@ -66,56 +66,6 @@ void calculateCircleICS(const std::string layer_name, std::shared_ptr<TerrainMap
   addErrorLayer(layer_name, "ics_-", "ics_+", terrain_map->getGridMap());
 }
 
-bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const double yaw, const double yaw_rate) {
-  auto manuever_library = std::make_shared<ManeuverLibrary>();
-
-  double upper_altitude = std::numeric_limits<double>::infinity();
-  double lower_altitude = -std::numeric_limits<double>::infinity();
-
-  Eigen::Vector3d rate = Eigen::Vector3d(0.0, 0.0, yaw_rate);
-  Eigen::Vector3d vel = Eigen::Vector3d(std::cos(yaw), std::sin(yaw), 0.0);
-  double horizon = 2 * M_PI / std::abs(rate.z());
-  Eigen::Vector3d pos = Eigen::Vector3d(pos_2d.x(), pos_2d.y(), 0.0);
-
-  Trajectory trajectory = manuever_library->generateArcTrajectory(rate, horizon, pos, vel);
-  for (auto& position : trajectory.position()) {
-    if (!map.isInside(Eigen::Vector2d(position.x(), position.y()))) {
-      // Handle outside states as part of collision surface
-      // Consider it as a collision when the circle trajectory is outside of the map
-      continue;
-      // return true;
-    };
-    double min_collisionaltitude = map.atPosition("distance_surface", Eigen::Vector2d(position.x(), position.y()));
-    if (min_collisionaltitude > lower_altitude) lower_altitude = min_collisionaltitude;
-    double max_collisionaltitude = map.atPosition("max_elevation", Eigen::Vector2d(position.x(), position.y()));
-    if (max_collisionaltitude < upper_altitude) upper_altitude = max_collisionaltitude;
-  }
-
-  if (upper_altitude > lower_altitude) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-void calculateYawICS(const std::string layer_name, grid_map::GridMap& map, const double yaw, const double yaw_rate) {
-  /// Choose yaw state to calculate ICS state
-
-  auto manuever_library = std::make_shared<ManeuverLibrary>();
-
-  map.add(layer_name);
-
-  for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator) {
-    const grid_map::Index index = *iterator;
-    Eigen::Vector2d pos_2d;
-    map.getPosition(index, pos_2d);
-
-    bool right_hand_circle_in_collision = checkCollision(map, pos_2d, yaw, yaw_rate);
-    bool left_hand_circle_in_collision = checkCollision(map, pos_2d, yaw, -yaw_rate);
-    map.at(layer_name, index) = (!right_hand_circle_in_collision || !left_hand_circle_in_collision);
-  }
-}
-
 double getCoverage(const std::string layer_name, const double threshold, const grid_map::GridMap& map) {
   int cell_count{0};
   int valid_count{0};
@@ -153,23 +103,26 @@ void writeGridmapToImage(const grid_map::GridMap& map, const std::string layer, 
   }
 }
 
+void drawCircle(grid_map::GridMap& map, Eigen::Vector2d center, double radius, double height) {
+  for (grid_map::CircleIterator submapIterator(map, center, radius); !submapIterator.isPastEnd(); ++submapIterator) {
+    const grid_map::Index SubmapIndex = *submapIterator;
+    map.at("elevation", SubmapIndex) = height;
+  }
+}
+
 void generateTestMap(grid_map::GridMap& map) {
   // Create a synthetic map for visualization
-  grid_map::Length length = grid_map::Length(100.0, 100.0);
+  grid_map::Length length = grid_map::Length(500.0, 500.0);
   grid_map::Position position = grid_map::Position(0.0, 0.0);
-  double resolution = 1.0;
+  double resolution = 5.0;
   map.setGeometry(length, resolution, position);
   map.setFrameId("map");
   map["elevation"].setConstant(0.0);
 
   Eigen::Vector2d circle_center_2d(0.0, 0.0);
-  double radius = 10.0;
-
-  for (grid_map::CircleIterator submapIterator(map, circle_center_2d, radius); !submapIterator.isPastEnd();
-       ++submapIterator) {
-    const grid_map::Index SubmapIndex = *submapIterator;
-    map.at("elevation", SubmapIndex) = 10.0;
-  }
+  double radius = 60.0;
+  drawCircle(map, Eigen::Vector2d(100.0, 100.0), 60.0, 120.0);
+  drawCircle(map, Eigen::Vector2d(-200.0, 0.0), 30.0, 150.0);
 }
 
 int main(int argc, char** argv) {
@@ -179,9 +132,8 @@ int main(int argc, char** argv) {
 
   auto reference_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
 
-  std::string output_file_dir, location;
+  std::string output_file_dir;
   bool visualize{true};
-  nh_private.param<std::string>("location", location, "dischma");
   nh_private.param<std::string>("output_file_dir", output_file_dir, "resources/output.csv");
   nh_private.param<bool>("visualize", visualize, true);
 
@@ -193,18 +145,13 @@ int main(int argc, char** argv) {
   reference_map->setGridMap(test_map);
 
   // reference_map->Load(map_path, false, map_color_path);
-  reference_map->AddLayerDistanceTransform(10.0, "distance_surface");
-  reference_map->AddLayerDistanceTransform(30.0, "max_elevation");
-  reference_map->AddLayerDistanceTransform(-10.0, "min_elevation");
-  double width = reference_map->getGridMap().getLength().y();
-  Eigen::Vector2d reference_map_position = Eigen::Vector2d(0.0, 1.5 * width);
-  reference_map->getGridMap().setPosition(reference_map_position);
+  reference_map->AddLayerDistanceTransform(50.0, "distance_surface");
+  reference_map->AddLayerDistanceTransform(120.0, "max_elevation");
 
-  calculateCircleICS("circle_error", reference_map, 60.0);
+  calculateCircleICS("circle_error", reference_map, 66.67);
   double circle_coverage = getCoverage("circle_error", 0.0, reference_map->getGridMap());
   std::cout << "  - coverage: " << circle_coverage << std::endl;
-  Eigen::Vector3d marker_position{Eigen::Vector3d(reference_map_position(0), reference_map_position(1), 400.0)};
-  std::string reference_map_path = output_file_dir + "/" + location + "_circle_goal.png";
+  std::string reference_map_path = output_file_dir + "/test" + "_circle_goal.png";
   writeGridmapToImage(reference_map->getGridMap(), "circle_error", reference_map_path);
 
   std::cout << "Valid yaw terminal state coverage" << std::endl;
