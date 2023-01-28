@@ -39,8 +39,6 @@
 
 #include "terrain_navigation/terrain_map.h"
 #include <grid_map_core/GridMapMath.hpp>
-#include <grid_map_core/iterators/CircleIterator.hpp>
-#include <grid_map_core/iterators/GridMapIterator.hpp>
 
 TerrainMap::TerrainMap() : GridMapGeo() {}
 
