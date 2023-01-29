@@ -20,15 +20,12 @@ with open(sys.argv[1]) as file:
     # scalar values to Python the dictionary format
     list = yaml.load(file, Loader=yaml.FullLoader)
 
-    fig = plt.figure("Coverage")
-    ax = fig.add_subplot(1, 1, 1)
-
     dataset_circle_goal = {}
     dataset_yaw_goal = {}
 
     idx = 0
 
-    fig = plt.figure("Coverage")
+    fig = plt.figure("Coverage", figsize=(5, 3))
     ax = fig.add_subplot(1, 1, 1)
     for category_name, category in list.items():
         name = {}
@@ -47,8 +44,7 @@ with open(sys.argv[1]) as file:
     
     ax.set_xlabel('Yaw [rad]')
     ax.set_ylabel('Coverage')
-    # ax.set_ylim([0.0, 1.0])
-    ax.set_title('Valid Goal state coverage')
+    ax.set_ylim([0.0, 1.0])
     ax.grid(True)
     ax.legend(loc="lower right")
 

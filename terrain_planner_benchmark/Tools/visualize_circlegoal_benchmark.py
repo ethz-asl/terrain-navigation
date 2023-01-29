@@ -44,9 +44,9 @@ with open(sys.argv[1]) as file:
     # scalar values to Python the dictionary format
     list = yaml.load(file, Loader=yaml.FullLoader)
 
-    fig = plt.figure("Coverage")
+    fig = plt.figure("Coverage", figsize=(5, 3))
     ax = fig.add_subplot(1, 1, 1)
-    colors = ['pink', 'lightblue']
+    colors = ['lightblue', 'pink']
 
     dataset_circle_goal = {}
     dataset_yaw_goal = {}
