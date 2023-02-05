@@ -185,7 +185,11 @@ int main(int argc, char **argv) {
 
   /// TODO: Write benchmarking log to a specific file
   // This will generate a file of the form ompl_host_time.log
-  b.saveResultsToFile();
+  if (output_file_path.empty()) {
+    b.saveResultsToFile();
+  } else {
+    b.saveResultsToFile(output_file_path.c_str());
+  }
 
   // Configure the problem to solve: set start state(s)
   // and goal representation
