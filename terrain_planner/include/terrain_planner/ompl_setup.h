@@ -29,7 +29,7 @@ class OmplSetup : public geometric::SimpleSetup {
         ompl::base::OptimizationObjectivePtr(new ompl::base::PathLengthOptimizationObjective(getSpaceInformation())));
   }
 
-  void setDefaultPlanner(PlannerType planner_type = PlannerType::RRTSTAR_CONNECT) {
+  void setDefaultPlanner(PlannerType planner_type = PlannerType::RRTSTAR) {
     switch (planner_type) {
       case PlannerType::RRTSTAR: {
         auto planner = std::make_shared<ompl::geometric::RRTstar>(getSpaceInformation());

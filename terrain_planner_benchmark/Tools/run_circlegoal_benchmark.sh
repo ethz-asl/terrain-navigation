@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NUM_RUNS=10
+NUM_RUNS=50
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTPUT_PATH=${SCRIPT_DIR}/../../output

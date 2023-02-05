@@ -59,7 +59,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
         Eigen::Vector3d goal_vel = 10.0 * Eigen::Vector3d(std::cos(goal_yaw), std::sin(goal_yaw), 0.0);
         planner->setupProblem(start, start_vel, goal, goal_vel);
       }
-      bool found_solution = planner->Solve(500.0, path);
+      bool found_solution = planner->Solve(200.0, path);
       // planner->getSolutionPath(interpolated_path);
       double solution_path_length{NAN};
       double path_length{0.0};
