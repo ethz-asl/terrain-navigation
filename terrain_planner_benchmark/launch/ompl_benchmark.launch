@@ -7,7 +7,7 @@
     <node pkg="terrain_planner_benchmark" type="ompl_benchmark_node" name="benchmark_planner" output="screen">
         <param name="map_path" value="$(find terrain_models)/models/$(arg location).tif"/>
         <param name="color_file_path" value="$(find terrain_models)/models/$(arg location)_color.tif"/>
-        <param name="output_path" value="$(find terrain_planner)/../output/output.log"/>
+        <param name="output_file_path" value="$(find terrain_planner)/../output/output.log"/>
         <param name="random" value="true"/>
     </node>
     <group if="$(arg visualization)">
