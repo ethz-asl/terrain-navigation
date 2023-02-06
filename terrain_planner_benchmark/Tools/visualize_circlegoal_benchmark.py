@@ -69,9 +69,9 @@ with open(sys.argv[1]) as file:
                 idx = idx + 1
                 continue
 
-custom_lines = [plt.Line2D([0], [0], color=colors[0], lw=4),
-                plt.Line2D([0], [0], color=colors[1], lw=4)]
+    custom_lines = [plt.Line2D([0], [0], color=colors[0], lw=4),
+                    plt.Line2D([0], [0], color=colors[1], lw=4)]
 
-ax.legend(custom_lines, ['Circle Goal', 'Yaw Goal'], loc='lower right')
-plt.tight_layout()
-plt.show()
+    ax.legend(custom_lines, ['Circle Goal', 'Yaw Goal'], loc='lower right')
+    plt.tight_layout()
+    plt.show()
