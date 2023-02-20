@@ -76,6 +76,90 @@ void writeToFile(const std::string path, std::vector<Eigen::Vector3d> solution_p
   return;
 }
 
+void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
+  visualization_msgs::MarkerArray msg;
+
+  std::vector<visualization_msgs::Marker> marker;
+  visualization_msgs::Marker mark;
+  mark.action = visualization_msgs::Marker::DELETEALL;
+  marker.push_back(mark);
+  msg.markers = marker;
+  pub.publish(msg);
+
+  std::vector<visualization_msgs::Marker> segment_markers;
+  int i = 0;
+  double max_altitude = -std::numeric_limits<double>::infinity();
+  double min_altitude = std::numeric_limits<double>::infinity();
+
+  for (auto& segment : trajectory.segments) {
+    for (auto& position : segment.position()) {
+      if (position(2) > max_altitude) {
+        max_altitude = position(2);
+      }
+      if (position(2) < min_altitude) {
+        min_altitude = position(2);
+      }
+    }
+  }
+
+  for (auto& segment : trajectory.segments) {
+    Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0);
+    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, min_altitude, max_altitude));
+    segment_markers.insert(segment_markers.begin(),
+                           vector2ArrowsMsg(segment.position().front(), 5.0 * segment.velocity().front(), i++, color));
+    segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().back(), i++, color));
+  }
+  msg.markers = segment_markers;
+  pub.publish(msg);
+}
+
+void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.header.frame_id = "map";
+  marker.id = 0;
+  marker.header.stamp = ros::Time::now();
+  std::vector<geometry_msgs::Point> points;
+  for (double t = 0.0; t <= 1.0; t += 0.02) {
+    geometry_msgs::Point point;
+    point.x = position.x() + radius * std::cos(t * 2 * M_PI);
+    point.y = position.y() + radius * std::sin(t * 2 * M_PI);
+    point.z = position.z();
+    points.push_back(point);
+  }
+  geometry_msgs::Point start_point;
+  start_point.x = position.x() + radius * std::cos(0.0);
+  start_point.y = position.y() + radius * std::sin(0.0);
+  start_point.z = position.z();
+  points.push_back(start_point);
+
+  marker.points = points;
+  marker.scale.x = 5.0;
+  marker.scale.y = 5.0;
+  marker.scale.z = 5.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+  marker.pose.orientation.w = 1.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  pub.publish(marker);
+}
+
+void addErrorLayer(const std::string layer_name, const std::string query_layer, const std::string reference_layer,
+                   grid_map::GridMap& map) {
+  map.add(layer_name);
+
+  for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator) {
+    const grid_map::Index index = *iterator;
+    map.at(layer_name, index) = map.at(query_layer, index) > map.at(reference_layer, index);
+  }
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ompl_rrt_planner");
   ros::NodeHandle nh("");
@@ -85,6 +169,7 @@ int main(int argc, char** argv) {
   auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
   auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
   auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
+  auto path_segment_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
 
@@ -108,7 +193,9 @@ int main(int argc, char** argv) {
   double radius = 66.667;
   terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
   terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
-
+  terrain_map->getGridMap().add("offset");
+  terrain_map->getGridMap()["offset"].setConstant(-6000.0);
+  addErrorLayer("error", "ics_-", "ics_+", terrain_map->getGridMap());
   // Initialize planner with loaded terrain map
   auto planner = std::make_shared<TerrainOmplRrt>();
   planner->setMap(terrain_map);
@@ -147,7 +234,7 @@ int main(int argc, char** argv) {
   auto start_time = std::chrono::steady_clock::now();
 
   double simulation_time{0.0};
-  double max_simulation_time{100.0};
+  double max_simulation_time{500.0};
 
   while (simulation_time < max_simulation_time) {
     /// TODO: Time budget based on segment length
@@ -214,8 +301,9 @@ int main(int argc, char** argv) {
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
     grid_map_pub.publish(message);
     publishTrajectory(path_pub, reference_primitive_.position());
-    // publishPositionSetpoints(start_pos_pub, start, start_vel);
-    // publishPositionSetpoints(goal_pos_pub, goal, goal_vel);
+    publishPathSegments(path_segment_pub, reference_primitive_);
+    publishCircleSetpoints(start_pos_pub, start, radius);
+    publishCircleSetpoints(goal_pos_pub, goal, radius);
     publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
     ros::Duration(1.0).sleep();
   }
