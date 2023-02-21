@@ -67,6 +67,9 @@
 #include <planner_msgs/SetString.h>
 #include <planner_msgs/SetVector3.h>
 
+#include <GeographicLib/Geocentric.hpp>
+#include <GeographicLib/LocalCartesian.hpp>
+
 enum class SETPOINT_MODE { STATE, PATH };
 
 enum class PLANNER_MODE { EXHAUSTIVE, MCTS, GLOBAL, RANDOM };
@@ -94,8 +97,12 @@ class TerrainPlanner {
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
                               std::vector<geometry_msgs::PoseStamped> &history_vector);
-  void publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
-                                const double curvature);
+  void publishPositionSetpoints(const ros::Publisher &pub, const Eigen::Vector3d &position,
+                                const Eigen::Vector3d &velocity, const double curvature);
+  void publishGlobalPositionSetpoints(const ros::Publisher &pub, const double latitude, const double longitude,
+                                      const double altitude, const Eigen::Vector3d &velocity, const double curvature);
+  void publishReferenceMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
+                              const Eigen::Vector3d &velocity, const double curvature);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
@@ -110,6 +117,7 @@ class TerrainPlanner {
   ros::Publisher posehistory_pub_;
   ros::Publisher referencehistory_pub_;
   ros::Publisher position_setpoint_pub_;
+  ros::Publisher global_position_setpoint_pub_;
   ros::Publisher position_target_pub_;
   ros::Publisher path_target_pub_;
   ros::Publisher planner_status_pub_;
@@ -151,6 +159,7 @@ class TerrainPlanner {
   std::shared_ptr<Profiler> planner_profiler_;
   TrajectorySegments reference_primitive_;
   mavros_msgs::State current_state_;
+  std::optional<GeographicLib::LocalCartesian> enu_;
 
   std::mutex goal_mutex_;  // protects g_i
 
@@ -172,6 +181,7 @@ class TerrainPlanner {
   double max_elevation_{120.0};
   double min_elevation_{50.0};
   double goal_radius_{66.67};
+  double local_origin_altitude_{0.0};
   bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};

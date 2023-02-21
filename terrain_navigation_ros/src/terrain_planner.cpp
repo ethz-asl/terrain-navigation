@@ -43,6 +43,7 @@
 
 #include <grid_map_msgs/GridMap.h>
 #include <mavros_msgs/CommandLong.h>
+#include <mavros_msgs/GlobalPositionTarget.h>
 #include <mavros_msgs/PositionTarget.h>
 #include <mavros_msgs/Trajectory.h>
 #include <planner_msgs/NavigationStatus.h>
@@ -51,8 +52,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
-
-#include <GeographicLib/Geocentric.hpp>
 
 TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private)
     : nh_(nh), nh_private_(nh_private) {
@@ -68,6 +67,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   mavstate_sub_ =
       nh_.subscribe("mavros/state", 1, &TerrainPlanner::mavstateCallback, this, ros::TransportHints().tcpNoDelay());
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
+  global_position_setpoint_pub_ = nh_.advertise<mavros_msgs::GlobalPositionTarget>("mavros/setpoint_raw/global", 1);
   path_target_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 1);
   vehicle_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_pose_marker", 1, true);
   planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status", 1, true);
@@ -146,7 +146,32 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         double reference_curvature{0.0};
         reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
                                              reference_curvature, 0.1);
-        publishPositionSetpoints(reference_position, reference_tangent, reference_curvature);
+        bool publish_global_reference = true;
+        if (!publish_global_reference) {
+          publishPositionSetpoints(position_setpoint_pub_, reference_position, reference_tangent, reference_curvature);
+          publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
+        } else {
+          // Publish global position setpoints in the global frame
+          ESPG map_coordinate;
+          Eigen::Vector3d map_origin;
+          terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
+          /// TODO: convert reference position to global
+          const Eigen::Vector3d lv03_reference_position = reference_position + map_origin;
+          Eigen::Vector3d transformed_coordinates =
+              transformCoordinates(map_coordinate, ESPG::WGS84, lv03_reference_position);
+#if GDAL_VERSION_MAJOR > 2
+          const double latitude = transformed_coordinates(0);
+          const double longitude = transformed_coordinates(1);
+          const double altitude = transformed_coordinates(2);
+#else
+          const double latitude = transformed_coordinates(1);
+          const double longitude = transformed_coordinates(0);
+          const double altitude = transformed_coordinates(2);
+#endif
+          publishGlobalPositionSetpoints(global_position_setpoint_pub_, latitude, longitude, altitude,
+                                         reference_tangent, reference_curvature);
+          publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
+        }
         /// TODO: Trigger camera when viewpoint reached
         /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
         if (current_state_.mode == "OFFBOARD") {
@@ -349,11 +374,31 @@ void TerrainPlanner::publishTrajectory(std::vector<Eigen::Vector3d> trajectory) 
 }
 
 void TerrainPlanner::mavposeCallback(const geometry_msgs::PoseStamped &msg) {
-  vehicle_position_ = toEigen(msg.pose.position);
-  vehicle_attitude_(0) = msg.pose.orientation.w;
-  vehicle_attitude_(1) = msg.pose.orientation.x;
-  vehicle_attitude_(2) = msg.pose.orientation.y;
-  vehicle_attitude_(3) = msg.pose.orientation.z;
+  const Eigen::Vector3d local_vehicle_position = toEigen(msg.pose.position);
+
+  if (enu_.has_value()) {  // Only update position if the transforms have been initialized
+    Eigen::Vector3d wgs84_vehicle_position = toEigen(msg.pose.position);
+    // Depending on Gdal versions, lon lat order are reversed
+#if GDAL_VERSION_MAJOR > 2
+    enu_.value().Reverse(local_vehicle_position.x(), local_vehicle_position.y(), local_vehicle_position.z(),
+                         wgs84_vehicle_position.x(), wgs84_vehicle_position.y(), wgs84_vehicle_position.z());
+#else
+    enu_.value().Reverse(local_vehicle_position.x(), local_vehicle_position.y(), local_vehicle_position.z(),
+                         wgs84_vehicle_position.y(), wgs84_vehicle_position.x(), wgs84_vehicle_position.z());
+#endif
+
+    ESPG map_coordinate;
+    Eigen::Vector3d map_origin;
+    terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
+
+    const Eigen::Vector3d transformed_coordinates =
+        transformCoordinates(ESPG::WGS84, map_coordinate, wgs84_vehicle_position);
+    vehicle_position_ = transformed_coordinates - map_origin;
+    vehicle_attitude_(0) = msg.pose.orientation.w;
+    vehicle_attitude_(1) = msg.pose.orientation.x;
+    vehicle_attitude_(2) = msg.pose.orientation.y;
+    vehicle_attitude_(3) = msg.pose.orientation.z;
+  }
 }
 
 void TerrainPlanner::mavtwistCallback(const geometry_msgs::TwistStamped &msg) {
@@ -385,8 +430,33 @@ void TerrainPlanner::publishPositionHistory(ros::Publisher &pub, const Eigen::Ve
   pub.publish(msg);
 }
 
-void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
-                                              const double curvature) {
+void TerrainPlanner::publishGlobalPositionSetpoints(const ros::Publisher &pub, const double latitude,
+                                                    const double longitude, const double altitude,
+                                                    const Eigen::Vector3d &velocity, const double curvature) {
+  using namespace mavros_msgs;
+  // Publishes position setpoints sequentially as trajectory setpoints
+  mavros_msgs::GlobalPositionTarget msg;
+  msg.header.stamp = ros::Time::now();
+  msg.coordinate_frame = GlobalPositionTarget::FRAME_GLOBAL_REL_ALT;
+  msg.type_mask = 0.0;
+  msg.latitude = latitude;
+  msg.longitude = longitude;
+  msg.altitude = altitude - local_origin_altitude_;
+  msg.velocity.x = velocity(0);
+  msg.velocity.y = velocity(1);
+  msg.velocity.z = velocity(2);
+  auto curvature_vector = Eigen::Vector3d(0.0, 0.0, -curvature);
+  auto projected_velocity = Eigen::Vector3d(velocity(0), velocity(1), 0.0);
+  Eigen::Vector3d lateral_acceleration = projected_velocity.squaredNorm() * curvature_vector.cross(projected_velocity);
+  msg.acceleration_or_force.x = lateral_acceleration(0);
+  msg.acceleration_or_force.y = lateral_acceleration(1);
+  msg.acceleration_or_force.z = lateral_acceleration(2);
+
+  pub.publish(msg);
+}
+
+void TerrainPlanner::publishPositionSetpoints(const ros::Publisher &pub, const Eigen::Vector3d &position,
+                                              const Eigen::Vector3d &velocity, const double curvature) {
   using namespace mavros_msgs;
   // Publishes position setpoints sequentially as trajectory setpoints
   mavros_msgs::PositionTarget msg;
@@ -406,8 +476,11 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   msg.acceleration_or_force.y = lateral_acceleration(1);
   msg.acceleration_or_force.z = lateral_acceleration(2);
 
-  position_setpoint_pub_.publish(msg);
+  pub.publish(msg);
+}
 
+void TerrainPlanner::publishReferenceMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
+                                            const Eigen::Vector3d &velocity, const double curvature) {
   visualization_msgs::Marker marker;
   marker.header.stamp = ros::Time::now();
   marker.type = visualization_msgs::Marker::ARROW;
@@ -434,7 +507,7 @@ void TerrainPlanner::publishPositionSetpoints(const Eigen::Vector3d &position, c
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = std::sin(0.5 * yaw);
 
-  position_target_pub_.publish(marker);
+  pub.publish(marker);
 }
 
 void TerrainPlanner::publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory) {
@@ -577,14 +650,17 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   GeographicLib::Geocentric earth(GeographicLib::Constants::WGS84_a(), GeographicLib::Constants::WGS84_f());
   double lat, lon, alt;
   earth.Reverse(X, Y, Z, lat, lon, alt);
+  enu_.emplace(lat, lon, alt, GeographicLib::Geocentric::WGS84());
+  local_origin_altitude_ = alt;
 
   // Depending on Gdal versions, lon lat order are reversed
 #if GDAL_VERSION_MAJOR > 2
-  maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector3d(lat, lon, alt));
+  terrain_map_->setGlobalOrigin(ESPG::WGS84, Eigen::Vector3d(lat, lon, alt));
 #else
-  maneuver_library_->getTerrainMap()->setGlobalOrigin(ESPG::WGS84, Eigen::Vector3d(lon, lat, alt));
+  terrain_map_->setGlobalOrigin(ESPG::WGS84, Eigen::Vector3d(lon, lat, alt));
 #endif
-  maneuver_library_->getTerrainMap()->setAltitudeOrigin(alt);
+  /// TODO: There are some issues aligning the altitude with the DEM
+  terrain_map_->setAltitudeOrigin(alt);
 }
 
 void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg) {
