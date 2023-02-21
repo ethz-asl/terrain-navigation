@@ -2,8 +2,9 @@
 
 [![Build Test](https://github.com/Jaeyoung-Lim/terrain-navigation/actions/workflows/build_test.yml/badge.svg)](https://github.com/Jaeyoung-Lim/terrain-navigation/actions/workflows/build_test.yml)
 
-This package includes a local planner enabling fixedwing vehicles navigating in steep terrain.
+This package includes a global planner based on Dubins RRT* enabling low altitude navigation for fixedwing vehicles in steep terrain.
 
+![ezgif com-gif-maker](https://user-images.githubusercontent.com/5248102/196541709-64c6a41f-9765-4978-b3fa-410912ee60e7.gif)
 
 ## Setup
 Install the dependencies. This package depends on gdal, to read georeferenced images and GeoTIFF files.
