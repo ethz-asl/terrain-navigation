@@ -40,6 +40,7 @@
 
 #include "terrain_navigation_ros/terrain_planner.h"
 #include "terrain_navigation/visualization.h"
+#include "terrain_navigation_ros/geo_conversions.h"
 
 #include <grid_map_msgs/GridMap.h>
 #include <mavros_msgs/CommandLong.h>
@@ -162,7 +163,8 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
 #if GDAL_VERSION_MAJOR > 2
           const double latitude = transformed_coordinates(0);
           const double longitude = transformed_coordinates(1);
-          const double altitude = transformed_coordinates(2);
+          double altitude;
+          GeoConversions::reverse(latitude, longitude, transformed_coordinates(2), altitude);
 #else
           const double latitude = transformed_coordinates(1);
           const double longitude = transformed_coordinates(0);
@@ -391,8 +393,15 @@ void TerrainPlanner::mavposeCallback(const geometry_msgs::PoseStamped &msg) {
     Eigen::Vector3d map_origin;
     terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
 
-    const Eigen::Vector3d transformed_coordinates =
-        transformCoordinates(ESPG::WGS84, map_coordinate, wgs84_vehicle_position);
+    Eigen::Vector3d transformed_coordinates = transformCoordinates(ESPG::WGS84, map_coordinate, wgs84_vehicle_position);
+    // LV03 / WGS84 ellipsoid
+    double bessel_1841;
+    // std::cout << "wgs84 altitude: " << wgs84_vehicle_position(2) << std::endl;
+    // std::cout << "  lat: " << wgs84_vehicle_position(0) << " lon: " << wgs84_vehicle_position(1) << std::endl;
+    GeoConversions::forward(wgs84_vehicle_position(0), wgs84_vehicle_position(1), wgs84_vehicle_position(2),
+                            bessel_1841);
+    transformed_coordinates(2) = bessel_1841;
+    // std::cout << "  - bessel_1841: " << bessel_1841 << std::endl;
     vehicle_position_ = transformed_coordinates - map_origin;
     vehicle_attitude_(0) = msg.pose.orientation.w;
     vehicle_attitude_(1) = msg.pose.orientation.x;
