@@ -158,18 +158,11 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
           terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
           /// TODO: convert reference position to global
           const Eigen::Vector3d lv03_reference_position = reference_position + map_origin;
-          Eigen::Vector3d transformed_coordinates =
-              transformCoordinates(map_coordinate, ESPG::WGS84, lv03_reference_position);
-#if GDAL_VERSION_MAJOR > 2
-          const double latitude = transformed_coordinates(0);
-          const double longitude = transformed_coordinates(1);
+          double latitude;
+          double longitude;
           double altitude;
-          GeoConversions::reverse(latitude, longitude, transformed_coordinates(2), altitude);
-#else
-          const double latitude = transformed_coordinates(1);
-          const double longitude = transformed_coordinates(0);
-          const double altitude = transformed_coordinates(2);
-#endif
+          GeoConversions::reverse(lv03_reference_position(0), lv03_reference_position(1), lv03_reference_position(2),
+                                  latitude, longitude, altitude);
           publishGlobalPositionSetpoints(global_position_setpoint_pub_, latitude, longitude, altitude,
                                          reference_tangent, reference_curvature);
           publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
@@ -381,28 +374,21 @@ void TerrainPlanner::mavposeCallback(const geometry_msgs::PoseStamped &msg) {
   if (enu_.has_value()) {  // Only update position if the transforms have been initialized
     Eigen::Vector3d wgs84_vehicle_position = toEigen(msg.pose.position);
     // Depending on Gdal versions, lon lat order are reversed
-#if GDAL_VERSION_MAJOR > 2
     enu_.value().Reverse(local_vehicle_position.x(), local_vehicle_position.y(), local_vehicle_position.z(),
                          wgs84_vehicle_position.x(), wgs84_vehicle_position.y(), wgs84_vehicle_position.z());
-#else
-    enu_.value().Reverse(local_vehicle_position.x(), local_vehicle_position.y(), local_vehicle_position.z(),
-                         wgs84_vehicle_position.y(), wgs84_vehicle_position.x(), wgs84_vehicle_position.z());
-#endif
 
     ESPG map_coordinate;
     Eigen::Vector3d map_origin;
     terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
 
-    Eigen::Vector3d transformed_coordinates = transformCoordinates(ESPG::WGS84, map_coordinate, wgs84_vehicle_position);
+    Eigen::Vector3d transformed_coordinates;
     // LV03 / WGS84 ellipsoid
-    double bessel_1841;
-    // std::cout << "wgs84 altitude: " << wgs84_vehicle_position(2) << std::endl;
-    // std::cout << "  lat: " << wgs84_vehicle_position(0) << " lon: " << wgs84_vehicle_position(1) << std::endl;
     GeoConversions::forward(wgs84_vehicle_position(0), wgs84_vehicle_position(1), wgs84_vehicle_position(2),
-                            bessel_1841);
-    transformed_coordinates(2) = bessel_1841;
-    // std::cout << "  - bessel_1841: " << bessel_1841 << std::endl;
+                            transformed_coordinates.x(), transformed_coordinates.y(), transformed_coordinates.z());
     vehicle_position_ = transformed_coordinates - map_origin;
+    // std::cout << "vehicle_position_: " << vehicle_position_.transpose() << std::endl;
+    // std::cout << "  wgs84_vehicle_position: " << wgs84_vehicle_position.transpose() << std::endl;
+    // std::cout << "  map_origin: " << map_origin.transpose() << std::endl;
     vehicle_attitude_(0) = msg.pose.orientation.w;
     vehicle_attitude_(1) = msg.pose.orientation.x;
     vehicle_attitude_(2) = msg.pose.orientation.y;
