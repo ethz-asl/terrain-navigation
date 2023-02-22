@@ -381,14 +381,17 @@ void TerrainPlanner::mavposeCallback(const geometry_msgs::PoseStamped &msg) {
     Eigen::Vector3d map_origin;
     terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
 
+    if (map_coordinate == ESPG::WGS84) {
+      GeoConversions::forward(map_origin(0), map_origin(1), map_origin(2), map_origin.x(), map_origin.y(),
+                              map_origin.z());
+    }
+
     Eigen::Vector3d transformed_coordinates;
     // LV03 / WGS84 ellipsoid
     GeoConversions::forward(wgs84_vehicle_position(0), wgs84_vehicle_position(1), wgs84_vehicle_position(2),
                             transformed_coordinates.x(), transformed_coordinates.y(), transformed_coordinates.z());
     vehicle_position_ = transformed_coordinates - map_origin;
-    // std::cout << "vehicle_position_: " << vehicle_position_.transpose() << std::endl;
-    // std::cout << "  wgs84_vehicle_position: " << wgs84_vehicle_position.transpose() << std::endl;
-    // std::cout << "  map_origin: " << map_origin.transpose() << std::endl;
+
     vehicle_attitude_(0) = msg.pose.orientation.w;
     vehicle_attitude_(1) = msg.pose.orientation.x;
     vehicle_attitude_(2) = msg.pose.orientation.y;
@@ -672,21 +675,29 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
   bool result = terrain_map_->Load(map_path_, align_location, map_color_path_);
+  terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
+  terrain_map_->AddLayerDistanceTransform(max_elevation_, "max_elevation");
+  double radius = 66.667;
+  terrain_map_->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
+  terrain_map_->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
+  global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
+
   if (!align_location) {
     // Depending on Gdal versions, lon lat order are reversed
-#if GDAL_VERSION_MAJOR > 2
-    terrain_map_->setGlobalOrigin(
-        ESPG::WGS84, Eigen::Vector3d(local_origin_latitude_, local_origin_longitude_, local_origin_altitude_));
-#else
-    terrain_map_->setGlobalOrigin(
-        ESPG::WGS84, Eigen::Vector3d(local_origin_longitude_, local_origin_latitude_, local_origin_altitude_));
-#endif
-    /// TODO: There are some issues aligning the altitude with the DEM
-    terrain_map_->setAltitudeOrigin(local_origin_altitude_);
+    Eigen::Vector3d lv03_local_origin;
+    GeoConversions::forward(local_origin_latitude_, local_origin_longitude_, local_origin_altitude_,
+                            lv03_local_origin.x(), lv03_local_origin.y(), lv03_local_origin.z());
+    double map_origin_altitude = local_origin_altitude_;
+    if (terrain_map_->getGridMap().isInside(Eigen::Vector2d(0.0, 0.0))) {
+      double terrain_altitude = terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(0.0, 0.0));
+      lv03_local_origin(2) = lv03_local_origin(2) - terrain_altitude;
+    }
+    terrain_map_->setGlobalOrigin(ESPG::CH1903_LV03, lv03_local_origin);
   }
   if (result) {
     global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
     problem_updated_ = true;
+    posehistory_vector_.clear();
   }
   res.success = result;
   return true;

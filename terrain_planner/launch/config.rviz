@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Grid1
         - /MarkerArray3
         - /MarkerArray4
       Splitter Ratio: 0.5
@@ -35,7 +36,7 @@ Panels:
     goal_altitude: ""
     namespace: ""
     odometry_topic: ""
-    planner_name: ""
+    planner_name: sertig
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -44,7 +45,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 1
+      Cell Size: 1000
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -301,25 +302,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1591.5234375
+      Distance: 12205.65234375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -527.2234497070312
-        Y: 109.4541244506836
-        Z: 130.5216827392578
+        X: 2112.93359375
+        Y: 619.91015625
+        Z: 1048.072021484375
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4093640446662903
+      Pitch: 0.7247979640960693
       Target Frame: map
       Value: Orbit (rviz)
-      Yaw: 1.218686819076538
+      Yaw: 0.8186891078948975
     Saved: ~
 Window Geometry:
   Displays:
