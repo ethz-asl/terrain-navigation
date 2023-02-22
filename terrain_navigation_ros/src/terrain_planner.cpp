@@ -647,15 +647,8 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   earth.Reverse(X, Y, Z, lat, lon, alt);
   enu_.emplace(lat, lon, alt, GeographicLib::Geocentric::WGS84());
   local_origin_altitude_ = alt;
-
-  // Depending on Gdal versions, lon lat order are reversed
-#if GDAL_VERSION_MAJOR > 2
-  terrain_map_->setGlobalOrigin(ESPG::WGS84, Eigen::Vector3d(lat, lon, alt));
-#else
-  terrain_map_->setGlobalOrigin(ESPG::WGS84, Eigen::Vector3d(lon, lat, alt));
-#endif
-  /// TODO: There are some issues aligning the altitude with the DEM
-  terrain_map_->setAltitudeOrigin(alt);
+  local_origin_latitude_ = lat;
+  local_origin_longitude_ = lon;
 }
 
 void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg) {
@@ -679,6 +672,18 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
   bool result = terrain_map_->Load(map_path_, align_location, map_color_path_);
+  if (!align_location) {
+    // Depending on Gdal versions, lon lat order are reversed
+#if GDAL_VERSION_MAJOR > 2
+    terrain_map_->setGlobalOrigin(
+        ESPG::WGS84, Eigen::Vector3d(local_origin_latitude_, local_origin_longitude_, local_origin_altitude_));
+#else
+    terrain_map_->setGlobalOrigin(
+        ESPG::WGS84, Eigen::Vector3d(local_origin_longitude_, local_origin_latitude_, local_origin_altitude_));
+#endif
+    /// TODO: There are some issues aligning the altitude with the DEM
+    terrain_map_->setAltitudeOrigin(local_origin_altitude_);
+  }
   if (result) {
     global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
     problem_updated_ = true;

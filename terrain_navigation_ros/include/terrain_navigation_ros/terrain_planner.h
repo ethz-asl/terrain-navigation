@@ -182,6 +182,8 @@ class TerrainPlanner {
   double min_elevation_{50.0};
   double goal_radius_{66.67};
   double local_origin_altitude_{0.0};
+  double local_origin_latitude_{0.0};
+  double local_origin_longitude_{0.0};
   bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};
