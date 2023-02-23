@@ -146,7 +146,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         Eigen::Vector3d reference_tangent;
         double reference_curvature{0.0};
         reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
-                                             reference_curvature, 0.1);
+                                             reference_curvature, 1.0);
         bool publish_global_reference = true;
         if (!publish_global_reference) {
           publishPositionSetpoints(position_setpoint_pub_, reference_position, reference_tangent, reference_curvature);
