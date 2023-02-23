@@ -273,7 +273,10 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
 
           if (new_problem) {
             new_problem = false;  // Since a solution is found, it is not a new problem anymore
-            update_solution = true;
+            update_solution = planner_solution_path.segments.empty() ? false : true;
+            std::cout << "-------------------" << std::endl;
+            std::cout << "  - new problem and update solution " << std::endl;
+            std::cout << "    - update_solution: " << update_solution << std::endl;
           } else {  /// Check if the found solution is a better solution
             /// Get length of the new planner solution path
             double new_solution_path_length = planner_solution_path.getLength();
@@ -287,18 +290,19 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
             std::cout << "    - current_solution total path_length: " << total_solution_path_length << std::endl;
             std::cout << "    - current_solution_path_length: " << current_solution_path_length << std::endl;
             /// Compare path length between the two path lengths
-            update_solution = bool(new_solution_path_length < current_solution_path_length);
+            update_solution = bool(new_solution_path_length < current_solution_path_length) &&
+                              bool(planner_solution_path.segments.size() > 0);
             std::cout << "  - Found better solution: " << update_solution << std::endl;
           }
 
           // If a better solution is found, update the path
           if (update_solution) {
-            std::cout << "  - Updating soltuion" << std::endl;
+            std::cout << "  - Updating solution" << std::endl;
             TrajectorySegments updated_segment;
             updated_segment.segments.clear();
             updated_segment.appendSegment(current_segment);
             updated_segment.appendSegment(planner_solution_path);
-            // expandPrimitives(motion_primitive_tree_, emergency_rates, horizon);
+
             Eigen::Vector3d end_position = planner_solution_path.lastSegment().states.back().position;
             Eigen::Vector3d end_velocity = planner_solution_path.lastSegment().states.back().velocity;
             Eigen::Vector3d radial_vector = (end_position - goal_pos_);
