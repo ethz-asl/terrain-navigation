@@ -56,6 +56,7 @@ class PlanningPanel : public rviz::Panel {
   void callPlannerService();
   void callPublishPath();
   void setGoalService();
+  void setStartService();
   void publishWaypoint();
   void publishToController();
   void terrainAlignmentStateChanged(int state);
@@ -88,6 +89,7 @@ class PlanningPanel : public rviz::Panel {
   PoseWidget* goal_pose_widget_;
   QPushButton* planner_service_button_;
   QPushButton* set_goal_button_;
+  QPushButton* set_start_button_;
   QPushButton* waypoint_button_;
   QPushButton* max_altitude_button_enable_;
   QPushButton* max_altitude_button_disable_;

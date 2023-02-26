@@ -65,6 +65,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
   goal_pub_ = nh_.advertise<visualization_msgs::Marker>("goal_marker", 1, true);
   candidate_goal_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_goal_marker", 1, true);
+  candidate_start_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_start_marker", 1, true);
   mavstate_sub_ =
       nh_.subscribe("mavros/state", 1, &TerrainPlanner::mavstateCallback, this, ros::TransportHints().tcpNoDelay());
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
@@ -90,6 +91,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   setmaxaltitude_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_max_altitude", &TerrainPlanner::setMaxAltitudeCallback, this);
   setgoal_serviceserver_ = nh_.advertiseService("/terrain_planner/set_goal", &TerrainPlanner::setGoalCallback, this);
+  setstart_serviceserver_ = nh_.advertiseService("/terrain_planner/set_start", &TerrainPlanner::setStartCallback, this);
   msginterval_serviceclient_ = nh_.serviceClient<mavros_msgs::CommandLong>("mavros/cmd/command");
 
   nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
@@ -348,7 +350,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   publishTrajectory(reference_primitive_.position());
   publishPathSegments(path_segment_pub_, reference_primitive_);
   MapPublishOnce();
-  publishGoal(goal_pub_, goal_pos_, Eigen::Vector3d(0.0, 1.0, 0.0));
+  // publishGoal(goal_pub_, goal_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
 
   planner_msgs::NavigationStatus msg;
   msg.header.stamp = ros::Time::now();
@@ -539,31 +541,37 @@ void TerrainPlanner::publishPathSegments(ros::Publisher &pub, TrajectorySegments
   pub.publish(msg);
 }
 
-void TerrainPlanner::publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, Eigen::Vector3d color) {
+void TerrainPlanner::publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, const double radius,
+                                 Eigen::Vector3d color) {
   visualization_msgs::Marker marker;
-  marker.header.stamp = ros::Time::now();
-  marker.type = visualization_msgs::Marker::SPHERE;
   marker.header.frame_id = "map";
-  marker.id = 1;
-  marker.action = visualization_msgs::Marker::DELETEALL;
-  pub.publish(marker);
-
   marker.header.stamp = ros::Time::now();
+  marker.ns = "goal";
+  marker.id = 1;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.action = visualization_msgs::Marker::ADD;
-  marker.scale.x = 20.0;
-  marker.scale.y = 20.0;
-  marker.scale.z = 20.0;
+  std::vector<geometry_msgs::Point> points;
+  /// TODO: Generate circular path
+  double delta_theta = 0.05 * 2 * M_PI;
+  for (double theta = 0.0; theta < 2 * M_PI + delta_theta; theta += delta_theta) {
+    geometry_msgs::Point point;
+    point.x = position(0) + radius * std::cos(theta);
+    point.y = position(1) + radius * std::sin(theta);
+    point.z = position(2);
+    points.push_back(point);
+  }
+  marker.points = points;
+  marker.scale.x = 5.0;
+  marker.scale.y = 5.0;
+  marker.scale.z = 5.0;
   marker.color.a = 0.5;  // Don't forget to set the alpha!
-  marker.color.r = color(0);
-  marker.color.g = color(1);
-  marker.color.b = color(2);
-  marker.pose.position.x = position(0);
-  marker.pose.position.y = position(1);
-  marker.pose.position.z = position(2);
   marker.pose.orientation.w = 1.0;
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
+  marker.color.r = color(0);
+  marker.color.g = color(1);
+  marker.color.b = color(2);
 
   pub.publish(marker);
 }
@@ -721,17 +729,35 @@ bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, pla
   Eigen::Vector3d candidate_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
   /// TODO: Publish candidate loiter as a marker
   Eigen::Vector3d new_goal;
-  bool is_goal_safe = validateGoal(terrain_map_->getGridMap(), candidate_goal, new_goal);
+  bool is_goal_safe = validatePosition(terrain_map_->getGridMap(), candidate_goal, new_goal);
   if (is_goal_safe) {
     goal_pos_ = new_goal;
     // mcts_planner_->setGoal(new_goal);
     problem_updated_ = true;
-
     res.success = true;
+    publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
     return true;
   } else {
     res.success = false;
-    publishGoal(candidate_goal_pub_, new_goal, Eigen::Vector3d(1.0, 0.0, 0.0));
+    publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0));
+    return false;
+  }
+}
+
+bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
+  Eigen::Vector3d candidate_start = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
+  /// TODO: Publish candidate loiter as a marker
+  Eigen::Vector3d new_start;
+  bool is_safe = validatePosition(terrain_map_->getGridMap(), candidate_start, new_start);
+  if (is_safe) {
+    start_pos_ = new_start;
+    res.success = true;
+    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
+    return true;
+  } else {
+    res.success = false;
+    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0));
     return false;
   }
 }

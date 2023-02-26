@@ -92,6 +92,7 @@ class TerrainPlanner {
   bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
+  bool setStartCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
 
   void MapPublishOnce();
@@ -107,7 +108,7 @@ class TerrainPlanner {
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
   void publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory);
-  void publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position,
+  void publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, const double radius,
                    Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0));
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -123,6 +124,7 @@ class TerrainPlanner {
   ros::Publisher planner_status_pub_;
   ros::Publisher goal_pub_;
   ros::Publisher candidate_goal_pub_;
+  ros::Publisher candidate_start_pub_;
   ros::Publisher viewpoint_pub_;
   ros::Publisher tree_pub_;
   ros::Publisher path_segment_pub_;
@@ -135,12 +137,14 @@ class TerrainPlanner {
   ros::ServiceServer setlocation_serviceserver_;
   ros::ServiceServer setmaxaltitude_serviceserver_;
   ros::ServiceServer setgoal_serviceserver_;
+  ros::ServiceServer setstart_serviceserver_;
   ros::ServiceClient msginterval_serviceclient_;
 
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::Time plan_time_;
   ros::Time last_triggered_time_;
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
+  Eigen::Vector3d start_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
   Eigen::Vector3d tracking_error_{Eigen::Vector3d::Zero()};
   ros::CallbackQueue statusloop_queue_;
   ros::CallbackQueue cmdloop_queue_;

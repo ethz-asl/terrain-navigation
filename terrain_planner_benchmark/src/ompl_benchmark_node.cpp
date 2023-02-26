@@ -88,7 +88,7 @@ ompl::base::PlannerPtr ConfigureABITPlanner(const ompl::base::SpaceInformationPt
   return ompl::base::PlannerPtr(bit);
 }
 
-bool validateGoal(grid_map::GridMap &map, const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
+bool validatePosition(grid_map::GridMap &map, const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
   double upper_surface = map.atPosition("ics_+", goal.head(2));
   double lower_surface = map.atPosition("ics_-", goal.head(2));
   const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
   /// TODO: Check if goal is valid
   Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.35 * map_width_y, 0.0)};
   Eigen::Vector3d updated_start;
-  if (validateGoal(terrain_map->getGridMap(), start, updated_start)) {
+  if (validatePosition(terrain_map->getGridMap(), start, updated_start)) {
     start = updated_start;
     std::cout << "Specified start position is valid" << std::endl;
   } else {
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
   }
   Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
   Eigen::Vector3d updated_goal;
-  if (validateGoal(terrain_map->getGridMap(), goal, updated_goal)) {
+  if (validatePosition(terrain_map->getGridMap(), goal, updated_goal)) {
     goal = updated_goal;
     std::cout << "Specified goal position is valid" << std::endl;
   } else {

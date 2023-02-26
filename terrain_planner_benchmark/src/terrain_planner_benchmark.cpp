@@ -35,7 +35,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
 
       Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.35 * map_width_y, 0.0)};
       Eigen::Vector3d updated_start;
-      if (validateGoal(map_->getGridMap(), start, updated_start)) {
+      if (validatePosition(map_->getGridMap(), start, updated_start)) {
         start = updated_start;
         std::cout << "Specified start position is valid" << std::endl;
       } else {
@@ -43,7 +43,7 @@ void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
       }
       Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
       Eigen::Vector3d updated_goal;
-      if (validateGoal(map_->getGridMap(), goal, updated_goal)) {
+      if (validatePosition(map_->getGridMap(), goal, updated_goal)) {
         goal = updated_goal;
         std::cout << "Specified goal position is valid" << std::endl;
       } else {

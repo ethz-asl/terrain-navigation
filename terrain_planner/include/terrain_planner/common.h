@@ -327,7 +327,7 @@ Eigen::Vector4d quatMultiplication(const Eigen::Vector4d &q, const Eigen::Vector
   return quat;
 }
 
-bool validateGoal(const grid_map::GridMap &map, const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
+bool validatePosition(const grid_map::GridMap &map, const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
   double upper_surface = map.atPosition("ics_+", goal.head(2));
   double lower_surface = map.atPosition("ics_-", goal.head(2));
   const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;

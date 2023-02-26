@@ -48,37 +48,38 @@ void PlanningPanel::onInitialize() {
 }
 
 void PlanningPanel::createLayout() {
-  QGridLayout* loadterrain_layout = new QGridLayout;
+  QGridLayout* service_layout = new QGridLayout;
+
   // Input the namespace.
-  loadterrain_layout->addWidget(new QLabel("Terrain Location:"), 0, 0);
+  service_layout->addWidget(new QLabel("Terrain Location:"), 0, 0, 1, 1);
   planner_name_editor_ = new QLineEdit;
-  loadterrain_layout->addWidget(planner_name_editor_, 0, 1);
-  terrain_align_checkbox_ = new QCheckBox("Disable Terrain Geolocation Alignment (Virtual Terrain)");
-  loadterrain_layout->addWidget(terrain_align_checkbox_, 1, 0, 1, 2);
+  service_layout->addWidget(planner_name_editor_, 0, 1, 1, 1);
+  terrain_align_checkbox_ = new QCheckBox("Virtual Terrain");
+  service_layout->addWidget(terrain_align_checkbox_, 0, 2, 1, 1);
   load_terrain_button_ = new QPushButton("Load Terrain");
-  loadterrain_layout->addWidget(load_terrain_button_, 2, 0, 2, 2);
+  service_layout->addWidget(load_terrain_button_, 0, 3, 1, 1);
 
   // Planner services and publications.
-  QGridLayout* service_layout = new QGridLayout;
   planner_service_button_ = new QPushButton("Engage Planner");
   goal_altitude_editor_ = new QLineEdit;
   set_goal_button_ = new QPushButton("Update Goal");
+  set_start_button_ = new QPushButton("Update Start");
   max_altitude_button_enable_ = new QPushButton("Enable Max altitude");
   max_altitude_button_disable_ = new QPushButton("Disable Max altitude");
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
-  service_layout->addWidget(new QLabel("Goal Altitude:"), 0, 0, 1, 1);
-  service_layout->addWidget(goal_altitude_editor_, 0, 1, 1, 2);
-  service_layout->addWidget(set_goal_button_, 1, 0, 1, 3);
+  service_layout->addWidget(new QLabel("Goal Altitude:"), 1, 0, 1, 1);
+  service_layout->addWidget(goal_altitude_editor_, 1, 1, 1, 1);
+  service_layout->addWidget(set_start_button_, 1, 2, 1, 1);
+  service_layout->addWidget(set_goal_button_, 1, 3, 1, 1);
   service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 2, 0, 1, 1);
   service_layout->addWidget(max_altitude_button_enable_, 2, 1, 1, 1);
   service_layout->addWidget(max_altitude_button_disable_, 2, 2, 1, 1);
-  service_layout->addWidget(planner_service_button_, 3, 0, 1, 3);
-  service_layout->addWidget(waypoint_button_, 4, 0, 1, 3);
+  service_layout->addWidget(planner_service_button_, 3, 0, 1, 2);
+  service_layout->addWidget(waypoint_button_, 3, 2, 1, 2);
 
   // First the names, then the start/goal, then service buttons.
   QVBoxLayout* layout = new QVBoxLayout;
-  layout->addLayout(loadterrain_layout);
   layout->addLayout(service_layout);
   setLayout(layout);
 
@@ -88,6 +89,7 @@ void PlanningPanel::createLayout() {
   connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
   connect(load_terrain_button_, SIGNAL(released()), this, SLOT(setPlannerName()));
   connect(set_goal_button_, SIGNAL(released()), this, SLOT(setGoalService()));
+  connect(set_start_button_, SIGNAL(released()), this, SLOT(setStartService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
   connect(max_altitude_button_enable_, SIGNAL(released()), this, SLOT(EnableMaxAltitude()));
   connect(max_altitude_button_disable_, SIGNAL(released()), this, SLOT(DisableMaxAltitude()));
@@ -360,6 +362,38 @@ void PlanningPanel::setGoalService() {
     std::cout << "[PlanningPanel] Set Goal Altitude: " << goal_altitude << std::endl;
   } catch (const std::exception& e) {
     std::cout << "[PlanningPanel] Invalid Goal Altitude Set: " << e.what() << std::endl;
+  }
+  std::thread t([service_name, goal_pos, goal_altitude] {
+    planner_msgs::SetVector3 req;
+    req.request.vector.x = goal_pos(0);
+    req.request.vector.y = goal_pos(1);
+    // if ()
+    req.request.vector.z = goal_altitude;
+
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::setStartService() {
+  std::string service_name = "/terrain_planner/set_start";
+  Eigen::Vector3d goal_pos = goal_marker_->getGoalPosition();
+  // The altitude is set as a terrain altitude of the goal point. Therefore, passing negative terrain altitude
+  // invalidates the altitude setpoint
+  double goal_altitude{-1.0};
+
+  try {
+    goal_altitude = std::stod(goal_altitude_value_.toStdString());
+    std::cout << "[PlanningPanel] Set Goal Altitude: " << goal_altitude << std::endl;
+  } catch (const std::exception& e) {
+    std::cout << "[PlanningPanel] Invalid Start Altitude Set: " << e.what() << std::endl;
   }
   std::thread t([service_name, goal_pos, goal_altitude] {
     planner_msgs::SetVector3 req;
