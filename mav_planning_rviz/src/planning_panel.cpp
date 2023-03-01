@@ -64,6 +64,9 @@ void PlanningPanel::createLayout() {
   goal_altitude_editor_ = new QLineEdit;
   set_goal_button_ = new QPushButton("Update Goal");
   set_start_button_ = new QPushButton("Update Start");
+  trigger_planning_button_ = new QPushButton("Plan");
+  update_path_button_ = new QPushButton("Update Path");
+  planning_budget_editor_ = new QLineEdit;
   max_altitude_button_enable_ = new QPushButton("Enable Max altitude");
   max_altitude_button_disable_ = new QPushButton("Disable Max altitude");
   waypoint_button_ = new QPushButton("Disengage Planner");
@@ -72,11 +75,15 @@ void PlanningPanel::createLayout() {
   service_layout->addWidget(goal_altitude_editor_, 1, 1, 1, 1);
   service_layout->addWidget(set_start_button_, 1, 2, 1, 1);
   service_layout->addWidget(set_goal_button_, 1, 3, 1, 1);
-  service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 2, 0, 1, 1);
-  service_layout->addWidget(max_altitude_button_enable_, 2, 1, 1, 1);
-  service_layout->addWidget(max_altitude_button_disable_, 2, 2, 1, 1);
-  service_layout->addWidget(planner_service_button_, 3, 0, 1, 2);
-  service_layout->addWidget(waypoint_button_, 3, 2, 1, 2);
+  service_layout->addWidget(new QLabel("Planning budget:"), 2, 0, 1, 1);
+  service_layout->addWidget(planning_budget_editor_, 2, 1, 1, 1);
+  service_layout->addWidget(trigger_planning_button_, 2, 2, 1, 2);
+  service_layout->addWidget(update_path_button_, 3, 0, 1, 4);
+  service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 4, 0, 1, 1);
+  service_layout->addWidget(max_altitude_button_enable_, 4, 1, 1, 1);
+  service_layout->addWidget(max_altitude_button_disable_, 4, 2, 1, 1);
+  service_layout->addWidget(planner_service_button_, 5, 0, 1, 2);
+  service_layout->addWidget(waypoint_button_, 5, 2, 1, 2);
 
   // First the names, then the start/goal, then service buttons.
   QVBoxLayout* layout = new QVBoxLayout;
@@ -91,6 +98,8 @@ void PlanningPanel::createLayout() {
   connect(set_goal_button_, SIGNAL(released()), this, SLOT(setGoalService()));
   connect(set_start_button_, SIGNAL(released()), this, SLOT(setStartService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
+  connect(planning_budget_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlanningBudget()));
+  connect(trigger_planning_button_, SIGNAL(released()), this, SLOT(setPlanningBudgetService()));
   connect(max_altitude_button_enable_, SIGNAL(released()), this, SLOT(EnableMaxAltitude()));
   connect(max_altitude_button_disable_, SIGNAL(released()), this, SLOT(DisableMaxAltitude()));
   connect(controller_button_, SIGNAL(released()), this, SLOT(publishToController()));
@@ -165,6 +174,14 @@ void PlanningPanel::setGoalAltitude(const QString& new_goal_altitude) {
   }
 }
 
+void PlanningPanel::updatePlanningBudget() { setPlanningBudget(planning_budget_editor_->text()); }
+
+void PlanningPanel::setPlanningBudget(const QString& new_planning_budget) {
+  if (new_planning_budget != planning_budget_value_) {
+    planning_budget_value_ = new_planning_budget;
+    Q_EMIT configChanged();
+  }
+}
 // void PlanningPanel::updateOdometryTopic() { setOdometryTopic(odometry_topic_editor_->text()); }
 
 // Set the topic name we are publishing to.
@@ -239,6 +256,7 @@ void PlanningPanel::save(rviz::Config config) const {
   config.mapSetValue("namespace", namespace_);
   config.mapSetValue("planner_name", planner_name_);
   config.mapSetValue("goal_altitude", goal_altitude_value_);
+  config.mapSetValue("planning_budget", planning_budget_value_);
   config.mapSetValue("odometry_topic", odometry_topic_);
 }
 
@@ -252,6 +270,9 @@ void PlanningPanel::load(const rviz::Config& config) {
   }
   if (config.mapGetString("goal_altitude", &goal_altitude_value_)) {
     goal_altitude_editor_->setText(goal_altitude_value_);
+  }
+  if (config.mapGetString("planning_budget", &planning_budget_value_)) {
+    planning_budget_editor_->setText(planning_budget_value_);
   }
 }
 
@@ -369,6 +390,36 @@ void PlanningPanel::setGoalService() {
     req.request.vector.y = goal_pos(1);
     // if ()
     req.request.vector.z = goal_altitude;
+
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::setPlanningBudgetService() {
+  std::string service_name = "/terrain_planner/trigger_planning";
+  // The altitude is set as a terrain altitude of the goal point. Therefore, passing negative terrain altitude
+  // invalidates the altitude setpoint
+  double planning_budget{-1.0};
+
+  try {
+    planning_budget = std::stod(planning_budget_value_.toStdString());
+    std::cout << "[PlanningPanel] Set Planning Budget: " << planning_budget << std::endl;
+  } catch (const std::exception& e) {
+    std::cout << "[PlanningPanel] InvalidPlanning Budget: " << e.what() << std::endl;
+  }
+
+  std::thread t([service_name, planning_budget] {
+    planner_msgs::SetVector3 req;
+    // if ()
+    req.request.vector.z = planning_budget;
 
     try {
       ROS_DEBUG_STREAM("Service name: " << service_name);

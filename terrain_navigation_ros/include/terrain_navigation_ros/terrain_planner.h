@@ -72,7 +72,7 @@
 
 enum class SETPOINT_MODE { STATE, PATH };
 
-enum class PLANNER_MODE { EXHAUSTIVE, MCTS, GLOBAL, RANDOM };
+enum class PLANNER_MODE { EXHAUSTIVE, MCTS, GLOBAL, GLOBAL_REPLANNING, RANDOM };
 
 class TerrainPlanner {
  public:
@@ -93,6 +93,7 @@ class TerrainPlanner {
   bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   bool setStartCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
+  bool setPlanningCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
 
   void MapPublishOnce();
@@ -138,6 +139,7 @@ class TerrainPlanner {
   ros::ServiceServer setmaxaltitude_serviceserver_;
   ros::ServiceServer setgoal_serviceserver_;
   ros::ServiceServer setstart_serviceserver_;
+  ros::ServiceServer setplanning_serviceserver_;
   ros::ServiceClient msginterval_serviceclient_;
 
   ros::Timer cmdloop_timer_, statusloop_timer_;
@@ -162,6 +164,7 @@ class TerrainPlanner {
   std::shared_ptr<TerrainOmplRrt> global_planner_;
   std::shared_ptr<Profiler> planner_profiler_;
   TrajectorySegments reference_primitive_;
+  TrajectorySegments candidate_primitive_;
   mavros_msgs::State current_state_;
   std::optional<GeographicLib::LocalCartesian> enu_;
 
@@ -188,6 +191,7 @@ class TerrainPlanner {
   double local_origin_altitude_{0.0};
   double local_origin_latitude_{0.0};
   double local_origin_longitude_{0.0};
+  double planner_time_budget_{30.0};
   bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};

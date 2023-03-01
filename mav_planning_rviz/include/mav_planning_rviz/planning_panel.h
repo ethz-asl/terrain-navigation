@@ -49,6 +49,7 @@ class PlanningPanel : public rviz::Panel {
  public Q_SLOTS:
   void updatePlannerName();
   void updateGoalAltitude();
+  void updatePlanningBudget();
   void setPlannerName();
   void startEditing(const std::string& id);
   void finishEditing(const std::string& id);
@@ -56,6 +57,7 @@ class PlanningPanel : public rviz::Panel {
   void callPlannerService();
   void callPublishPath();
   void setGoalService();
+  void setPlanningBudgetService();
   void setStartService();
   void publishWaypoint();
   void publishToController();
@@ -69,6 +71,7 @@ class PlanningPanel : public rviz::Panel {
   void setNamespace(const QString& new_namespace);
   void setOdometryTopic(const QString& new_odometry_topic);
   void setGoalAltitude(const QString& new_goal_altitude);
+  void setPlanningBudget(const QString& new_planning_budget);
   void setMaxAltitudeConstrant(bool set_constraint);
 
   // ROS Stuff:
@@ -84,12 +87,15 @@ class PlanningPanel : public rviz::Panel {
   QLineEdit* planner_name_editor_;
   QLineEdit* goal_altitude_editor_;
   QLineEdit* odometry_topic_editor_;
+  QLineEdit* planning_budget_editor_;
   QCheckBox* terrain_align_checkbox_;
   PoseWidget* start_pose_widget_;
   PoseWidget* goal_pose_widget_;
   QPushButton* planner_service_button_;
   QPushButton* set_goal_button_;
   QPushButton* set_start_button_;
+  QPushButton* trigger_planning_button_;
+  QPushButton* update_path_button_;
   QPushButton* waypoint_button_;
   QPushButton* max_altitude_button_enable_;
   QPushButton* max_altitude_button_disable_;
@@ -106,6 +112,7 @@ class PlanningPanel : public rviz::Panel {
   QString namespace_;
   QString planner_name_;
   QString goal_altitude_value_{"100.0"};
+  QString planning_budget_value_{"100.0"};
   QString odometry_topic_;
   bool align_terrain_on_load_{true};
 

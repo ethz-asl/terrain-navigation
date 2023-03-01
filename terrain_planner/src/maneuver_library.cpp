@@ -287,6 +287,28 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
   return trajectory;
 }
 
+Trajectory ManeuverLibrary::generateCircleTrajectory(Eigen::Vector3d center_pos, double radius, const double dt) {
+  Trajectory trajectory;
+  trajectory.states.clear();
+
+  /// TODO: Fix sign conventions for curvature
+  double horizon = 2 * M_PI * radius / cruise_speed_;
+  trajectory.curvature = 1 / radius;
+  trajectory.dt = dt;
+  for (int i = 0; i < std::max(1.0, horizon / dt); i++) {
+    Eigen::Vector3d pos;
+    Eigen::Vector3d vel;
+    Eigen::Vector4d att;
+
+    State state_vector;
+    state_vector.position = pos;
+    state_vector.velocity = vel;
+    state_vector.attitude = att;
+    trajectory.states.push_back(state_vector);
+  }
+  return trajectory;
+}
+
 TrajectorySegments ManeuverLibrary::getBestPrimitive() {
   /// TODO: Implement best first search on tree
   TrajectorySegments primitive;

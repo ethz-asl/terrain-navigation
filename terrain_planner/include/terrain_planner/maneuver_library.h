@@ -61,6 +61,7 @@ class ManeuverLibrary {
   TrajectorySegments getRandomPrimitive();
   Trajectory generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
                                    Eigen::Vector3d current_vel, const double dt = 0.1);
+  Trajectory generateCircleTrajectory(Eigen::Vector3d center_pos, double radius, const double dt = 0.1);
   double getPlanningHorizon() { return planning_horizon_; };
 
   /**

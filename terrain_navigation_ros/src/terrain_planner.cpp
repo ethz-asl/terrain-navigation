@@ -92,6 +92,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
       nh_.advertiseService("/terrain_planner/set_max_altitude", &TerrainPlanner::setMaxAltitudeCallback, this);
   setgoal_serviceserver_ = nh_.advertiseService("/terrain_planner/set_goal", &TerrainPlanner::setGoalCallback, this);
   setstart_serviceserver_ = nh_.advertiseService("/terrain_planner/set_start", &TerrainPlanner::setStartCallback, this);
+  setplanning_serviceserver_ =
+      nh_.advertiseService("/terrain_planner/trigger_planning", &TerrainPlanner::setPlanningCallback, this);
   msginterval_serviceclient_ = nh_.serviceClient<mavros_msgs::CommandLong>("mavros/cmd/command");
 
   nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
@@ -149,26 +151,20 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         double reference_curvature{0.0};
         reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
                                              reference_curvature, 1.0);
-        bool publish_global_reference = true;
-        if (!publish_global_reference) {
-          publishPositionSetpoints(position_setpoint_pub_, reference_position, reference_tangent, reference_curvature);
-          publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
-        } else {
-          // Publish global position setpoints in the global frame
-          ESPG map_coordinate;
-          Eigen::Vector3d map_origin;
-          terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
-          /// TODO: convert reference position to global
-          const Eigen::Vector3d lv03_reference_position = reference_position + map_origin;
-          double latitude;
-          double longitude;
-          double altitude;
-          GeoConversions::reverse(lv03_reference_position(0), lv03_reference_position(1), lv03_reference_position(2),
-                                  latitude, longitude, altitude);
-          publishGlobalPositionSetpoints(global_position_setpoint_pub_, latitude, longitude, altitude,
-                                         reference_tangent, reference_curvature);
-          publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
-        }
+        // Publish global position setpoints in the global frame
+        ESPG map_coordinate;
+        Eigen::Vector3d map_origin;
+        terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
+        /// TODO: convert reference position to global
+        const Eigen::Vector3d lv03_reference_position = reference_position + map_origin;
+        double latitude;
+        double longitude;
+        double altitude;
+        GeoConversions::reverse(lv03_reference_position(0), lv03_reference_position(1), lv03_reference_position(2),
+                                latitude, longitude, altitude);
+        publishGlobalPositionSetpoints(global_position_setpoint_pub_, latitude, longitude, altitude, reference_tangent,
+                                       reference_curvature);
+        publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
         /// TODO: Trigger camera when viewpoint reached
         /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
         if (current_state_.mode == "OFFBOARD") {
@@ -237,10 +233,9 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   }
   // Only run planner in offboard mode
   /// TODO: Switch to chrono
-  plan_time_ = ros::Time::now();
   planner_mode_ = PLANNER_MODE::GLOBAL;
   switch (planner_mode_) {
-    case PLANNER_MODE::GLOBAL: {
+    case PLANNER_MODE::GLOBAL_REPLANNING: {
       /// TODO: Handle start states with loiter circles
       Eigen::Vector3d start_position = vehicle_position_;
       Eigen::Vector3d start_velocity = vehicle_velocity_;
@@ -327,6 +322,18 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
         maneuver_library_->Solve();
         reference_primitive_ = maneuver_library_->getBestPrimitive();
       }
+      break;
+    }
+    case PLANNER_MODE::GLOBAL: {
+      // Solve planning problem with RRT*
+      /// TODO: Plan on execution
+      bool run_planner = true;
+      double time_spent_planning = ros::Duration(ros::Time::now() - plan_time_).toSec();
+      if (time_spent_planning < planner_time_budget_) {
+        bool found_solution = global_planner_->Solve(1.0, candidate_primitive_);
+        publishTree(tree_pub_, global_planner_->getPlannerData(), global_planner_->getProblemSetup());
+      }
+      publishPathSegments(path_segment_pub_, candidate_primitive_);
       break;
     }
     case PLANNER_MODE::EXHAUSTIVE:
@@ -727,13 +734,13 @@ bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &re
 bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   Eigen::Vector3d candidate_goal = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
-  /// TODO: Publish candidate loiter as a marker
   Eigen::Vector3d new_goal;
+  std::cout << "[TerrainPlanner] Candidate goal: " << candidate_goal.transpose() << std::endl;
   bool is_goal_safe = validatePosition(terrain_map_->getGridMap(), candidate_goal, new_goal);
   if (is_goal_safe) {
     goal_pos_ = new_goal;
     // mcts_planner_->setGoal(new_goal);
-    problem_updated_ = true;
+    // problem_updated_ = true;
     res.success = true;
     publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
     return true;
@@ -747,8 +754,8 @@ bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, pla
 bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   Eigen::Vector3d candidate_start = Eigen::Vector3d(req.vector.x, req.vector.y, req.vector.z);
-  /// TODO: Publish candidate loiter as a marker
   Eigen::Vector3d new_start;
+  std::cout << "[TerrainPlanner] Candidate start: " << candidate_start.transpose() << std::endl;
   bool is_safe = validatePosition(terrain_map_->getGridMap(), candidate_start, new_start);
   if (is_safe) {
     start_pos_ = new_start;
@@ -760,4 +767,16 @@ bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, pl
     publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0));
     return false;
   }
+}
+
+bool TerrainPlanner::setPlanningCallback(planner_msgs::SetVector3::Request &req,
+                                         planner_msgs::SetVector3::Response &res) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
+  planner_time_budget_ = req.vector.z;
+  std::cout << "[TerrainPlanner] Planning budget: " << planner_time_budget_ << std::endl;
+  problem_updated_ = true;
+  plan_time_ = ros::Time::now();
+  global_planner_->setupProblem(start_pos_, goal_pos_);
+  res.success = true;
+  return true;
 }
