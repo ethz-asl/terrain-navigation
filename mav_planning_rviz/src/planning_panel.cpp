@@ -96,6 +96,7 @@ void PlanningPanel::createLayout() {
   connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
   connect(load_terrain_button_, SIGNAL(released()), this, SLOT(setPlannerName()));
   connect(set_goal_button_, SIGNAL(released()), this, SLOT(setGoalService()));
+  connect(update_path_button_, SIGNAL(released()), this, SLOT(setPathService()));
   connect(set_start_button_, SIGNAL(released()), this, SLOT(setStartService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
   connect(planning_budget_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlanningBudget()));
@@ -390,6 +391,24 @@ void PlanningPanel::setGoalService() {
     req.request.vector.y = goal_pos(1);
     // if ()
     req.request.vector.z = goal_altitude;
+
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::setPathService() {
+  std::string service_name = "/terrain_planner/set_path";
+  std::cout << "Planner Service" << std::endl;
+  std::thread t([service_name] {
+    planner_msgs::SetVector3 req;
 
     try {
       ROS_DEBUG_STREAM("Service name: " << service_name);

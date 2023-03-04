@@ -94,6 +94,7 @@ class TerrainPlanner {
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   bool setStartCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   bool setPlanningCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
+  bool setPathCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
 
   void MapPublishOnce();
@@ -105,6 +106,8 @@ class TerrainPlanner {
                                       const double altitude, const Eigen::Vector3d &velocity, const double curvature);
   void publishReferenceMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
                               const Eigen::Vector3d &velocity, const double curvature);
+  void publishVelocityMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
+                             const Eigen::Vector3d &velocity);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
@@ -128,6 +131,7 @@ class TerrainPlanner {
   ros::Publisher candidate_start_pub_;
   ros::Publisher viewpoint_pub_;
   ros::Publisher tree_pub_;
+  ros::Publisher vehicle_velocity_pub_;
   ros::Publisher path_segment_pub_;
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
@@ -140,6 +144,7 @@ class TerrainPlanner {
   ros::ServiceServer setgoal_serviceserver_;
   ros::ServiceServer setstart_serviceserver_;
   ros::ServiceServer setplanning_serviceserver_;
+  ros::ServiceServer updatepath_serviceserver_;
   ros::ServiceClient msginterval_serviceclient_;
 
   ros::Timer cmdloop_timer_, statusloop_timer_;

@@ -63,6 +63,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
   referencehistory_pub_ = nh_.advertise<nav_msgs::Path>("reference/path", 10);
   position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
+  vehicle_velocity_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_velocity", 1, true);
   goal_pub_ = nh_.advertise<visualization_msgs::Marker>("goal_marker", 1, true);
   candidate_goal_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_goal_marker", 1, true);
   candidate_start_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_start_marker", 1, true);
@@ -94,6 +95,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   setstart_serviceserver_ = nh_.advertiseService("/terrain_planner/set_start", &TerrainPlanner::setStartCallback, this);
   setplanning_serviceserver_ =
       nh_.advertiseService("/terrain_planner/trigger_planning", &TerrainPlanner::setPlanningCallback, this);
+  updatepath_serviceserver_ = nh_.advertiseService("/terrain_planner/set_path", &TerrainPlanner::setPathCallback, this);
   msginterval_serviceclient_ = nh_.serviceClient<mavros_msgs::CommandLong>("mavros/cmd/command");
 
   nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
@@ -194,6 +196,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
   }
 
   publishVehiclePose(vehicle_position_, vehicle_attitude_);
+  publishVelocityMarker(vehicle_velocity_pub_, vehicle_position_, vehicle_velocity_);
   publishPositionHistory(posehistory_pub_, vehicle_position_, posehistory_vector_);
 }
 
@@ -227,15 +230,16 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
 
   planner_profiler_->tic();
 
-  // Plan from the end of the current segment
-  if (current_state_.mode != "OFFBOARD") {
-    reference_primitive_.segments.clear();
-  }
+  // std::cout << "Terrain altitude: " << terrain_map_->getGridMap().atPosition("elevation", vehicle_position_.head(2))
+  // << std::endl; Plan from the end of the current segment
   // Only run planner in offboard mode
   /// TODO: Switch to chrono
   planner_mode_ = PLANNER_MODE::GLOBAL;
   switch (planner_mode_) {
     case PLANNER_MODE::GLOBAL_REPLANNING: {
+      if (current_state_.mode != "OFFBOARD") {
+        reference_primitive_.segments.clear();
+      }
       /// TODO: Handle start states with loiter circles
       Eigen::Vector3d start_position = vehicle_position_;
       Eigen::Vector3d start_velocity = vehicle_velocity_;
@@ -488,6 +492,38 @@ void TerrainPlanner::publishPositionSetpoints(const ros::Publisher &pub, const E
   msg.acceleration_or_force.z = lateral_acceleration(2);
 
   pub.publish(msg);
+}
+
+void TerrainPlanner::publishVelocityMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
+                                           const Eigen::Vector3d &velocity) {
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.type = visualization_msgs::Marker::ARROW;
+  marker.header.frame_id = "map";
+  marker.id = 0;
+  marker.action = visualization_msgs::Marker::DELETEALL;
+  position_target_pub_.publish(marker);
+
+  marker.header.stamp = ros::Time::now();
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = velocity.norm();
+  marker.scale.y = 2.0;
+  marker.scale.z = 2.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 1.0;
+  marker.pose.position.x = position(0);
+  marker.pose.position.y = position(1);
+  marker.pose.position.z = position(2);
+  double yaw = std::atan2(velocity.y(), velocity.x());
+  double pitch = std::atan2(velocity.z(), velocity.x());
+  marker.pose.orientation.w = std::cos(0.5 * yaw);
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = std::sin(0.5 * yaw);
+
+  pub.publish(marker);
 }
 
 void TerrainPlanner::publishReferenceMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
@@ -777,6 +813,17 @@ bool TerrainPlanner::setPlanningCallback(planner_msgs::SetVector3::Request &req,
   problem_updated_ = true;
   plan_time_ = ros::Time::now();
   global_planner_->setupProblem(start_pos_, goal_pos_);
+  res.success = true;
+  return true;
+}
+
+bool TerrainPlanner::setPathCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
+  planner_time_budget_ = req.vector.z;
+  std::cout << "[TerrainPlanner] Planning budget: " << planner_time_budget_ << std::endl;
+  problem_updated_ = true;
+  plan_time_ = ros::Time::now();
+  reference_primitive_ = candidate_primitive_;
   res.success = true;
   return true;
 }

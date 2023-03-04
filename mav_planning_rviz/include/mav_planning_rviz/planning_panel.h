@@ -59,6 +59,7 @@ class PlanningPanel : public rviz::Panel {
   void setGoalService();
   void setPlanningBudgetService();
   void setStartService();
+  void setPathService();
   void publishWaypoint();
   void publishToController();
   void terrainAlignmentStateChanged(int state);

@@ -10,7 +10,7 @@
     <arg name="fcu_protocol" default="v2.0" />
     <arg name="respawn_mavros" default="false" />
     <arg name="visualization" default="true"/>
-    <arg name="location" default="hinwil"/>
+    <arg name="location" default="dischma"/>
     <arg name="gui" default="false"/>
 
     <include file="$(find mavros)/launch/node.launch">
