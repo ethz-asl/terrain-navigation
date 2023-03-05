@@ -221,6 +221,7 @@ class TrajectorySegments {
       appendSegment(trajectory);
     }
   };
+  Trajectory firstSegment() { return segments.front(); }
   Trajectory lastSegment() { return segments.back(); }
   void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
                        double &curvature, double epsilon = 0.001) {

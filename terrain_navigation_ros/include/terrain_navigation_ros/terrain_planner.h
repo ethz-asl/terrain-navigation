@@ -114,6 +114,9 @@ class TerrainPlanner {
   void publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory);
   void publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, const double radius,
                    Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0));
+  void generateCircle(const Eigen::Vector3d end_position, const Eigen::Vector3d end_velocity,
+                      const Eigen::Vector3d center_pos, Trajectory &trajectory);
+
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
   ros::Publisher vehicle_path_pub_;
