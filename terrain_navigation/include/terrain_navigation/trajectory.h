@@ -174,6 +174,68 @@ class Trajectory {
     return length;
   }
 
+  double getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
+                         double &curvature, double epsilon = 0.001) {
+    double theta{-std::numeric_limits<double>::infinity()};
+    Eigen::Vector3d segment_start = states.front().position;
+    Eigen::Vector3d segment_start_tangent = (states.front().velocity).normalized();
+    Eigen::Vector3d segment_end = states.back().position;
+    if (states.size() == 1) {
+      // Segment only contains a single state, meaning that it is nor a line or a arc
+      theta = 1.0;
+    } else if (std::abs(curvature) < 0.0001) {
+      // Compute closest point on a line segment
+      // Get Path Progress
+      theta = getLineProgress(position, segment_start, segment_end);
+      tangent = (segment_end - segment_start).normalized();
+      closest_point = theta * (segment_end - segment_start) + segment_start;
+    } else {
+      // Compute closest point on a Arc segment
+      Eigen::Vector2d position_2d(position(0), position(1));
+      Eigen::Vector2d segment_start_2d = segment_start.head(2);
+      Eigen::Vector2d segment_start_tangent_2d = segment_start_tangent.head(2);
+      Eigen::Vector2d segment_end_2d = segment_end.head(2);
+      Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
+      if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+        arc_center = getArcCenter(segment_start_2d, segment_start_tangent_2d, curvature);
+        Eigen::Vector2d start_vector = (segment_start_2d - arc_center).normalized();
+        Eigen::Vector2d position_vector = position_2d - arc_center;
+        double angle_pos =
+            std::atan2(position_vector(1), position_vector(0)) - std::atan2(start_vector(1), start_vector(0));
+        wrap_2pi(angle_pos);
+        /// TODO: Check for the case for a helix!
+        theta = angle_pos / (2 * M_PI);
+        if (std::abs(segment_end(2) - segment_start(2)) > 0.01) {
+          double theta_altitude = std::max(
+              std::min((position(2) - segment_start(2)) / std::abs(segment_end(2) - segment_start(2)), 1.0), 0.0);
+          // theta = std::min(theta, theta_altitude);
+        }
+      } else {
+        arc_center = getArcCenter(segment_start_2d, segment_start_tangent_2d, curvature);
+        theta = getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, curvature);
+      }
+      Eigen::Vector2d closest_point_2d = std::abs(1 / curvature) * (position_2d - arc_center).normalized() + arc_center;
+      closest_point = Eigen::Vector3d(closest_point_2d(0), closest_point_2d(1),
+                                      theta * segment_end(2) + (1 - theta) * segment_start(2));
+      Eigen::Vector2d error_vector = (closest_point_2d - arc_center).normalized();  // Position to error vector
+      tangent = Eigen::Vector3d((curvature / std::abs(curvature)) * -error_vector(1),
+                                (curvature / std::abs(curvature)) * error_vector(0), 0.0);
+
+      /// If current segment is a full circle, and has a next segment, escape when close to start of next segment
+      // if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+      //   if (&segment != &segments.back()) {  // Segment is a full circle
+      //     /// TODO: Get next segment from iterator
+      //     Eigen::Vector3d next_segment_start = segments[segment_idx].states.front().position;
+      //     if ((closest_point - next_segment_start).norm() < epsilon) {
+      //       segment.reached = true;
+      //       return;
+      //     }
+      //   }
+      // }
+    }
+    return theta;
+  }
+
   std::vector<State> states;
   double curvature{0.0};
   double climb_rate{0.0};
@@ -223,87 +285,39 @@ class TrajectorySegments {
   };
   Trajectory firstSegment() { return segments.front(); }
   Trajectory lastSegment() { return segments.back(); }
+
+  /**
+   * @brief Get the Closest Point of the current segment
+   *
+   * @param position
+   * @param closest_point
+   * @param tangent
+   * @param curvature
+   * @param epsilon
+   */
   void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
                        double &curvature, double epsilon = 0.001) {
-    double theta{-std::numeric_limits<double>::infinity()};
     closest_point = segments.front().states.front().position;
 
     // Iterate through all segments
-    int segment_idx{-1};
     for (auto &segment : segments) {
-      segment_idx++;
       if (segment.reached && (&segment != &segments.back())) continue;
-      Eigen::Vector3d segment_start = segment.states.front().position;
-      Eigen::Vector3d segment_start_tangent = (segment.states.front().velocity).normalized();
-      Eigen::Vector3d segment_end = segment.states.back().position;
-      if (segment.states.size() == 1) {
-        // Segment only contains a single state, meaning that it is nor a line or a arc
-        theta = 1.0;
-      } else if (std::abs(segment.curvature) < 0.0001) {
-        // Compute closest point on a line segment
-        // Get Path Progress
-        theta = segment.getLineProgress(position, segment_start, segment_end);
-        tangent = (segment_end - segment_start).normalized();
-        closest_point = theta * (segment_end - segment_start) + segment_start;
-      } else {
-        // Compute closest point on a Arc segment
-        Eigen::Vector2d position_2d(position(0), position(1));
-        Eigen::Vector2d segment_start_2d = segment_start.head(2);
-        Eigen::Vector2d segment_start_tangent_2d = segment_start_tangent.head(2);
-        Eigen::Vector2d segment_end_2d = segment_end.head(2);
-        Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
-        if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
-          arc_center = segment.getArcCenter(segment_start_2d, segment_start_tangent_2d, segment.curvature);
-          Eigen::Vector2d start_vector = (segment_start_2d - arc_center).normalized();
-          Eigen::Vector2d position_vector = position_2d - arc_center;
-          double angle_pos =
-              std::atan2(position_vector(1), position_vector(0)) - std::atan2(start_vector(1), start_vector(0));
-          wrap_2pi(angle_pos);
-          /// TODO: Check for the case for a helix!
-          theta = angle_pos / (2 * M_PI);
-          if (std::abs(segment_end(2) - segment_start(2)) > 0.01) {
-            double theta_altitude = std::max(
-                std::min((position(2) - segment_start(2)) / std::abs(segment_end(2) - segment_start(2)), 1.0), 0.0);
-            // theta = std::min(theta, theta_altitude);
-          }
-        } else {
-          arc_center = segment.getArcCenter(segment_start_2d, segment_start_tangent_2d, segment.curvature);
-          theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
-        }
-        Eigen::Vector2d closest_point_2d =
-            std::abs(1 / segment.curvature) * (position_2d - arc_center).normalized() + arc_center;
-        closest_point = Eigen::Vector3d(closest_point_2d(0), closest_point_2d(1),
-                                        theta * segment_end(2) + (1 - theta) * segment_start(2));
-        Eigen::Vector2d error_vector = (closest_point_2d - arc_center).normalized();  // Position to error vector
-        tangent = Eigen::Vector3d((segment.curvature / std::abs(segment.curvature)) * -error_vector(1),
-                                  (segment.curvature / std::abs(segment.curvature)) * error_vector(0), 0.0);
+      auto theta = segment.getClosestPoint(position, closest_point, tangent, curvature);
 
-        /// If current segment is a full circle, and has a next segment, escape when close to start of next segment
-        if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
-          if (&segment != &segments.back()) {  // Segment is a full circle
-            /// TODO: Get next segment from iterator
-            Eigen::Vector3d next_segment_start = segments[segment_idx].states.front().position;
-            if ((closest_point - next_segment_start).norm() < epsilon) {
-              segment.reached = true;
-              return;
-            }
-          }
-        }
-      }
-
+      /// TODO: This is a workaround for the TECS height tracking
       double altitude_correction = K_z_ * (position(2) - closest_point(2));
       tangent(2) =
           std::min(std::max(altitude_correction - segment.climb_rate, max_climb_rate_control_), max_sink_rate_control_);
       curvature = segment.curvature;
       if (theta <= 0.0) {
         /// theta can be negative on the start of the next segment
-        closest_point = segment_start;
+        closest_point = segment.states.front().position;
         tangent = (segment.states.front().velocity).normalized();
         return;
       } else if (theta < 1.0) {  /// TODO: This is a magic number in terms of acceptance radius of end of segments
         return;
       } else {
-        closest_point = segment_end;
+        closest_point = segment.states.back().position;
         tangent = (segment.states.back().velocity).normalized();
         // Consider that the segment is tracked
         segment.reached = true;
@@ -321,43 +335,12 @@ class TrajectorySegments {
 
   Trajectory &getCurrentSegment(const Eigen::Vector3d &position) {
     double theta{-std::numeric_limits<double>::infinity()};
+    Eigen::Vector3d closest_point;
+    Eigen::Vector3d tangent;
+    double curvature;
     for (auto &segment : segments) {
       if (segment.reached && (&segment != &segments.back())) continue;
-      Eigen::Vector3d segment_start = segment.states.front().position;
-      Eigen::Vector3d segment_start_tangent = (segment.states.front().velocity).normalized();
-      Eigen::Vector3d segment_end = segment.states.back().position;
-      if (segment.states.size() == 1) {
-        // Segment only contains a single state, meaning that it is nor a line or a arc
-        theta = 1.0;
-      } else if (std::abs(segment.curvature) < 0.0001) {
-        // Compute closest point on a line segment
-        // Get Path Progress
-        theta = segment.getLineProgress(position, segment_start, segment_end);
-      } else {
-        // Compute closest point on a Arc segment
-        Eigen::Vector2d position_2d(position(0), position(1));
-        Eigen::Vector2d segment_start_2d(segment_start(0), segment_start(1));
-        Eigen::Vector2d segment_start_tangent_2d = segment_start_tangent.head(2);
-        Eigen::Vector2d segment_end_2d(segment_end(0), segment_end(1));
-        Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
-        if ((segment_start_2d - segment_end_2d).norm() < epsilon_) {
-          // This is a special logic to handle when the arc segment start and end position is identical
-          Eigen::Vector3d rotational_vector(0.0, 0.0, segment.curvature / std::abs(segment.curvature));
-          Eigen::Vector3d arc_center_3d =
-              segment_start + (1 / std::abs(segment.curvature)) * segment_start_tangent.cross(rotational_vector);
-
-          arc_center = Eigen::Vector2d(arc_center_3d(0), arc_center_3d(1));
-          Eigen::Vector2d start_vector = (segment_start_2d - arc_center).normalized();
-          Eigen::Vector2d position_vector = position_2d - arc_center;
-          double angle_pos =
-              std::atan2(position_vector(1), position_vector(0)) - std::atan2(start_vector(1), start_vector(0));
-          wrap_2pi(angle_pos);
-          theta = angle_pos / (2 * M_PI);
-        } else {
-          arc_center = segment.getArcCenter(segment_start_2d, segment_start_tangent_2d, segment.curvature);
-          theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
-        }
-      }
+      auto theta = segment.getClosestPoint(position, closest_point, tangent, curvature);
       if (theta <= 0.0) {
         return segment;
       } else if ((theta < 1.0)) {
@@ -369,44 +352,15 @@ class TrajectorySegments {
   }
 
   int getCurrentSegmentIndex(const Eigen::Vector3d &position, double epsilon = 0.1) {
-    double theta{-std::numeric_limits<double>::infinity()};
-
+    Eigen::Vector3d closest_point;
+    Eigen::Vector3d tangent;
+    double curvature;
     // Iterate through all segments
     int segment_idx{-1};
     for (auto &segment : segments) {
       segment_idx++;
       if (segment.reached && (&segment != &segments.back())) continue;
-      Eigen::Vector3d segment_start = segment.states.front().position;
-      Eigen::Vector3d segment_start_tangent = (segment.states.front().velocity).normalized();
-      Eigen::Vector3d segment_end = segment.states.back().position;
-      if (segment.states.size() == 1) {
-        // Segment only contains a single state, meaning that it is nor a line or a arc
-        theta = 1.0;
-      } else if (std::abs(segment.curvature) < 0.0001) {
-        // Compute closest point on a line segment
-        // Get Path Progress
-        theta = segment.getLineProgress(position, segment_start, segment_end);
-      } else {
-        // Compute closest point on a Arc segment
-        Eigen::Vector2d position_2d(position(0), position(1));
-        Eigen::Vector2d segment_start_2d = segment_start.head(2);
-        Eigen::Vector2d segment_start_tangent_2d = segment_start_tangent.head(2);
-        Eigen::Vector2d segment_end_2d = segment_end.head(2);
-        Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
-        if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
-          arc_center = segment.getArcCenter(segment_start_2d, segment_start_tangent_2d, segment.curvature);
-          Eigen::Vector2d start_vector = (segment_start_2d - arc_center).normalized();
-          Eigen::Vector2d position_vector = position_2d - arc_center;
-          double angle_pos =
-              std::atan2(position_vector(1), position_vector(0)) - std::atan2(start_vector(1), start_vector(0));
-          wrap_2pi(angle_pos);
-          /// TODO: Check for the case for a helix!
-          theta = angle_pos / (2 * M_PI);
-        } else {
-          arc_center = segment.getArcCenter(segment_start_2d, segment_start_tangent_2d, segment.curvature);
-          theta = segment.getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, segment.curvature);
-        }
-      }
+      auto theta = segment.getClosestPoint(position, closest_point, tangent, curvature);
       if (theta <= 0.0) {
         /// theta can be negative on the start of the next segment
         return segment_idx;
