@@ -47,4 +47,15 @@ void GoalMarker::processSetPoseFeedback(const visualization_msgs::InteractiveMar
 void GoalMarker::GridmapCallback(const grid_map_msgs::GridMap &msg) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   grid_map::GridMapRosConverter::fromMessage(msg, map_);
+  Eigen::Vector2d marker_position_2d(set_goal_marker_.pose.position.x, set_goal_marker_.pose.position.y);
+  if (map_.isInside(marker_position_2d)) {
+    // set_goal_marker_.pose.position.z
+    double elevation = map_.atPosition("elevation", marker_position_2d);
+    if (elevation + 200.0 > set_goal_marker_.pose.position.z) {
+      set_goal_marker_.pose.position.z = elevation + 200.0;
+      marker_server_.setPose(set_goal_marker_.name, set_goal_marker_.pose);
+      goal_pos_(2) = elevation + 100.0;
+    }
+  }
+  marker_server_.applyChanges();
 }

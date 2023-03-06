@@ -151,8 +151,9 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         Eigen::Vector3d reference_position;
         Eigen::Vector3d reference_tangent;
         double reference_curvature{0.0};
-        reference_primitive_.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
-                                             reference_curvature, 1.0);
+        auto current_segment = reference_primitive_.getCurrentSegment(vehicle_position_);
+        current_segment.getClosestPoint(vehicle_position_, reference_position, reference_tangent, reference_curvature,
+                                        1.0);
         // Publish global position setpoints in the global frame
         ESPG map_coordinate;
         Eigen::Vector3d map_origin;
@@ -849,5 +850,6 @@ void TerrainPlanner::generateCircle(const Eigen::Vector3d end_position, const Ei
   double horizon = 2 * M_PI / std::abs(emergency_rates(2));
   // Append a loiter at the end of the planned path
   trajectory = maneuver_library_->generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
+  trajectory.is_periodic = true;
   return;
 }

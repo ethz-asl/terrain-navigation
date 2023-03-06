@@ -175,8 +175,9 @@ class Trajectory {
   }
 
   double getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
-                         double &curvature, double epsilon = 0.001) {
+                         double &segment_curvature, double epsilon = 0.001) {
     double theta{-std::numeric_limits<double>::infinity()};
+    segment_curvature = curvature;
     Eigen::Vector3d segment_start = states.front().position;
     Eigen::Vector3d segment_start_tangent = (states.front().velocity).normalized();
     Eigen::Vector3d segment_end = states.back().position;
@@ -196,7 +197,8 @@ class Trajectory {
       Eigen::Vector2d segment_start_tangent_2d = segment_start_tangent.head(2);
       Eigen::Vector2d segment_end_2d = segment_end.head(2);
       Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
-      if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+      // Handle when it is a full circle
+      if (is_periodic) {
         arc_center = getArcCenter(segment_start_2d, segment_start_tangent_2d, curvature);
         Eigen::Vector2d start_vector = (segment_start_2d - arc_center).normalized();
         Eigen::Vector2d position_vector = position_2d - arc_center;
@@ -205,11 +207,6 @@ class Trajectory {
         wrap_2pi(angle_pos);
         /// TODO: Check for the case for a helix!
         theta = angle_pos / (2 * M_PI);
-        if (std::abs(segment_end(2) - segment_start(2)) > 0.01) {
-          double theta_altitude = std::max(
-              std::min((position(2) - segment_start(2)) / std::abs(segment_end(2) - segment_start(2)), 1.0), 0.0);
-          // theta = std::min(theta, theta_altitude);
-        }
       } else {
         arc_center = getArcCenter(segment_start_2d, segment_start_tangent_2d, curvature);
         theta = getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, curvature);
@@ -220,18 +217,10 @@ class Trajectory {
       Eigen::Vector2d error_vector = (closest_point_2d - arc_center).normalized();  // Position to error vector
       tangent = Eigen::Vector3d((curvature / std::abs(curvature)) * -error_vector(1),
                                 (curvature / std::abs(curvature)) * error_vector(0), 0.0);
-
-      /// If current segment is a full circle, and has a next segment, escape when close to start of next segment
-      // if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
-      //   if (&segment != &segments.back()) {  // Segment is a full circle
-      //     /// TODO: Get next segment from iterator
-      //     Eigen::Vector3d next_segment_start = segments[segment_idx].states.front().position;
-      //     if ((closest_point - next_segment_start).norm() < epsilon) {
-      //       segment.reached = true;
-      //       return;
-      //     }
-      //   }
-      // }
+      /// TODO: This is a workaround for the TECS height tracking
+      double altitude_correction = K_z_ * (position(2) - closest_point(2));
+      tangent(2) =
+          std::min(std::max(altitude_correction - climb_rate, max_climb_rate_control_), max_sink_rate_control_);
     }
     return theta;
   }
@@ -241,8 +230,12 @@ class Trajectory {
   double climb_rate{0.0};
   double dt{0.0};
   double utility{0.0};
+  double K_z_ = 0.5;
+  double max_climb_rate_control_{-3.5};
+  double max_sink_rate_control_{2.0};
   bool viewed{false};
   bool reached{false};
+  bool is_periodic{false};
 
  private:
 };
@@ -304,10 +297,6 @@ class TrajectorySegments {
       if (segment.reached && (&segment != &segments.back())) continue;
       auto theta = segment.getClosestPoint(position, closest_point, tangent, curvature);
 
-      /// TODO: This is a workaround for the TECS height tracking
-      double altitude_correction = K_z_ * (position(2) - closest_point(2));
-      tangent(2) =
-          std::min(std::max(altitude_correction - segment.climb_rate, max_climb_rate_control_), max_sink_rate_control_);
       curvature = segment.curvature;
       if (theta <= 0.0) {
         /// theta can be negative on the start of the next segment
@@ -338,9 +327,21 @@ class TrajectorySegments {
     Eigen::Vector3d closest_point;
     Eigen::Vector3d tangent;
     double curvature;
+    int segment_idx{-1};
     for (auto &segment : segments) {
+      segment_idx++;
       if (segment.reached && (&segment != &segments.back())) continue;
       auto theta = segment.getClosestPoint(position, closest_point, tangent, curvature);
+
+      // If current segment is a full circle, and has a next segment, escape when close to start of next segment
+      if (segment.is_periodic && (&segment != &segments.back())) {  // Segment is a terminal periodic set
+        Eigen::Vector3d next_segment_start = segments[segment_idx].states.front().position;
+        if ((closest_point - next_segment_start).norm() < epsilon_) {
+          segment.reached = true;
+          return segment;
+        }
+      }
+
       if (theta <= 0.0) {
         return segment;
       } else if ((theta < 1.0)) {
@@ -391,10 +392,7 @@ class TrajectorySegments {
   std::vector<Trajectory> segments;
 
  private:
-  double K_z_ = 0.5;
-  double max_climb_rate_control_{-3.5};
-  double max_sink_rate_control_{2.0};
-  double epsilon_{15.0 * 0.1};
+  double epsilon_{15.0 * 0.2};
 };
 
 #endif
