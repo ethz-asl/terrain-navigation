@@ -336,8 +336,9 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
       if (time_spent_planning < planner_time_budget_) {
         bool found_solution = global_planner_->Solve(1.0, candidate_primitive_);
         publishTree(tree_pub_, global_planner_->getPlannerData(), global_planner_->getProblemSetup());
+      } else {
+        publishPathSegments(path_segment_pub_, candidate_primitive_);
       }
-      publishPathSegments(path_segment_pub_, candidate_primitive_);
       break;
     }
     case PLANNER_MODE::EXHAUSTIVE:
@@ -501,8 +502,7 @@ void TerrainPlanner::publishVelocityMarker(const ros::Publisher &pub, const Eige
   marker.type = visualization_msgs::Marker::ARROW;
   marker.header.frame_id = "map";
   marker.id = 0;
-  marker.action = visualization_msgs::Marker::DELETEALL;
-  position_target_pub_.publish(marker);
+  marker.ns = "velocity";
 
   marker.header.stamp = ros::Time::now();
   marker.action = visualization_msgs::Marker::ADD;
@@ -533,9 +533,7 @@ void TerrainPlanner::publishReferenceMarker(const ros::Publisher &pub, const Eig
   marker.type = visualization_msgs::Marker::ARROW;
   marker.header.frame_id = "map";
   marker.id = 0;
-  marker.action = visualization_msgs::Marker::DELETEALL;
-  position_target_pub_.publish(marker);
-
+  marker.ns = "reference";
   marker.header.stamp = ros::Time::now();
   marker.action = visualization_msgs::Marker::ADD;
   marker.scale.x = 20.0;
