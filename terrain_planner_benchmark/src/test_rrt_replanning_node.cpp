@@ -113,7 +113,7 @@ void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
   pub.publish(msg);
 }
 
-void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
+void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius, Eigen::Vector3d color=Eigen::Vector3d(0.0, 1.0, 0.0)) {
   visualization_msgs::Marker marker;
   marker.header.stamp = ros::Time::now();
   marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -136,13 +136,13 @@ void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& po
   points.push_back(start_point);
 
   marker.points = points;
-  marker.scale.x = 5.0;
-  marker.scale.y = 5.0;
-  marker.scale.z = 5.0;
-  marker.color.a = 0.5;  // Don't forget to set the alpha!
-  marker.color.r = 0.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
+  marker.scale.x = 10.0;
+  marker.scale.y = 10.0;
+  marker.scale.z = 10.0;
+  marker.color.a = 1.0;  // Don't forget to set the alpha!
+  marker.color.r = color(0);
+  marker.color.g = color(1);
+  marker.color.b = color(2);
   marker.pose.orientation.w = 1.0;
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
@@ -158,6 +158,18 @@ void addErrorLayer(const std::string layer_name, const std::string query_layer, 
     const grid_map::Index index = *iterator;
     map.at(layer_name, index) = map.at(query_layer, index) > map.at(reference_layer, index);
   }
+}
+
+Eigen::Vector3d getColor(double intensity) {
+    const std::vector<std::vector<float>> &ctable = colorMap.at("plasma");
+
+    int idx = int(floor(intensity * 255));
+    idx = std::min(idx, 255);
+    idx = std::max(idx, 0);
+
+    // Get color from table
+    std::vector<float> rgb = ctable.at(idx);
+    return Eigen::Vector3d(rgb[0], rgb[1], rgb[2]);
 }
 
 int main(int argc, char** argv) {
@@ -194,7 +206,7 @@ int main(int argc, char** argv) {
   terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
   terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
   terrain_map->getGridMap().add("offset");
-  terrain_map->getGridMap()["offset"].setConstant(-6000.0);
+  terrain_map->getGridMap()["offset"].setConstant(1000.0);
   addErrorLayer("error", "ics_-", "ics_+", terrain_map->getGridMap());
   // Initialize planner with loaded terrain map
   auto planner = std::make_shared<TerrainOmplRrt>();
@@ -207,7 +219,7 @@ int main(int argc, char** argv) {
   const double map_width_x = terrain_map->getGridMap().getLength().x();
   const double map_width_y = terrain_map->getGridMap().getLength().y();
 
-  Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) + 0.4 * map_width_x, map_pos(1) - 0.35 * map_width_y, 0.0)};
+  Eigen::Vector3d start{Eigen::Vector3d(map_pos(0) - 0.35 * map_width_x, map_pos(1) + 0.35 * map_width_y, 0.0)};
   Eigen::Vector3d updated_start;
   if (validatePosition(terrain_map->getGridMap(), start, updated_start)) {
     start = updated_start;
@@ -215,7 +227,7 @@ int main(int argc, char** argv) {
   } else {
     throw std::runtime_error("Specified start position is NOT valid");
   }
-  Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
+  Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) + 0.35 * map_width_x, map_pos(1) - 0.35 * map_width_y, 0.0)};
   Eigen::Vector3d updated_goal;
   if (validatePosition(terrain_map->getGridMap(), goal, updated_goal)) {
     goal = updated_goal;
@@ -302,8 +314,14 @@ int main(int argc, char** argv) {
     grid_map_pub.publish(message);
     publishTrajectory(path_pub, reference_primitive_.position());
     publishPathSegments(path_segment_pub, reference_primitive_);
-    publishCircleSetpoints(start_pos_pub, start, radius);
-    publishCircleSetpoints(goal_pos_pub, goal, radius);
+    std::cout << " - start pos: " << start.transpose() << std::endl;
+    std::cout << " - goal pos: " << goal.transpose() << std::endl;
+    double min_altitude = 1964.41;
+    double max_altitude = 2307.01;
+
+
+    publishCircleSetpoints(start_pos_pub, start, radius, getColor(1.0));
+    publishCircleSetpoints(goal_pos_pub, goal, radius, getColor(0.0));
     publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
     ros::Duration(1.0).sleep();
   }

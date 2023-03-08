@@ -521,9 +521,9 @@ visualization_msgs::Marker trajectory2MarkerMsg(Trajectory &trajectory, const in
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
   marker.pose.orientation.w = 1.0;
-  marker.scale.x = 30.0;
-  marker.scale.y = 30.0;
-  marker.scale.z = 30.0;
+  marker.scale.x = 10.0;
+  marker.scale.y = 10.0;
+  marker.scale.z = 10.0;
   return marker;
 }
 
