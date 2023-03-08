@@ -4,7 +4,7 @@
 
 This package includes a global planner based on Dubins RRT* enabling low altitude navigation for fixedwing vehicles in steep terrain.
 
-![ezgif com-gif-maker](https://user-images.githubusercontent.com/5248102/196541709-64c6a41f-9765-4978-b3fa-410912ee60e7.gif)
+![bitmap](https://user-images.githubusercontent.com/5248102/223867256-f2c29bd6-403a-422f-bca0-c64fc502dfe1.png)
 
 ## Setup
 Install the dependencies. This package depends on gdal, to read georeferenced images and GeoTIFF files.
