@@ -18,6 +18,7 @@
 #include <std_srvs/Empty.h>
 
 #include <mavros_msgs/SetMode.h>
+#include <planner_msgs/SetService.h>
 #include <planner_msgs/SetString.h>
 #include <planner_msgs/SetVector3.h>
 
@@ -64,6 +65,7 @@ void PlanningPanel::createLayout() {
   goal_altitude_editor_ = new QLineEdit;
   set_goal_button_ = new QPushButton("Update Goal");
   set_start_button_ = new QPushButton("Update Start");
+  set_current_loiter_button_ = new QPushButton("Loiter Start");
   trigger_planning_button_ = new QPushButton("Plan");
   update_path_button_ = new QPushButton("Update Path");
   planning_budget_editor_ = new QLineEdit;
@@ -72,7 +74,8 @@ void PlanningPanel::createLayout() {
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
   service_layout->addWidget(new QLabel("Goal Altitude:"), 1, 0, 1, 1);
-  service_layout->addWidget(goal_altitude_editor_, 1, 1, 1, 1);
+  // service_layout->addWidget(goal_altitude_editor_, 1, 1, 1, 1);
+  service_layout->addWidget(set_current_loiter_button_, 1, 1, 1, 1);
   service_layout->addWidget(set_start_button_, 1, 2, 1, 1);
   service_layout->addWidget(set_goal_button_, 1, 3, 1, 1);
   service_layout->addWidget(new QLabel("Planning budget:"), 2, 0, 1, 1);
@@ -98,6 +101,7 @@ void PlanningPanel::createLayout() {
   connect(set_goal_button_, SIGNAL(released()), this, SLOT(setGoalService()));
   connect(update_path_button_, SIGNAL(released()), this, SLOT(setPathService()));
   connect(set_start_button_, SIGNAL(released()), this, SLOT(setStartService()));
+  connect(set_current_loiter_button_, SIGNAL(released()), this, SLOT(setStartLoiterService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
   connect(planning_budget_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlanningBudget()));
   connect(trigger_planning_button_, SIGNAL(released()), this, SLOT(setPlanningBudgetService()));
@@ -472,6 +476,23 @@ void PlanningPanel::setStartService() {
     // if ()
     req.request.vector.z = goal_altitude;
 
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::setStartLoiterService() {
+  std::string service_name = "/terrain_planner/set_start_loiter";
+
+  std::thread t([service_name] {
+    planner_msgs::SetService req;
     try {
       ROS_DEBUG_STREAM("Service name: " << service_name);
       if (!ros::service::call(service_name, req)) {

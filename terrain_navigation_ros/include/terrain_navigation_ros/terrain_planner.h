@@ -50,6 +50,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <mavros_msgs/CameraImageCaptured.h>
 #include <mavros_msgs/State.h>
+#include <mavros_msgs/WaypointList.h>
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 
@@ -64,6 +65,7 @@
 #include "terrain_planner/primitive_planner.h"
 #include "terrain_planner/visualization.h"
 
+#include <planner_msgs/SetService.h>
 #include <planner_msgs/SetString.h>
 #include <planner_msgs/SetVector3.h>
 
@@ -89,10 +91,12 @@ class TerrainPlanner {
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
   void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
   void mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
+  void mavMissionCallback(const mavros_msgs::WaypointListPtr &msg);
   bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   bool setStartCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
+  bool setStartLoiterCallback(planner_msgs::SetService::Request &req, planner_msgs::SetService::Response &res);
   bool setPlanningCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   bool setPathCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
@@ -139,6 +143,7 @@ class TerrainPlanner {
   ros::Subscriber mavpose_sub_;
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;
+  ros::Subscriber mavmission_sub_;
   ros::Subscriber global_origin_sub_;
   ros::Subscriber image_captured_sub_;
 
@@ -146,6 +151,7 @@ class TerrainPlanner {
   ros::ServiceServer setmaxaltitude_serviceserver_;
   ros::ServiceServer setgoal_serviceserver_;
   ros::ServiceServer setstart_serviceserver_;
+  ros::ServiceServer setstartloiter_serviceserver_;
   ros::ServiceServer setplanning_serviceserver_;
   ros::ServiceServer updatepath_serviceserver_;
   ros::ServiceClient msginterval_serviceclient_;
@@ -188,6 +194,7 @@ class TerrainPlanner {
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
   Eigen::Vector3d last_planning_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d previous_start_position_{Eigen::Vector3d::Zero()};
+  Eigen::Vector3d mission_loiter_center_{Eigen::Vector3d::Zero()};
 
   std::string map_path_{};
   std::string map_color_path_{};

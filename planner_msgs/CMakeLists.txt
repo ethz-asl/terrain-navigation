@@ -15,6 +15,7 @@ add_service_files(
   FILES
   SetString.srv
   SetVector3.srv
+  SetService.srv
 )
 
 generate_messages(DEPENDENCIES geometry_msgs std_msgs)

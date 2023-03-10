@@ -43,6 +43,7 @@
 #include "terrain_navigation_ros/geo_conversions.h"
 
 #include <grid_map_msgs/GridMap.h>
+#include <mavros_msgs/CommandCode.h>
 #include <mavros_msgs/CommandLong.h>
 #include <mavros_msgs/GlobalPositionTarget.h>
 #include <mavros_msgs/PositionTarget.h>
@@ -69,6 +70,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   candidate_start_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_start_marker", 1, true);
   mavstate_sub_ =
       nh_.subscribe("mavros/state", 1, &TerrainPlanner::mavstateCallback, this, ros::TransportHints().tcpNoDelay());
+  mavmission_sub_ = nh_.subscribe("mavros/mission/waypoints", 1, &TerrainPlanner::mavMissionCallback, this,
+                                  ros::TransportHints().tcpNoDelay());
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
   global_position_setpoint_pub_ = nh_.advertise<mavros_msgs::GlobalPositionTarget>("mavros/setpoint_raw/global", 1);
   path_target_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 1);
@@ -93,6 +96,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
       nh_.advertiseService("/terrain_planner/set_max_altitude", &TerrainPlanner::setMaxAltitudeCallback, this);
   setgoal_serviceserver_ = nh_.advertiseService("/terrain_planner/set_goal", &TerrainPlanner::setGoalCallback, this);
   setstart_serviceserver_ = nh_.advertiseService("/terrain_planner/set_start", &TerrainPlanner::setStartCallback, this);
+  setstartloiter_serviceserver_ =
+      nh_.advertiseService("/terrain_planner/set_start_loiter", &TerrainPlanner::setStartLoiterCallback, this);
   setplanning_serviceserver_ =
       nh_.advertiseService("/terrain_planner/trigger_planning", &TerrainPlanner::setPlanningCallback, this);
   updatepath_serviceserver_ = nh_.advertiseService("/terrain_planner/set_path", &TerrainPlanner::setPathCallback, this);
@@ -708,6 +713,37 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStam
   local_origin_longitude_ = lon;
 }
 
+void TerrainPlanner::mavMissionCallback(const mavros_msgs::WaypointListPtr &msg) {
+  for (auto &waypoint : msg->waypoints) {
+    if (waypoint.is_current) {
+      if (waypoint.command == mavros_msgs::CommandCode::NAV_LOITER_UNLIM) {
+        // Get Loiter position
+        std::cout << "NAV Loiter Center" << std::endl;
+        std::cout << " - x_lat : " << waypoint.x_lat << std::endl;
+        std::cout << " - y_long: " << waypoint.y_long << std::endl;
+        std::cout << " - alt   : " << waypoint.z_alt << std::endl;
+        std::cout << " - Radius: " << waypoint.param3 << std::endl;
+        double waypoint_altitude = waypoint.z_alt + local_origin_altitude_;
+        Eigen::Vector3d lv03_mission_loiter_center;
+        GeoConversions::forward(waypoint.x_lat, waypoint.y_long, waypoint_altitude, lv03_mission_loiter_center.x(),
+                                lv03_mission_loiter_center.y(), lv03_mission_loiter_center.z());
+        std::cout << "mission_loiter_center_: " << lv03_mission_loiter_center.transpose() << std::endl;
+        ESPG map_coordinate;
+        Eigen::Vector3d map_origin;
+        terrain_map_->getGlobalOrigin(map_coordinate, map_origin);
+
+        if (map_coordinate == ESPG::WGS84) {
+          GeoConversions::forward(map_origin(0), map_origin(1), map_origin(2), map_origin.x(), map_origin.y(),
+                                  map_origin.z());
+        }
+        mission_loiter_center_ = lv03_mission_loiter_center - map_origin;
+        std::cout << "mission_loiter_center_: " << mission_loiter_center_.transpose() << std::endl;
+      }
+      break;
+    }
+  }
+}
+
 void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg) {
   // Publish recorded viewpoints
   /// TODO: Transform image tag into local position
@@ -794,6 +830,24 @@ bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, pl
   bool is_safe = validatePosition(terrain_map_->getGridMap(), candidate_start, new_start);
   if (is_safe) {
     start_pos_ = new_start;
+    res.success = true;
+    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
+    return true;
+  } else {
+    res.success = false;
+    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0));
+    return false;
+  }
+}
+
+bool TerrainPlanner::setStartLoiterCallback(planner_msgs::SetService::Request &req,
+                                            planner_msgs::SetService::Response &res) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
+  std::cout << "[TerrainPlanner] Current Loiter start: " << mission_loiter_center_.transpose() << std::endl;
+  Eigen::Vector3d new_start;
+  bool is_safe = validatePosition(terrain_map_->getGridMap(), mission_loiter_center_, new_start);
+  if (is_safe) {
+    start_pos_ = mission_loiter_center_;
     res.success = true;
     publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
     return true;
