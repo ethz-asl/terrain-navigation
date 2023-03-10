@@ -327,10 +327,10 @@ each planner."""
     ax.set_xlabel('time (s)')
     ax.set_ylabel(attribute.replace('_', ' '))
     plannerNames = []
-    fig1 = plt.figure('Best Cost', figsize=(5, 4))
+    fig1 = plt.figure('Best Cost', figsize=(5, 3.5))
     ax1 = fig1.add_subplot(2, 1, 1)
     plt.tight_layout()
-    ax2 = fig1.add_subplot(2, 1, 2)
+    ax2 = fig1.add_subplot(2, 1, 2, sharex=ax1)
     if (attribute=='best_cost'):
         for planner in planners:
             cur.execute("""SELECT count(progress.%s) FROM progress INNER JOIN runs
@@ -376,27 +376,31 @@ each planner."""
                 ax2.plot(times, success_rate)
                 ax2.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
                 ax2.set_ylim([0.0, 1.1])
+
     
         # Best cost plot
         # ax1.legend(plannerNames)
         # ax1.set_xlabel('Time [s]')
         ax1.set_ylabel('Solution Length [km]')
         ax1.grid(True)
+        ax1.set_xscale('log')
         ax1.set_xlim([0.0, 500.0])
         ax1.tick_params(axis='x',          # changes apply to the x-axis
             which='both',      # both major and minor ticks are affected
             bottom=False,      # ticks along the bottom edge are off
             top=False,         # ticks along the top edge are off
             labelbottom=False)
+        ax1.legend(plannerNames, loc='upper left')
 
         # Success Rate plot
-        ax2.legend(plannerNames, loc='lower right')
         ax2.set_xlabel('Time [s]')
         ax2.set_ylabel('Success Rate')
         ax2.grid(True)
+        # ax2.set_xscale('log')
         ax2.set_xlim([0.0, 500.0])
         fig1.tight_layout()
         # fig2.tight_layout()
+        plt.tight_layout()
         plt.show()
 
 def plotStatistics(dbname):
