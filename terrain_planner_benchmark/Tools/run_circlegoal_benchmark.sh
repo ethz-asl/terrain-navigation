@@ -10,8 +10,8 @@ source ~/catkin_ws/devel/setup.bash
 
 
 touch $OUTPUT_PATH/sargans.log
-roslaunch terrain_planner_benchmark benchmark.launch location:="sargans" runs:=${NUM_RUNS} > ${OUTPUT_PATH}/sargans.log
+roslaunch terrain_planner_benchmark goaltype_benchmark.launch location:="sargans" runs:=${NUM_RUNS} > ${OUTPUT_PATH}/sargans.log
 touch $OUTPUT_PATH/dischma_valley.log
-roslaunch terrain_planner_benchmark benchmark.launch location:="dischma_valley" runs:=${NUM_RUNS} > ${OUTPUT_PATH}/dischma_valley.log
+roslaunch terrain_planner_benchmark goaltype_benchmark.launch location:="dischma_valley" runs:=${NUM_RUNS} > ${OUTPUT_PATH}/dischma_valley.log
 touch $OUTPUT_PATH/gotthard.log
-roslaunch terrain_planner_benchmark benchmark.launch location:="gotthard" runs:=${NUM_RUNS} > ${OUTPUT_PATH}/gotthard.log
+roslaunch terrain_planner_benchmark goaltype_benchmark.launch location:="gotthard" runs:=${NUM_RUNS} > ${OUTPUT_PATH}/gotthard.log
