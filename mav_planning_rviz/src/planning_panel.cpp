@@ -66,6 +66,7 @@ void PlanningPanel::createLayout() {
   set_goal_button_ = new QPushButton("Update Goal");
   set_start_button_ = new QPushButton("Update Start");
   set_current_loiter_button_ = new QPushButton("Loiter Start");
+  set_current_segment_button_ = new QPushButton("Current Segment");
   trigger_planning_button_ = new QPushButton("Plan");
   update_path_button_ = new QPushButton("Update Path");
   planning_budget_editor_ = new QLineEdit;
@@ -75,18 +76,21 @@ void PlanningPanel::createLayout() {
   controller_button_ = new QPushButton("Send To Controller");
   service_layout->addWidget(new QLabel("Goal Altitude:"), 1, 0, 1, 1);
   // service_layout->addWidget(goal_altitude_editor_, 1, 1, 1, 1);
-  service_layout->addWidget(set_current_loiter_button_, 1, 1, 1, 1);
   service_layout->addWidget(set_start_button_, 1, 2, 1, 1);
   service_layout->addWidget(set_goal_button_, 1, 3, 1, 1);
-  service_layout->addWidget(new QLabel("Planning budget:"), 2, 0, 1, 1);
-  service_layout->addWidget(planning_budget_editor_, 2, 1, 1, 1);
-  service_layout->addWidget(trigger_planning_button_, 2, 2, 1, 2);
-  service_layout->addWidget(update_path_button_, 3, 0, 1, 4);
-  service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 4, 0, 1, 1);
-  service_layout->addWidget(max_altitude_button_enable_, 4, 1, 1, 1);
-  service_layout->addWidget(max_altitude_button_disable_, 4, 2, 1, 1);
-  service_layout->addWidget(planner_service_button_, 5, 0, 1, 2);
-  service_layout->addWidget(waypoint_button_, 5, 2, 1, 2);
+
+  service_layout->addWidget(set_current_loiter_button_, 2, 2, 1, 1);
+  service_layout->addWidget(set_current_segment_button_, 2, 3, 1, 1);
+
+  service_layout->addWidget(new QLabel("Planning budget:"), 3, 0, 1, 1);
+  service_layout->addWidget(planning_budget_editor_, 3, 1, 1, 1);
+  service_layout->addWidget(trigger_planning_button_, 3, 2, 1, 2);
+  service_layout->addWidget(update_path_button_, 4, 0, 1, 4);
+  service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 5, 0, 1, 1);
+  service_layout->addWidget(max_altitude_button_enable_, 5, 1, 1, 1);
+  service_layout->addWidget(max_altitude_button_disable_, 5, 2, 1, 1);
+  service_layout->addWidget(planner_service_button_, 6, 0, 1, 2);
+  service_layout->addWidget(waypoint_button_, 6, 2, 1, 2);
 
   // First the names, then the start/goal, then service buttons.
   QVBoxLayout* layout = new QVBoxLayout;
@@ -102,6 +106,7 @@ void PlanningPanel::createLayout() {
   connect(update_path_button_, SIGNAL(released()), this, SLOT(setPathService()));
   connect(set_start_button_, SIGNAL(released()), this, SLOT(setStartService()));
   connect(set_current_loiter_button_, SIGNAL(released()), this, SLOT(setStartLoiterService()));
+  connect(set_current_segment_button_, SIGNAL(released()), this, SLOT(setCurrentSegmentService()));
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
   connect(planning_budget_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlanningBudget()));
   connect(trigger_planning_button_, SIGNAL(released()), this, SLOT(setPlanningBudgetService()));
@@ -490,6 +495,23 @@ void PlanningPanel::setStartService() {
 
 void PlanningPanel::setStartLoiterService() {
   std::string service_name = "/terrain_planner/set_start_loiter";
+
+  std::thread t([service_name] {
+    planner_msgs::SetService req;
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::setCurrentSegmentService() {
+  std::string service_name = "/terrain_planner/set_current_segment";
 
   std::thread t([service_name] {
     planner_msgs::SetService req;

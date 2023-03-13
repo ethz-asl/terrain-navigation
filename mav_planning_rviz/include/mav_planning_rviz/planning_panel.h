@@ -60,6 +60,7 @@ class PlanningPanel : public rviz::Panel {
   void setPlanningBudgetService();
   void setStartService();
   void setStartLoiterService();
+  void setCurrentSegmentService();
   void setPathService();
   void publishWaypoint();
   void publishToController();
@@ -97,6 +98,7 @@ class PlanningPanel : public rviz::Panel {
   QPushButton* set_goal_button_;
   QPushButton* set_start_button_;
   QPushButton* set_current_loiter_button_;
+  QPushButton* set_current_segment_button_;
   QPushButton* trigger_planning_button_;
   QPushButton* update_path_button_;
   QPushButton* waypoint_button_;

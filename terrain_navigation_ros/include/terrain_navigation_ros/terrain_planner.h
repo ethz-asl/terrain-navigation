@@ -92,14 +92,15 @@ class TerrainPlanner {
   void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
   void mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
   void mavMissionCallback(const mavros_msgs::WaypointListPtr &msg);
+  void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
   bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
   bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   bool setStartCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
+  bool setCurrentSegmentCallback(planner_msgs::SetService::Request &req, planner_msgs::SetService::Response &res);
   bool setStartLoiterCallback(planner_msgs::SetService::Request &req, planner_msgs::SetService::Response &res);
   bool setPlanningCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
   bool setPathCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
-  void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
 
   void MapPublishOnce();
   void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
@@ -154,6 +155,7 @@ class TerrainPlanner {
   ros::ServiceServer setstartloiter_serviceserver_;
   ros::ServiceServer setplanning_serviceserver_;
   ros::ServiceServer updatepath_serviceserver_;
+  ros::ServiceServer setcurrentsegment_serviceserver_;
   ros::ServiceClient msginterval_serviceclient_;
 
   ros::Timer cmdloop_timer_, statusloop_timer_;

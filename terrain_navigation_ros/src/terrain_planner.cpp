@@ -96,6 +96,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
       nh_.advertiseService("/terrain_planner/set_max_altitude", &TerrainPlanner::setMaxAltitudeCallback, this);
   setgoal_serviceserver_ = nh_.advertiseService("/terrain_planner/set_goal", &TerrainPlanner::setGoalCallback, this);
   setstart_serviceserver_ = nh_.advertiseService("/terrain_planner/set_start", &TerrainPlanner::setStartCallback, this);
+  setcurrentsegment_serviceserver_ =
+      nh_.advertiseService("/terrain_planner/set_current_segment", &TerrainPlanner::setCurrentSegmentCallback, this);
   setstartloiter_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_start_loiter", &TerrainPlanner::setStartLoiterCallback, this);
   setplanning_serviceserver_ =
@@ -838,6 +840,16 @@ bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, pl
     publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0));
     return false;
   }
+}
+
+bool TerrainPlanner::setCurrentSegmentCallback(planner_msgs::SetService::Request &req,
+                                               planner_msgs::SetService::Response &res) {
+  const std::lock_guard<std::mutex> lock(goal_mutex_);
+  /// TODO: Get current segment
+  /// TODO: Update start from current segment
+  /// TODO: Replace reference segment
+  res.success = false;
+  return true;
 }
 
 bool TerrainPlanner::setStartLoiterCallback(planner_msgs::SetService::Request &req,
