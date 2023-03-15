@@ -334,6 +334,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
         maneuver_library_->Solve();
         reference_primitive_ = maneuver_library_->getBestPrimitive();
       }
+      publishPathSegments(path_segment_pub_, reference_primitive_);
       break;
     }
     case PLANNER_MODE::GLOBAL: {
@@ -368,7 +369,6 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
 
   double planner_time = planner_profiler_->toc();
   publishTrajectory(reference_primitive_.position());
-  publishPathSegments(path_segment_pub_, reference_primitive_);
   MapPublishOnce();
   // publishGoal(goal_pub_, goal_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
 
@@ -591,11 +591,11 @@ void TerrainPlanner::publishPathSegments(ros::Publisher &pub, TrajectorySegments
 }
 
 void TerrainPlanner::publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, const double radius,
-                                 Eigen::Vector3d color) {
+                                 Eigen::Vector3d color, std::string name_space) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
-  marker.ns = "goal";
+  marker.ns = name_space;
   marker.id = 1;
   marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.action = visualization_msgs::Marker::ADD;
@@ -815,11 +815,11 @@ bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, pla
     // mcts_planner_->setGoal(new_goal);
     // problem_updated_ = true;
     res.success = true;
-    publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
+    publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "goal");
     return true;
   } else {
     res.success = false;
-    publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0));
+    publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0), "goal");
     return false;
   }
 }
@@ -833,11 +833,11 @@ bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, pl
   if (is_safe) {
     start_pos_ = new_start;
     res.success = true;
-    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
+    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
     return true;
   } else {
     res.success = false;
-    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0));
+    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
     return false;
   }
 }
@@ -845,9 +845,33 @@ bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, pl
 bool TerrainPlanner::setCurrentSegmentCallback(planner_msgs::SetService::Request &req,
                                                planner_msgs::SetService::Response &res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
-  /// TODO: Get current segment
-  /// TODO: Update start from current segment
-  /// TODO: Replace reference segment
+  /// TODO: Get center of the last segment of the reference path
+  if (!reference_primitive_.segments.empty()) {
+    auto last_segment = reference_primitive_.lastSegment();
+    if (last_segment.is_periodic) {
+      /// TODO: Get the center of the circle
+      Eigen::Vector3d segment_start = last_segment.states.front().position;
+      Eigen::Vector3d segment_start_tangent = (last_segment.states.front().velocity).normalized();
+      auto arc_center =
+          Trajectory::getArcCenter(segment_start.head(2), segment_start_tangent.head(2), last_segment.curvature);
+      Eigen::Vector3d candidate_start = Eigen::Vector3d(arc_center(0), arc_center(1), 0.0);
+      Eigen::Vector3d new_start;
+      bool is_safe = validatePosition(terrain_map_->getGridMap(), candidate_start, new_start);
+      if (is_safe) {
+        start_pos_ = new_start;
+        res.success = true;
+        publishGoal(candidate_start_pub_, new_start, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
+        return true;
+      } else {
+        res.success = false;
+        publishGoal(candidate_start_pub_, new_start, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
+        return false;
+      }
+    } else {
+      std::cout << "[TerrainPlanner] Last segment is not periodic" << std::endl;
+    }
+  }
+  std::cout << "[TerrainPlanner] Could not select current segment, reference is empty" << std::endl;
   res.success = false;
   return true;
 }
@@ -861,11 +885,11 @@ bool TerrainPlanner::setStartLoiterCallback(planner_msgs::SetService::Request &r
   if (is_safe) {
     start_pos_ = mission_loiter_center_;
     res.success = true;
-    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
+    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
     return true;
   } else {
     res.success = false;
-    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0));
+    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
     return false;
   }
 }
