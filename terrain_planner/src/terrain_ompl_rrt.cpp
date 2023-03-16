@@ -10,6 +10,7 @@ TerrainOmplRrt::~TerrainOmplRrt() {
 
 void TerrainOmplRrt::configureProblem() {
   problem_setup_->clear();
+  problem_setup_->clearStartStates();
 
   problem_setup_->setDefaultPlanner();
   problem_setup_->setDefaultObjective();
