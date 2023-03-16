@@ -12,8 +12,9 @@ namespace ompl {
 
 class TerrainValidityChecker : public base::StateValidityChecker {
  public:
-  TerrainValidityChecker(const base::SpaceInformationPtr& space_info, const grid_map::GridMap& map)
-      : base::StateValidityChecker(space_info), map_(map) {}
+  TerrainValidityChecker(const base::SpaceInformationPtr& space_info, const grid_map::GridMap& map,
+                         bool check_max_altitude)
+      : base::StateValidityChecker(space_info), map_(map), check_collision_max_altitude_(check_max_altitude) {}
 
   /**
    * @brief State validity check
@@ -46,6 +47,7 @@ class TerrainValidityChecker : public base::StateValidityChecker {
 
  protected:
   const grid_map::GridMap& map_;
+  bool check_collision_max_altitude_{true};
 };
 
 class TerrainStateSampler : public base::StateSampler {

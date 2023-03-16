@@ -12,7 +12,12 @@ bool TerrainValidityChecker::isValid(const base::State* state) const {
 }
 
 bool TerrainValidityChecker::checkCollision(const Eigen::Vector3d state) const {
-  return isInCollision("distance_surface", state, true) | isInCollision("max_elevation", state, false);
+  bool in_collision = isInCollision("distance_surface", state, true);
+  bool in_collision_max{false};
+  if (check_collision_max_altitude_) {
+    in_collision_max = isInCollision("max_elevation", state, false);
+  }
+  return in_collision | in_collision_max;
 }
 
 bool TerrainValidityChecker::isInCollision(const std::string& layer, const Eigen::Vector3d& position,

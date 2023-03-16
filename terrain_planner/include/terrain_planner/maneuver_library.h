@@ -89,7 +89,6 @@ class ManeuverLibrary {
    */
   bool hasTerrainMap() { return bool(terrain_map_); };
   Eigen::Vector3d setTerrainRelativeGoalPosition(const Eigen::Vector3d& pos);
-  void setMaxAltitudeConstraint(bool max_altitude_constraint) { check_max_altitude_ = max_altitude_constraint; }
   void setGoalPosition(const Eigen::Vector3d& pos) { goal_pos_ = pos; };
   bool Solve();
   grid_map::GridMap& getGridMap() { return terrain_map_->getGridMap(); };
@@ -140,7 +139,6 @@ class ManeuverLibrary {
   std::shared_ptr<Primitive> motion_primitive_tree_;
   int num_segments{3};
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 100.0)};  // Terrain relative goal position
-  bool check_max_altitude_{true};
   double planning_horizon_{10.0};
   double cruise_speed_{20.0};
   double goal_terrain_altitude_{100.0};

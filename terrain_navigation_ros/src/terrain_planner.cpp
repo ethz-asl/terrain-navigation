@@ -797,9 +797,10 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
 
 bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &req,
                                             planner_msgs::SetString::Response &res) {
-  bool set_max_alitude_constraint = req.align;
-  std::cout << "[TerrainPlanner] Max altitude constraint configured: " << set_max_alitude_constraint << std::endl;
-  maneuver_library_->setMaxAltitudeConstraint(set_max_alitude_constraint);
+  bool check_max_altitude = req.align;
+  std::cout << "[TerrainPlanner] Max altitude constraint configured: " << check_max_altitude << std::endl;
+  global_planner_->setMaxAltitudeCollisionChecks(check_max_altitude);
+  // maneuver_library_->setMaxAltitudeConstraint(set_max_alitude_constraint);
   res.success = true;
   return true;
 }
@@ -908,26 +909,27 @@ bool TerrainPlanner::setPlanningCallback(planner_msgs::SetVector3::Request &req,
 
 bool TerrainPlanner::setPathCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
-  planner_time_budget_ = req.vector.z;
-  std::cout << "[TerrainPlanner] Planning budget: " << planner_time_budget_ << std::endl;
-  problem_updated_ = true;
-  plan_time_ = ros::Time::now();
-  // Add initial loiter
-  Eigen::Vector3d start_position = candidate_primitive_.firstSegment().states.front().position;
-  Eigen::Vector3d start_velocity = candidate_primitive_.firstSegment().states.front().velocity;
-  Trajectory start_loiter;
-  generateCircle(start_position, start_velocity, start_pos_, start_loiter);
-  candidate_primitive_.prependSegment(start_loiter);
 
-  // Add terminal loiter
-  Eigen::Vector3d end_position = candidate_primitive_.lastSegment().states.back().position;
-  Eigen::Vector3d end_velocity = candidate_primitive_.lastSegment().states.back().velocity;
-  Trajectory terminal_loiter;
-  generateCircle(end_position, end_velocity, goal_pos_, terminal_loiter);
-  candidate_primitive_.appendSegment(terminal_loiter);
+  if (!candidate_primitive_.segments.empty()) {
+    // Add initial loiter
+    Eigen::Vector3d start_position = candidate_primitive_.firstSegment().states.front().position;
+    Eigen::Vector3d start_velocity = candidate_primitive_.firstSegment().states.front().velocity;
+    Trajectory start_loiter;
+    generateCircle(start_position, start_velocity, start_pos_, start_loiter);
+    candidate_primitive_.prependSegment(start_loiter);
 
-  reference_primitive_ = candidate_primitive_;
-  res.success = true;
+    // Add terminal loiter
+    Eigen::Vector3d end_position = candidate_primitive_.lastSegment().states.back().position;
+    Eigen::Vector3d end_velocity = candidate_primitive_.lastSegment().states.back().velocity;
+    Trajectory terminal_loiter;
+    generateCircle(end_position, end_velocity, goal_pos_, terminal_loiter);
+    candidate_primitive_.appendSegment(terminal_loiter);
+
+    reference_primitive_ = candidate_primitive_;
+    res.success = true;
+  } else {
+    res.success = false;
+  }
   return true;
 }
 

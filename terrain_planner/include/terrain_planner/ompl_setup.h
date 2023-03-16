@@ -71,8 +71,9 @@ class OmplSetup : public geometric::SimpleSetup {
     si_->setStateValidityCheckingResolution(resolution);
   }
 
-  void setTerrainCollisionChecking(const grid_map::GridMap& map) {
-    std::shared_ptr<TerrainValidityChecker> validity_checker(new TerrainValidityChecker(getSpaceInformation(), map));
+  void setTerrainCollisionChecking(const grid_map::GridMap& map, bool check_max_altitude) {
+    std::shared_ptr<TerrainValidityChecker> validity_checker(
+        new TerrainValidityChecker(getSpaceInformation(), map, check_max_altitude));
 
     setStateValidityChecker(base::StateValidityCheckerPtr(validity_checker));
   }

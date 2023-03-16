@@ -55,12 +55,48 @@ class TerrainOmplRrt {
    */
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal,
                     const Eigen::Vector3d& goal_vel);
+
+  /**
+   * @brief Set the Bounds of the statespace for the planner
+   *
+   * @param lower_bound lower bo
+   * @param upper_bound
+   */
   void setBounds(const Eigen::Vector3d& lower_bound, const Eigen::Vector3d& upper_bound) {
     lower_bound_ = lower_bound;
     upper_bound_ = upper_bound;
   }
+
+  /**
+   * @brief Set the Bounds of the statespace for the planner using the map
+   *
+   * @param map
+   */
   void setBoundsFromMap(const grid_map::GridMap& map);
+
+  /**
+   * @brief Set the Map
+   *
+   * @param map
+   */
   void setMap(std::shared_ptr<TerrainMap> map) { map_ = std::move(map); }
+
+  /**
+   * @brief Set the Max Altitude Collision Check
+   *
+   * @param check_max_altitude If true, enables the maximum altitude collision checks
+   */
+  void setMaxAltitudeCollisionChecks(bool check_max_altitude) { check_max_altitude_ = check_max_altitude; }
+
+  /**
+   * @brief Solve the planning problem for a given time budget, and return a TerrainSegments object if an exact solution
+   * is found
+   *
+   * @param time_budget [s] time the planner should use for planning
+   * @param path
+   * @return true Found exact solution
+   * @return false Did not find an exact solution
+   */
   bool Solve(double time_budget, TrajectorySegments& path);
   bool Solve(double time_budget, std::vector<Eigen::Vector3d>& path);
   double getSegmentCurvature(std::shared_ptr<ompl::OmplSetup> problem_setup,
@@ -109,6 +145,7 @@ class TerrainOmplRrt {
   Eigen::Vector3d lower_bound_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d upper_bound_{Eigen::Vector3d::Zero()};
   double solve_duration_{0.0};
+  bool check_max_altitude_{true};
 };
 
 #endif

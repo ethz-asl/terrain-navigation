@@ -148,9 +148,7 @@ bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> &primitive,
   Trajectory &current_trajectory = primitive->segment;
   valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "distance_surface", true);
   // Check collision with maximum terrain altitude
-  if (check_max_altitude_) {
-    valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "max_elevation", false);
-  }
+  valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "max_elevation", false);
   primitive->validity = valid_segment;
 
   // Check recursively if there the leaf has a valid child
