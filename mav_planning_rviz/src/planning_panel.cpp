@@ -75,7 +75,7 @@ void PlanningPanel::createLayout() {
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
   service_layout->addWidget(new QLabel("Goal Altitude:"), 1, 0, 1, 1);
-  // service_layout->addWidget(goal_altitude_editor_, 1, 1, 1, 1);
+  service_layout->addWidget(goal_altitude_editor_, 1, 1, 1, 1);
   service_layout->addWidget(set_start_button_, 1, 2, 1, 1);
   service_layout->addWidget(set_goal_button_, 1, 3, 1, 1);
 
