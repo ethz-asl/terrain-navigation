@@ -189,7 +189,8 @@ class Trajectory {
       // Get Path Progress
       theta = getLineProgress(position, segment_start, segment_end);
       tangent = (segment_end - segment_start).normalized();
-      closest_point = theta * (segment_end - segment_start) + segment_start;
+      // Closest point should not be outside segment - constrain theta to [0.0, 1.0]
+      closest_point = std::max(std::min(1.0, theta), 0.0) * (segment_end - segment_start) + segment_start;
     } else {
       // Compute closest point on a Arc segment
       Eigen::Vector2d position_2d(position(0), position(1));
@@ -217,11 +218,10 @@ class Trajectory {
       Eigen::Vector2d error_vector = (closest_point_2d - arc_center).normalized();  // Position to error vector
       tangent = Eigen::Vector3d((curvature / std::abs(curvature)) * -error_vector(1),
                                 (curvature / std::abs(curvature)) * error_vector(0), 0.0);
-      /// TODO: This is a workaround for the TECS height tracking
-      double altitude_correction = K_z_ * (position(2) - closest_point(2));
-      tangent(2) =
-          std::min(std::max(altitude_correction - climb_rate, max_climb_rate_control_), max_sink_rate_control_);
     }
+    /// TODO: This is a workaround for the TECS height tracking
+    double altitude_correction = K_z_ * (position(2) - closest_point(2));
+    tangent(2) = std::min(std::max(altitude_correction - climb_rate, max_climb_rate_control_), max_sink_rate_control_);
     return theta;
   }
 

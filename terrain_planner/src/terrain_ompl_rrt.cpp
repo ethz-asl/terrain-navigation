@@ -48,7 +48,7 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
     start_ompl->setX(start_pos(0) + radius * std::cos(theta));
     start_ompl->setY(start_pos(1) + radius * std::sin(theta));
     start_ompl->setZ(start_pos(2));
-    double start_yaw = theta + M_PI_2;
+    double start_yaw = theta - M_PI_2;
     wrap_pi(start_yaw);
     start_ompl->setYaw(start_yaw);
     problem_setup_->addStartState(start_ompl);
@@ -292,6 +292,7 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
         Trajectory trajectory;
         trajectory.curvature = getSegmentCurvature(problem_setup_, dubins_path, start_idx);
         ompl::base::State* state = problem_setup_->getStateSpace()->allocState();
+        trajectory.climb_rate = cruise_speed_ * std::sin(dubins_path.getGamma());
         double yaw;
         double track_progress{0.0};
         for (double t = progress; t <= progress + segment_progress; t = t + dt) {

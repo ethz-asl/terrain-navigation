@@ -145,6 +145,7 @@ class TerrainOmplRrt {
   Eigen::Vector3d lower_bound_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d upper_bound_{Eigen::Vector3d::Zero()};
   double solve_duration_{0.0};
+  double cruise_speed_{20.0};
   bool check_max_altitude_{true};
 };
 
