@@ -129,11 +129,12 @@ visualization_msgs::Marker utility2MarkerMsg(const double utility, const Eigen::
 }
 
 visualization_msgs::Marker vector2ArrowsMsg(const Eigen::Vector3d &position, const Eigen::Vector3d &normal, int id,
-                                            Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0)) {
+                                            Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0),
+                                            const std::string marker_namespace = "normals") {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
-  marker.ns = "normals";
+  marker.ns = marker_namespace;
   marker.id = id;
   marker.type = visualization_msgs::Marker::ARROW;
   marker.action = visualization_msgs::Marker::ADD;

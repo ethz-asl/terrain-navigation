@@ -293,7 +293,7 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
         Trajectory trajectory;
         trajectory.curvature = getSegmentCurvature(problem_setup_, dubins_path, start_idx);
         ompl::base::State* state = problem_setup_->getStateSpace()->allocState();
-        trajectory.climb_rate = cruise_speed_ * std::sin(dubins_path.getGamma());
+        trajectory.flightpath_angle = dubins_path.getGamma();
         double yaw;
         double track_progress{0.0};
         for (double t = progress; t <= progress + segment_progress; t = t + dt) {

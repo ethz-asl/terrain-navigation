@@ -172,9 +172,22 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         double altitude;
         GeoConversions::reverse(lv03_reference_position(0), lv03_reference_position(1), lv03_reference_position(2),
                                 latitude, longitude, altitude);
-        publishGlobalPositionSetpoints(global_position_setpoint_pub_, latitude, longitude, altitude, reference_tangent,
-                                       reference_curvature);
         publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
+
+        // Run additional altitude control
+        double K_z_ = 0.5;
+        double max_climb_rate_control_{-5.0};
+        double max_sink_rate_control_{5.0};
+        double altitude_correction = K_z_ * (vehicle_position_(2) - reference_position(2));
+        double climb_rate = cruise_speed_ * std::sin(current_segment.flightpath_angle);
+        Eigen::Vector3d velocity_reference = reference_tangent;
+
+        velocity_reference(2) =
+            std::min(std::max(altitude_correction - climb_rate, max_climb_rate_control_), max_sink_rate_control_);
+
+        publishGlobalPositionSetpoints(global_position_setpoint_pub_, latitude, longitude, altitude, velocity_reference,
+                                       reference_curvature);
+
         /// TODO: Trigger camera when viewpoint reached
         /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
         if (current_state_.mode == "OFFBOARD") {
@@ -511,29 +524,9 @@ void TerrainPlanner::publishVelocityMarker(const ros::Publisher &pub, const Eige
 
 void TerrainPlanner::publishReferenceMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
                                             const Eigen::Vector3d &velocity, const double curvature) {
-  visualization_msgs::Marker marker;
-  marker.header.stamp = ros::Time::now();
-  marker.type = visualization_msgs::Marker::ARROW;
-  marker.header.frame_id = "map";
-  marker.id = 0;
-  marker.ns = "reference";
-  marker.header.stamp = ros::Time::now();
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.scale.x = 20.0;
-  marker.scale.y = 4.0;
-  marker.scale.z = 4.0;
-  marker.color.a = 0.5;  // Don't forget to set the alpha!
-  marker.color.r = 0.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
-  marker.pose.position.x = position(0);
-  marker.pose.position.y = position(1);
-  marker.pose.position.z = position(2);
-  double yaw = std::atan2(velocity.y(), velocity.x());
-  marker.pose.orientation.w = std::cos(0.5 * yaw);
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = std::sin(0.5 * yaw);
+  Eigen::Vector3d scaled_velocity = 20.0 * velocity;
+  visualization_msgs::Marker marker =
+      vector2ArrowsMsg(position, scaled_velocity, 0, Eigen::Vector3d(0.0, 0.0, 1.0), "reference");
 
   pub.publish(marker);
 }

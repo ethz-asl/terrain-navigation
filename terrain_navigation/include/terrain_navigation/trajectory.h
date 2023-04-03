@@ -219,20 +219,18 @@ class Trajectory {
       tangent = Eigen::Vector3d((curvature / std::abs(curvature)) * -error_vector(1),
                                 (curvature / std::abs(curvature)) * error_vector(0), 0.0);
     }
-    /// TODO: This is a workaround for the TECS height tracking
-    double altitude_correction = K_z_ * (position(2) - closest_point(2));
-    tangent(2) = std::min(std::max(altitude_correction - climb_rate, max_climb_rate_control_), max_sink_rate_control_);
+
+    tangent(0) = std::cos(flightpath_angle) * tangent(0);
+    tangent(1) = std::cos(flightpath_angle) * tangent(1);
+    tangent(2) = std::sin(flightpath_angle);
     return theta;
   }
 
   std::vector<State> states;
   double curvature{0.0};
-  double climb_rate{0.0};
+  double flightpath_angle{0.0};
   double dt{0.0};
   double utility{0.0};
-  double K_z_ = 0.5;
-  double max_climb_rate_control_{-3.5};
-  double max_sink_rate_control_{2.0};
   bool viewed{false};
   bool reached{false};
   bool is_periodic{false};

@@ -255,7 +255,7 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
   double time = 0.0;
   const double current_yaw = std::atan2(-1.0 * current_vel(1), current_vel(0));
   const double climb_rate = rate(1);
-  trajectory.climb_rate = climb_rate;
+  trajectory.flightpath_angle = std::asin(climb_rate / cruise_speed_);
   /// TODO: Fix sign conventions for curvature
   trajectory.curvature = -rate(2) / cruise_speed_;
   trajectory.dt = dt;
