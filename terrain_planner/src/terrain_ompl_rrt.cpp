@@ -37,7 +37,8 @@ void TerrainOmplRrt::configureProblem() {
   planner_data_ = std::make_shared<ompl::base::PlannerData>(problem_setup_->getSpaceInformation());
 }
 
-void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal) {
+void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal,
+                                  double start_loiter_radius) {
   configureProblem();
   double radius = 66.6667;
   double delta_theta = 0.1;
@@ -48,7 +49,7 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
     start_ompl->setX(start_pos(0) + radius * std::cos(theta));
     start_ompl->setY(start_pos(1) + radius * std::sin(theta));
     start_ompl->setZ(start_pos(2));
-    double start_yaw = theta - M_PI_2;
+    double start_yaw = bool(start_loiter_radius > 0) ? theta - M_PI_2 : theta + M_PI_2;
     wrap_pi(start_yaw);
     start_ompl->setYaw(start_yaw);
     problem_setup_->addStartState(start_ompl);

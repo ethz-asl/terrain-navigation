@@ -701,6 +701,7 @@ void TerrainPlanner::mavMissionCallback(const mavros_msgs::WaypointListPtr &msg)
         std::cout << " - alt   : " << waypoint.z_alt << std::endl;
         std::cout << " - Radius: " << waypoint.param3 << std::endl;
         double waypoint_altitude = waypoint.z_alt + local_origin_altitude_;
+        const double loiter_radius = waypoint.param3;
         Eigen::Vector3d lv03_mission_loiter_center;
         GeoConversions::forward(waypoint.x_lat, waypoint.y_long, waypoint_altitude, lv03_mission_loiter_center.x(),
                                 lv03_mission_loiter_center.y(), lv03_mission_loiter_center.z());
@@ -714,6 +715,7 @@ void TerrainPlanner::mavMissionCallback(const mavros_msgs::WaypointListPtr &msg)
                                   map_origin.z());
         }
         mission_loiter_center_ = lv03_mission_loiter_center - map_origin;
+        mission_loiter_radius_ = loiter_radius;
         std::cout << "mission_loiter_center_: " << mission_loiter_center_.transpose() << std::endl;
       }
       break;
@@ -835,6 +837,8 @@ bool TerrainPlanner::setCurrentSegmentCallback(planner_msgs::SetService::Request
       bool is_safe = validatePosition(terrain_map_->getGridMap(), candidate_start, new_start);
       if (is_safe) {
         start_pos_ = new_start;
+        /// TODO: Curvature sign seems to be the opposite from mission items
+        start_loiter_radius_ = -1 / last_segment.curvature;
         res.success = true;
         publishGoal(candidate_start_pub_, new_start, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
         return true;
@@ -860,6 +864,7 @@ bool TerrainPlanner::setStartLoiterCallback(planner_msgs::SetService::Request &r
   bool is_safe = validatePosition(terrain_map_->getGridMap(), mission_loiter_center_, new_start);
   if (is_safe) {
     start_pos_ = mission_loiter_center_;
+    start_loiter_radius_ = mission_loiter_radius_;
     res.success = true;
     publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
     return true;
@@ -877,7 +882,7 @@ bool TerrainPlanner::setPlanningCallback(planner_msgs::SetVector3::Request &req,
   std::cout << "[TerrainPlanner] Planning budget: " << planner_time_budget_ << std::endl;
   problem_updated_ = true;
   plan_time_ = ros::Time::now();
-  global_planner_->setupProblem(start_pos_, goal_pos_);
+  global_planner_->setupProblem(start_pos_, goal_pos_, start_loiter_radius_);
   res.success = true;
   return true;
 }
