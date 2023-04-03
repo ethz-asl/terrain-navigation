@@ -150,8 +150,8 @@ visualization_msgs::Marker vector2ArrowsMsg(const Eigen::Vector3d &position, con
   points.push_back(tail);
 
   marker.points = points;
-  marker.scale.x = 1.0;
-  marker.scale.y = 2.0;
+  marker.scale.x = std::min(normal.norm(), 1.0);
+  marker.scale.y = std::min(normal.norm(), 2.0);
   marker.scale.z = 0.0;
   marker.color.a = 1.0;
   marker.color.r = color(0);

@@ -505,32 +505,7 @@ void TerrainPlanner::publishPositionSetpoints(const ros::Publisher &pub, const E
 
 void TerrainPlanner::publishVelocityMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
                                            const Eigen::Vector3d &velocity) {
-  visualization_msgs::Marker marker;
-  marker.header.stamp = ros::Time::now();
-  marker.type = visualization_msgs::Marker::ARROW;
-  marker.header.frame_id = "map";
-  marker.id = 0;
-  marker.ns = "velocity";
-
-  marker.header.stamp = ros::Time::now();
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.scale.x = velocity.norm();
-  marker.scale.y = 2.0;
-  marker.scale.z = 2.0;
-  marker.color.a = 0.5;  // Don't forget to set the alpha!
-  marker.color.r = 1.0;
-  marker.color.g = 0.0;
-  marker.color.b = 1.0;
-  marker.pose.position.x = position(0);
-  marker.pose.position.y = position(1);
-  marker.pose.position.z = position(2);
-  double yaw = std::atan2(velocity.y(), velocity.x());
-  double pitch = std::atan2(velocity.z(), velocity.x());
-  marker.pose.orientation.w = std::cos(0.5 * yaw);
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = std::sin(0.5 * yaw);
-
+  visualization_msgs::Marker marker = vector2ArrowsMsg(position, velocity, 0, Eigen::Vector3d(1.0, 0.0, 1.0));
   pub.publish(marker);
 }
 
