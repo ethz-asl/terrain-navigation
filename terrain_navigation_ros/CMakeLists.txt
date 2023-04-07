@@ -3,6 +3,10 @@ project(terrain_navigation_ros)
 add_definitions(-std=c++17)
 
 find_package(ompl REQUIRED)
+find_package(catkin REQUIRED dynamic_reconfigure)
+generate_dynamic_reconfigure_options(
+  cfg/HeightRateTuning.cfg
+)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -17,12 +21,12 @@ find_package(catkin REQUIRED COMPONENTS
   interactive_markers
   terrain_navigation
   terrain_planner
+  dynamic_reconfigure
 )
 
 catkin_package(
-  INCLUDE_DIRS include
   LIBRARIES terrain_navigation
-  CATKIN_DEPENDS roscpp rospy
+  CATKIN_DEPENDS roscpp rospy dynamic_reconfigure
 )
 
 include_directories(
@@ -37,7 +41,7 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/terrain_planner.cpp
 )
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES} ${OMPL_LIBRARIES})
 
 add_executable(terrain_planner_node

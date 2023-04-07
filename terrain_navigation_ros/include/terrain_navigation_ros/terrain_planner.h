@@ -72,6 +72,9 @@
 #include <GeographicLib/Geocentric.hpp>
 #include <GeographicLib/LocalCartesian.hpp>
 
+#include <dynamic_reconfigure/server.h>
+#include "terrain_navigation_ros/HeightRateTuningConfig.h"
+
 enum class SETPOINT_MODE { STATE, PATH };
 
 enum class PLANNER_MODE { EXHAUSTIVE, MCTS, GLOBAL, GLOBAL_REPLANNING, RANDOM };
@@ -121,6 +124,7 @@ class TerrainPlanner {
                    Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0), std::string name_space = "goal");
   void generateCircle(const Eigen::Vector3d end_position, const Eigen::Vector3d end_velocity,
                       const Eigen::Vector3d center_pos, Trajectory &trajectory);
+  void dynamicReconfigureCallback(terrain_navigation_ros::HeightRateTuningConfig &config, uint32_t level);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -169,6 +173,9 @@ class TerrainPlanner {
   std::unique_ptr<ros::AsyncSpinner> statusloop_spinner_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
+  dynamic_reconfigure::Server<terrain_navigation_ros::HeightRateTuningConfig> server;
+  dynamic_reconfigure::Server<terrain_navigation_ros::HeightRateTuningConfig>::CallbackType f;
+
   SETPOINT_MODE setpoint_mode_{SETPOINT_MODE::STATE};
   PLANNER_MODE planner_mode_{PLANNER_MODE::EXHAUSTIVE};
 
@@ -198,6 +205,12 @@ class TerrainPlanner {
   Eigen::Vector3d previous_start_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d mission_loiter_center_{Eigen::Vector3d::Zero()};
 
+  // Altitude tracking loop parameters
+  /// TODO: This needs to be handed over to TECS
+  double K_z_{0.5};
+  double cruise_speed_{20.0};
+  double max_climb_rate_control_{5.0};
+
   std::string map_path_{};
   std::string map_color_path_{};
   std::string mesh_resource_path_{};
@@ -211,7 +224,6 @@ class TerrainPlanner {
   double planner_time_budget_{30.0};
   double mission_loiter_radius_{66.67};
   double start_loiter_radius_{66.67};
-  double cruise_speed_{20.0};
   bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};

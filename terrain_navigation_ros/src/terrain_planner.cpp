@@ -126,6 +126,9 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   global_planner_->setMap(terrain_map_);
   global_planner_->setAltitudeLimits(max_elevation_, min_elevation_);
 
+  f = boost::bind(&TerrainPlanner::dynamicReconfigureCallback, this, _1, _2);
+  server.setCallback(f);
+
   planner_profiler_ = std::make_shared<Profiler>("planner");
 }
 TerrainPlanner::~TerrainPlanner() {
@@ -175,15 +178,12 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
 
         // Run additional altitude control
-        double K_z_ = 0.5;
-        double max_climb_rate_control_{-5.0};
-        double max_sink_rate_control_{5.0};
         double altitude_correction = K_z_ * (vehicle_position_(2) - reference_position(2));
         double climb_rate = cruise_speed_ * std::sin(current_segment.flightpath_angle);
         Eigen::Vector3d velocity_reference = reference_tangent;
 
         velocity_reference(2) =
-            std::min(std::max(altitude_correction - climb_rate, max_climb_rate_control_), max_sink_rate_control_);
+            std::min(std::max(altitude_correction - climb_rate, -max_climb_rate_control_), max_climb_rate_control_);
 
         publishGlobalPositionSetpoints(global_position_setpoint_pub_, latitude, longitude, altitude, velocity_reference,
                                        reference_curvature);
@@ -202,7 +202,14 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
             added_viewpoint_list.push_back(viewpoint);
             last_triggered_time_ = ros::Time::now();
           }
-
+          planner_msgs::NavigationStatus msg;
+          msg.header.stamp = ros::Time::now();
+          // msg.planner_time.data = planner_time;
+          msg.tracking_error = toVector3(tracking_error_);
+          msg.enabled = planner_enabled_;
+          msg.reference_position = toVector3(reference_position);
+          msg.vehicle_position = toVector3(vehicle_position_);
+          planner_status_pub_.publish(msg);
         } else {
           tracking_error_ = Eigen::Vector3d::Zero();
           planner_enabled_ = false;
@@ -385,12 +392,6 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
   MapPublishOnce();
   // publishGoal(goal_pub_, goal_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
 
-  planner_msgs::NavigationStatus msg;
-  msg.header.stamp = ros::Time::now();
-  msg.planner_time.data = planner_time;
-  msg.tracking_error = toVector3(tracking_error_);
-  msg.enabled = planner_enabled_;
-  planner_status_pub_.publish(msg);
   publishViewpoints(viewpoints_);
 }
 
@@ -763,6 +764,22 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   }
   res.success = result;
   return true;
+}
+
+void TerrainPlanner::dynamicReconfigureCallback(terrain_navigation_ros::HeightRateTuningConfig &config,
+                                                uint32_t level) {
+  if (K_z_ != config.K_z) {
+    K_z_ = config.K_z;
+    ROS_INFO("Reconfigure request : K_z_  = %.2f  ", config.K_z);
+  }
+  if (cruise_speed_ != config.cruise_speed) {
+    cruise_speed_ = config.cruise_speed;
+    ROS_INFO("Reconfigure request : cruise_speed_  = %.2f  ", config.cruise_speed);
+  }
+  if (max_climb_rate_control_ != config.max_climb_rate) {
+    max_climb_rate_control_ = config.max_climb_rate;
+    ROS_INFO("Reconfigure request : max_climb_rate  = %.2f  ", config.max_climb_rate);
+  }
 }
 
 bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &req,
