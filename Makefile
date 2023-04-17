@@ -34,6 +34,9 @@ curate-dataset:
 process-dataset:
 	Tools/process_dataset.sh ${path}
 
+benchmark-dubins-classifications:
+	terrain_planner_benchmark/Tools/run_dubins_classification_benchmark.sh
+
 clean-dataset:
 	rm -rf output/dataset
 

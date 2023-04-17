@@ -68,13 +68,17 @@ int main(int argc, char** argv) {
   logger->setPrintHeader(true);
   logger->setKeys(keys);
 
-  int num_experiments{100};
+  int num_experiments{10000};
   for (int idx = 0; idx < num_experiments; idx++) {
     /// TODO: Randomly generate states
-    fw_planning::spaces::DubinsPath dp;
-    double d{10.0};
+    double d = getRandom(0, 10.0);
     double alpha = getRandom(0, 2 * M_PI);
     double beta = getRandom(0, 2 * M_PI);
+
+    double d_threshold = std::abs(std::sin(alpha)) + std::abs(std::sin(beta)) +
+                         std::sqrt(4 - std::pow(std::cos(alpha) + std::cos(beta), 2));
+    if (d < d_threshold) continue;
+
     std::unordered_map<std::string, std::any> state;
     for (auto& key : keys) {
       if (key == "exhaustive") {
@@ -82,15 +86,15 @@ int main(int argc, char** argv) {
       } else {
         dubins_ss->setEnableSetClassification(true);
       }
+      fw_planning::spaces::DubinsPath dp;
+      int repeat = 1000;
       auto start = std::chrono::steady_clock::now();
-      dubins_ss->dubins(d, alpha, beta, dp);
-      if (!isfinite(dp.length_2D())) {
-        std::cout << "Length is invalid!" << std::endl;
-        std::cout << "  - key: " << key << std::endl;
+      for (int i = 0; i < repeat; i++) {
+        dubins_ss->dubins(d, alpha, beta, dp);
       }
       auto end = std::chrono::steady_clock::now();
-      double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-      state.insert(std::pair<std::string, double>(key, duration));
+      double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / 1000.0;
+      state.insert(std::pair<std::string, double>(key, duration / 1000.0));
     }
     logger->record(state);
   }
