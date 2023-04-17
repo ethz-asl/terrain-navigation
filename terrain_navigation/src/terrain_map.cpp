@@ -44,6 +44,22 @@ TerrainMap::TerrainMap() : GridMapGeo() {}
 
 TerrainMap::~TerrainMap() {}
 
+void TerrainMap::addLayerSafety(const std::string &layer, const std::string &layer_name_lowerbound,
+                                const std::string &layer_name_upperbound) {
+  /// TODO: Iterate over map to find the distance surface and validation
+  grid_map_.add(layer);
+  for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
+    const grid_map::Index index = *iterator;
+    const double value_lowerbound = grid_map_.at(layer_name_lowerbound, index);
+    const double value_upperbound = grid_map_.at(layer_name_upperbound, index);
+    if (value_lowerbound < value_upperbound) {
+      grid_map_.at(layer, index) = (value_lowerbound + value_upperbound) / 2.0;
+    } else {
+      grid_map_.at(layer, index) = NAN;
+    }
+  }
+}
+
 bool TerrainMap::isInCollision(const std::string &layer, const Eigen::Vector3d &position, const bool is_above) {
   const Eigen::Vector2d position_2d(position(0), position(1));
   if (grid_map_.isInside(position_2d)) {

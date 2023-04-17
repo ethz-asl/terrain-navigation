@@ -50,7 +50,8 @@ class TerrainMap : public GridMapGeo {
  public:
   TerrainMap();
   virtual ~TerrainMap();
-
+  void addLayerSafety(const std::string& layer, const std::string& layer_name_lowerbound,
+                      const std::string& layer_name_upperbound);
   bool isInCollision(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
   double getCollisionDepth(const std::string& layer, const Eigen::Vector3d& position, bool is_above = true);
 

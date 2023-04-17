@@ -183,6 +183,7 @@ class TerrainPlanner {
   // std::shared_ptr<MctsPlanner> mcts_planner_;
   std::shared_ptr<PrimitivePlanner> primitive_planner_;
   std::shared_ptr<TerrainMap> terrain_map_;
+  std::shared_ptr<fw_planning::spaces::DubinsAirplaneStateSpace> dubins_state_space_;
   // std::shared_ptr<ViewUtilityMap> viewutility_map_;
   std::shared_ptr<TerrainOmplRrt> global_planner_;
   std::shared_ptr<Profiler> planner_profiler_;

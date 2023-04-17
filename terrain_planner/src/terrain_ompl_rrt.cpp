@@ -3,7 +3,13 @@
 #include "terrain_planner/terrain_ompl_rrt.h"
 
 // Constructor
-TerrainOmplRrt::TerrainOmplRrt() { problem_setup_ = std::make_shared<ompl::OmplSetup>(); }
+TerrainOmplRrt::TerrainOmplRrt() {
+  problem_setup_ =
+      std::make_shared<ompl::OmplSetup>(ompl::base::StateSpacePtr(new fw_planning::spaces::DubinsAirplaneStateSpace()));
+}
+TerrainOmplRrt::TerrainOmplRrt(const ompl::base::StateSpacePtr& space) {
+  problem_setup_ = std::make_shared<ompl::OmplSetup>(space);
+}
 TerrainOmplRrt::~TerrainOmplRrt() {
   // Destructor
 }
@@ -40,14 +46,15 @@ void TerrainOmplRrt::configureProblem() {
 void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal,
                                   double start_loiter_radius) {
   configureProblem();
-  double radius = 66.6667;
+  double radius =
+      problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
   double delta_theta = 0.1;
   for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
     ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
         problem_setup_->getSpaceInformation());
 
-    start_ompl->setX(start_pos(0) + radius * std::cos(theta));
-    start_ompl->setY(start_pos(1) + radius * std::sin(theta));
+    start_ompl->setX(start_pos(0) + std::abs(start_loiter_radius) * std::cos(theta));
+    start_ompl->setY(start_pos(1) + std::abs(start_loiter_radius) * std::sin(theta));
     start_ompl->setZ(start_pos(2));
     double start_yaw = bool(start_loiter_radius > 0) ? theta - M_PI_2 : theta + M_PI_2;
     wrap_pi(start_yaw);
@@ -83,7 +90,8 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
                                   const Eigen::Vector3d& goal) {
   configureProblem();
 
-  double radius = 66.6667;
+  double radius =
+      problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
   double delta_theta = 0.1;
   ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
       problem_setup_->getSpaceInformation());

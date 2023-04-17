@@ -20,6 +20,7 @@
 class TerrainOmplRrt {
  public:
   TerrainOmplRrt();
+  TerrainOmplRrt(const ompl::base::StateSpacePtr& space);
   virtual ~TerrainOmplRrt();
 
   /**
@@ -37,8 +38,12 @@ class TerrainOmplRrt {
    *          - Positive: anti clockwise
    *          - Negative: Clockwise
    */
-  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal,
-                    double start_loiter_radius = 66.6667);
+  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal) {
+    this->setupProblem(
+        start_pos, goal,
+        problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius());
+  };
+  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal, double start_loiter_radius);
 
   /**
    * @brief Setup problem with position, velocity of the start and center of the goal loiter circle
@@ -140,6 +145,7 @@ class TerrainOmplRrt {
   }
 
  private:
+  double minimum_turning_radius_{66.67};
   std::shared_ptr<ompl::OmplSetup> problem_setup_;
   std::shared_ptr<TerrainMap> map_;
   double min_altitude_{50.0};

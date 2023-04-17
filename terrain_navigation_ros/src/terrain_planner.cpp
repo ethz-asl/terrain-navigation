@@ -109,20 +109,19 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   nh_private.param<std::string>("terrain_color_path", map_color_path_, "");
   nh_private.param<std::string>("resource_path", resource_path_, "resources");
   nh_private.param<std::string>("meshresource_path", mesh_resource_path_, "../resources/believer.dae");
+  nh_private.param<double>("minimum_turn_radius", goal_radius_, 66.67);
   maneuver_library_ = std::make_shared<ManeuverLibrary>();
   maneuver_library_->setPlanningHorizon(4.0);
 
   primitive_planner_ = std::make_shared<PrimitivePlanner>();
   terrain_map_ = std::make_shared<TerrainMap>();
-  // viewutility_map_ = std::make_shared<ViewUtilityMap>(terrain_map_->getGridMap());
 
   maneuver_library_->setTerrainMap(terrain_map_);
   primitive_planner_->setTerrainMap(terrain_map_);
 
-  // mcts_planner_ = std::make_shared<MctsPlanner>();
-  // mcts_planner_->setViewUtilityMap(viewutility_map_);
-
-  global_planner_ = std::make_shared<TerrainOmplRrt>();
+  // Initialize Dubins state space
+  dubins_state_space_ = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>(goal_radius_);
+  global_planner_ = std::make_shared<TerrainOmplRrt>(ompl::base::StateSpacePtr(dubins_state_space_));
   global_planner_->setMap(terrain_map_);
   global_planner_->setAltitudeLimits(max_elevation_, min_elevation_);
 
@@ -235,9 +234,9 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
     terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
     terrain_map_->AddLayerDistanceTransform(max_elevation_, "max_elevation");
-    double radius = 66.667;
-    terrain_map_->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
-    terrain_map_->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
+    terrain_map_->AddLayerHorizontalDistanceTransform(goal_radius_, "ics_+", "distance_surface");
+    terrain_map_->AddLayerHorizontalDistanceTransform(-goal_radius_, "ics_-", "max_elevation");
+    terrain_map_->addLayerSafety("safety", "ics_+", "ics_-");
     if (map_initialized_) {
       std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
       // viewutility_map_->initializeFromGridmap();
@@ -738,11 +737,14 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
   bool result = terrain_map_->Load(map_path_, align_location, map_color_path_);
+  std::cout << "[TerrainPlanner]   Computing distance transforms" << std::endl;
   terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
   terrain_map_->AddLayerDistanceTransform(max_elevation_, "max_elevation");
-  double radius = 66.667;
-  terrain_map_->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
-  terrain_map_->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
+  std::cout << "[TerrainPlanner]   Computing horizontal distance transforms " << std::endl;
+  terrain_map_->AddLayerHorizontalDistanceTransform(goal_radius_, "ics_+", "distance_surface");
+  terrain_map_->AddLayerHorizontalDistanceTransform(-goal_radius_, "ics_-", "max_elevation");
+  std::cout << "[TerrainPlanner]   Computing safety layers" << std::endl;
+  terrain_map_->addLayerSafety("safety", "ics_+", "ics_-");
   global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
 
   if (!align_location) {
@@ -803,11 +805,11 @@ bool TerrainPlanner::setGoalCallback(planner_msgs::SetVector3::Request &req, pla
     // mcts_planner_->setGoal(new_goal);
     // problem_updated_ = true;
     res.success = true;
-    publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "goal");
+    publishGoal(candidate_goal_pub_, new_goal, goal_radius_, Eigen::Vector3d(0.0, 1.0, 0.0), "goal");
     return true;
   } else {
     res.success = false;
-    publishGoal(candidate_goal_pub_, new_goal, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0), "goal");
+    publishGoal(candidate_goal_pub_, new_goal, goal_radius_, Eigen::Vector3d(1.0, 0.0, 0.0), "goal");
     return false;
   }
 }
@@ -821,11 +823,11 @@ bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, pl
   if (is_safe) {
     start_pos_ = new_start;
     res.success = true;
-    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
+    publishGoal(candidate_start_pub_, start_pos_, goal_radius_, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
     return true;
   } else {
     res.success = false;
-    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
+    publishGoal(candidate_start_pub_, start_pos_, goal_radius_, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
     return false;
   }
 }
@@ -850,11 +852,11 @@ bool TerrainPlanner::setCurrentSegmentCallback(planner_msgs::SetService::Request
         /// TODO: Curvature sign seems to be the opposite from mission items
         start_loiter_radius_ = -1 / last_segment.curvature;
         res.success = true;
-        publishGoal(candidate_start_pub_, new_start, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
+        publishGoal(candidate_start_pub_, new_start, goal_radius_, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
         return true;
       } else {
         res.success = false;
-        publishGoal(candidate_start_pub_, new_start, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
+        publishGoal(candidate_start_pub_, new_start, goal_radius_, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
         return false;
       }
     } else {

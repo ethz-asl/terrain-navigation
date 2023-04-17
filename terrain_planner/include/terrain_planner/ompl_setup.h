@@ -21,7 +21,7 @@ namespace ompl {
 
 class OmplSetup : public geometric::SimpleSetup {
  public:
-  OmplSetup() : geometric::SimpleSetup(base::StateSpacePtr(new fw_planning::spaces::DubinsAirplaneStateSpace())) {}
+  OmplSetup(const base::StateSpacePtr& space_ptr) : geometric::SimpleSetup(space_ptr) {}
 
   void setDefaultObjective() {
     setOptimizationObjective(
