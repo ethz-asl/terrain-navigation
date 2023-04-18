@@ -63,11 +63,11 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
 
   posehistory_pub_ = nh_.advertise<nav_msgs::Path>("geometric_controller/path", 10);
   referencehistory_pub_ = nh_.advertise<nav_msgs::Path>("reference/path", 10);
-  position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1, true);
-  vehicle_velocity_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_velocity", 1, true);
-  goal_pub_ = nh_.advertise<visualization_msgs::Marker>("goal_marker", 1, true);
-  candidate_goal_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_goal_marker", 1, true);
-  candidate_start_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_start_marker", 1, true);
+  position_target_pub_ = nh_.advertise<visualization_msgs::Marker>("position_target", 1);
+  vehicle_velocity_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_velocity", 1);
+  goal_pub_ = nh_.advertise<visualization_msgs::Marker>("goal_marker", 1);
+  candidate_goal_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_goal_marker", 1);
+  candidate_start_pub_ = nh_.advertise<visualization_msgs::Marker>("candidate_start_marker", 1);
   mavstate_sub_ =
       nh_.subscribe("mavros/state", 1, &TerrainPlanner::mavstateCallback, this, ros::TransportHints().tcpNoDelay());
   mavmission_sub_ = nh_.subscribe("mavros/mission/waypoints", 1, &TerrainPlanner::mavMissionCallback, this,
@@ -75,11 +75,11 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   position_setpoint_pub_ = nh_.advertise<mavros_msgs::PositionTarget>("mavros/setpoint_raw/local", 1);
   global_position_setpoint_pub_ = nh_.advertise<mavros_msgs::GlobalPositionTarget>("mavros/setpoint_raw/global", 1);
   path_target_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 1);
-  vehicle_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_pose_marker", 1, true);
-  planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status", 1, true);
-  viewpoint_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("viewpoints", 1, true);
-  path_segment_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
-  tree_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
+  vehicle_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("vehicle_pose_marker", 1);
+  planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status", 1);
+  viewpoint_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("viewpoints", 1);
+  path_segment_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_segments", 1);
+  tree_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("tree", 1);
 
   mavpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavposeCallback, this,
                                ros::TransportHints().tcpNoDelay());
@@ -239,6 +239,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
     terrain_map_->addLayerSafety("safety", "ics_+", "ics_-");
     if (map_initialized_) {
       std::cout << "[TerrainPlanner]   - Successfully loaded map: " << map_path_ << std::endl;
+      MapPublishOnce();
       // viewutility_map_->initializeFromGridmap();
       global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
     } else {
@@ -388,7 +389,6 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
 
   double planner_time = planner_profiler_->toc();
   publishTrajectory(reference_primitive_.position());
-  MapPublishOnce();
   // publishGoal(goal_pub_, goal_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
 
   publishViewpoints(viewpoints_);
@@ -452,7 +452,7 @@ void TerrainPlanner::MapPublishOnce() {
 
 void TerrainPlanner::publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
                                             std::vector<geometry_msgs::PoseStamped> &history_vector) {
-  unsigned int posehistory_window_ = 20000;
+  unsigned int posehistory_window_ = 200;
   Eigen::Vector4d vehicle_attitude(1.0, 0.0, 0.0, 0.0);
   history_vector.insert(history_vector.begin(), vector3d2PoseStampedMsg(position, vehicle_attitude));
   if (history_vector.size() > posehistory_window_) {

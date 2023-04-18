@@ -1,8 +1,18 @@
 <?xml version="1.0"?>
 <launch>
-    <node pkg="rosbag" type="record" name="rosbag_recorder" args="record -o /home/ethzasl/rosbag/ --split --size=1024 --max-splits 10
-        /vehicle_path
+    <node pkg="rosbag" type="record" name="rosbag_recorder" args="record -o /home/ethzasl/rosbag/ 
+        /candidate_goal_marker
+        /candidate_start_marker
+        /geometric_controller/path
+        /grid_map
+        /path_segments
+        /planner_status
+        /position_target
         /reference/path
+        /goal_amrker
+        /vehicle_path
+        /vehicle_pose_marker
+        /vehicle_velocity
         /mavros/setpoint_raw/target_global
         /mavros/local_position/pose
         /mavros/local_position/velocity_local
