@@ -156,7 +156,7 @@ class Trajectory {
       Eigen::Vector2d segment_end_2d = segment_end.head(2);
       if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
         // Return full circle length
-        length = 2 * M_PI * (1 / curvature);
+        length = 2 * M_PI * (1 / std::abs(curvature));
       } else {
         Eigen::Vector2d segment_start_2d = segment_start.head(2);
         Eigen::Vector2d segment_start_tangent_2d = (states.front().velocity).normalized().head(2);
