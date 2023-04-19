@@ -161,8 +161,8 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         Eigen::Vector3d reference_tangent;
         double reference_curvature{0.0};
         auto current_segment = reference_primitive_.getCurrentSegment(vehicle_position_);
-        current_segment.getClosestPoint(vehicle_position_, reference_position, reference_tangent, reference_curvature,
-                                        1.0);
+        double path_progress = current_segment.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
+                                                               reference_curvature, 1.0);
         // Publish global position setpoints in the global frame
         ESPG map_coordinate;
         Eigen::Vector3d map_origin;
@@ -184,8 +184,25 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
         velocity_reference(2) =
             std::min(std::max(altitude_correction - climb_rate, -max_climb_rate_control_), max_climb_rate_control_);
 
+        /// Blend curvature with next segment
+        double curvature_reference = reference_curvature;
+        int current_segment_idx = reference_primitive_.getCurrentSegmentIndex(vehicle_position_);
+        bool is_last_segment = bool(current_segment_idx >= (reference_primitive_.segments.size() - 1));
+        if (!is_last_segment) {
+          /// Get next segment curvature
+          double next_segment_curvature = reference_primitive_.segments[current_segment_idx + 1].curvature;
+
+          /// Blend current curvature with next curvature when close to the end
+          double segment_length = current_segment.getLength(1.0);
+          double cut_off_distance = 10.0;
+          double portion = std::min(
+              1.0,
+              std::max((path_progress * segment_length - segment_length + cut_off_distance) / cut_off_distance, 0.0));
+          curvature_reference = (1 - portion) * reference_curvature + portion * next_segment_curvature;
+        }
+
         publishGlobalPositionSetpoints(global_position_setpoint_pub_, latitude, longitude, altitude, velocity_reference,
-                                       reference_curvature);
+                                       curvature_reference);
 
         /// TODO: Trigger camera when viewpoint reached
         /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
@@ -242,6 +259,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
       MapPublishOnce();
       // viewutility_map_->initializeFromGridmap();
       global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
+      global_planner_->setupProblem(start_pos_, goal_pos_, start_loiter_radius_);
     } else {
       std::cout << "[TerrainPlanner]   - Failed to load map: " << map_path_ << std::endl;
     }
@@ -745,7 +763,6 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   terrain_map_->AddLayerHorizontalDistanceTransform(-goal_radius_, "ics_-", "max_elevation");
   std::cout << "[TerrainPlanner]   Computing safety layers" << std::endl;
   terrain_map_->addLayerSafety("safety", "ics_+", "ics_-");
-  global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
 
   if (!align_location) {
     // Depending on Gdal versions, lon lat order are reversed
@@ -761,8 +778,10 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   }
   if (result) {
     global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
+    global_planner_->setupProblem(start_pos_, goal_pos_, start_loiter_radius_);
     problem_updated_ = true;
     posehistory_vector_.clear();
+    MapPublishOnce();
   }
   res.success = result;
   return true;
