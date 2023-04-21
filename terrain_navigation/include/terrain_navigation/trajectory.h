@@ -102,6 +102,27 @@ class Trajectory {
     return arc_center;
   }
 
+  static Eigen::Vector2d getArcCenter(double curvature, const Eigen::Vector2d &segment_start,
+                                      const Eigen::Vector2d &segment_start_tangent,
+                                      const Eigen::Vector2d &segment_end) {
+    Eigen::Vector3d rotational_vector(0.0, 0.0, curvature / std::abs(curvature));
+
+    Eigen::Vector2d error_vector = segment_end - segment_start;
+    double segment_distance = error_vector.norm();
+    double center_distance = std::sqrt(std::pow(1 / curvature, 2) - std::pow(0.5 * segment_distance, 2));
+    Eigen::Vector2d midpoint_2d = 0.5 * (segment_start + segment_end);
+    Eigen::Vector2d distance_vector_2d = error_vector.normalized();
+    Eigen::Vector3d distance_vector = Eigen::Vector3d(distance_vector_2d(0), distance_vector_2d(1), 0.0);
+    Eigen::Vector3d normal_vector;
+    if (error_vector.dot(segment_start_tangent) > 0.0) {
+      normal_vector = -distance_vector.cross(rotational_vector);
+    } else {
+      normal_vector = distance_vector.cross(rotational_vector);
+    }
+    Eigen::Vector2d arc_center = midpoint_2d + normal_vector.head(2) * center_distance;
+    return arc_center;
+  }
+
   static double getLineProgress(const Eigen::Vector3d position, const Eigen::Vector3d &segment_start,
                                 const Eigen::Vector3d &segment_end) {
     Eigen::Vector3d progress_vector = (segment_end - segment_start).normalized();
@@ -159,7 +180,7 @@ class Trajectory {
         length = 2 * M_PI * (1 / std::abs(curvature));
       } else {
         Eigen::Vector2d segment_start_2d = segment_start.head(2);
-        Eigen::Vector2d segment_start_tangent_2d = (states.front().velocity).normalized().head(2);
+        Eigen::Vector2d segment_start_tangent_2d = (states.front().velocity).head(2).normalized();
         Eigen::Vector2d segment_end_2d = segment_end.head(2);
 
         Eigen::Vector2d arc_center_2d = getArcCenter(segment_start_2d, segment_start_tangent_2d, curvature);
@@ -195,7 +216,7 @@ class Trajectory {
       // Compute closest point on a Arc segment
       Eigen::Vector2d position_2d(position(0), position(1));
       Eigen::Vector2d segment_start_2d = segment_start.head(2);
-      Eigen::Vector2d segment_start_tangent_2d = segment_start_tangent.head(2);
+      Eigen::Vector2d segment_start_tangent_2d = segment_start_tangent.head(2).normalized();
       Eigen::Vector2d segment_end_2d = segment_end.head(2);
       Eigen::Vector2d arc_center{Eigen::Vector2d::Zero()};
       // Handle when it is a full circle
@@ -209,7 +230,8 @@ class Trajectory {
         /// TODO: Check for the case for a helix!
         theta = angle_pos / (2 * M_PI);
       } else {
-        arc_center = getArcCenter(segment_start_2d, segment_start_tangent_2d, curvature);
+        // arc_center = getArcCenter(segment_start_2d, segment_start_tangent_2d, curvature);
+        arc_center = getArcCenter(curvature, segment_start_2d, segment_start_tangent_2d, segment_end_2d);
         theta = getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, curvature);
       }
       Eigen::Vector2d closest_point_2d = std::abs(1 / curvature) * (position_2d - arc_center).normalized() + arc_center;

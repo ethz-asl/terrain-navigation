@@ -897,11 +897,13 @@ bool TerrainPlanner::setStartLoiterCallback(planner_msgs::SetService::Request &r
     start_pos_ = mission_loiter_center_;
     start_loiter_radius_ = mission_loiter_radius_;
     res.success = true;
-    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
+    publishGoal(candidate_start_pub_, start_pos_, std::abs(mission_loiter_radius_), Eigen::Vector3d(0.0, 1.0, 0.0),
+                "start");
     return true;
   } else {
     res.success = false;
-    publishGoal(candidate_start_pub_, start_pos_, 66.67, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
+    publishGoal(candidate_start_pub_, start_pos_, std::abs(mission_loiter_radius_), Eigen::Vector3d(1.0, 0.0, 0.0),
+                "start");
     return false;
   }
 }

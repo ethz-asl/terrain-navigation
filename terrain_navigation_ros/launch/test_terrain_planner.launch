@@ -10,7 +10,7 @@
     <arg name="fcu_protocol" default="v2.0" />
     <arg name="respawn_mavros" default="false" />
     <arg name="visualization" default="true"/>
-    <arg name="location" default="hinwil"/>
+    <arg name="location" default="riemenstalden"/>
     <arg name="gui" default="false"/>
 
     <include file="$(find mavros)/launch/node.launch">
@@ -36,7 +36,7 @@
         <param name="terrain_path" value="$(find terrain_models)/models/$(arg location).tif"/>
         <param name="terrain_color_path" value="$(find terrain_models)/models/$(arg location)_color.tif"/>
         <param name="resource_path" value="$(find terrain_models)/models"/>
-        <param name="minimum_turn_radius" value="100.0"/>
+        <param name="minimum_turn_radius" value="80.0"/>
     </node>
     <group if="$(arg visualization)">
         <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config.rviz" output="screen"/>

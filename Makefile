@@ -7,7 +7,7 @@ format:
 	Tools/fix_code_style.sh .
 
 config:
-	catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
+	catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False
 
 build: config
 	catkin build ${package} mav_planning_rviz
