@@ -25,8 +25,8 @@
     </include>
 
     <node pkg="terrain_navigation_ros" type="terrain_planner_node" name="terrain_planner" output="screen">
-        <param name="terrain_path" value="$(find terrain_planner)/../resources/$(arg location).tif"/>
-        <param name="terrain_color_path" value="$(find terrain_planner)/../resources/$(arg location)_color.tif"/>
+        <param name="terrain_path" value="$(find terrain_models)/models/$(arg location).tif"/>
+        <param name="terrain_color_path" value="$(find terrain_models)/models/$(arg location)_color.tif"/>
         <param name="resource_path" value="$(find terrain_models)/models"/>
         <param name="minimum_turn_radius" value="80.0"/>
         <!-- <param name="meshresource_path" value="$(find terrain_planner)/../resources/$(arg mav_name).dae"/> -->
