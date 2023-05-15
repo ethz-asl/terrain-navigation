@@ -18,11 +18,6 @@
 #include <limits>
 #include <sstream>
 
-#include <geometry_msgs/Point.h>
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
-
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/base/spaces/SO2StateSpace.h>
 #include <ompl/util/RandomNumbers.h>
@@ -739,8 +734,8 @@ void DubinsAirplaneStateSpace::calcDubPathWithClassification(DubinsPath& path, d
       break;
     }
     default: {
-      ROS_ERROR_STREAM("default (a not in set{0,1,...,15}), path.a: " << path.getClassification() << " ,d: " << d
-                                                                      << " ,alpha: " << alpha << ",beta: " << beta);
+      std::cout << "default (a not in set{0,1,...,15}), path.a: " << path.getClassification() << " ,d: " << d
+                << " ,alpha: " << alpha << ",beta: " << beta;
       assert(false && "class of path (path.a) was not assigned to an integer in the set {0,1,...,15}.");
     }
   }
@@ -984,7 +979,7 @@ std::tuple<double, bool, double, double, double> DubinsAirplaneStateSpace::addit
       return std::make_tuple(rho_, foundSol, t_min, p_min, q_min);
     }
     default: {
-      ROS_ERROR_STREAM("DubinsAirplane::additionalManeuver: Invalid path index: " << dp.getIdx());
+      std::cout << "DubinsAirplane::additionalManeuver: Invalid path index: " << dp.getIdx();
       return std::make_tuple(0.0, 0.0, 0.0, 0.0, 0.0);
     }
   }
@@ -1081,9 +1076,9 @@ void DubinsAirplaneStateSpace::interpolate(const DubinsPath& path, const Segment
             stateInterpolation_->addToZ(interpol_seg_ * interpol_tanGamma_);
             break;
           } else {
-            ROS_ERROR(
-                "This should never happen, otherwise something wrong in the DubinsAirplaneStateSpace::interpolate"
-                "(const ob::State *from, const DubinsPath &path, double t, ob::State *state) const function.");
+            std::cout
+                << "This should never happen, otherwise something wrong in the DubinsAirplaneStateSpace::interpolate"
+                   "(const ob::State *from, const DubinsPath &path, double t, ob::State *state) const function.";
             break;
           }
       }
@@ -1099,9 +1094,8 @@ void DubinsAirplaneStateSpace::interpolate(const DubinsPath& path, const Segment
       interpol_seg_ -= path.getSegmentLength(interpol_iter_);
     }
   }
-  ROS_ERROR(
-      "This should never happen, otherwise something wrong in the DubinsAirplaneStateSpace::interpolate"
-      "(const ob::State *from, const DubinsPath &path, double t, ob::State *state) const function.");
+  std::cout << "This should never happen, otherwise something wrong in the DubinsAirplaneStateSpace::interpolate"
+               "(const ob::State *from, const DubinsPath &path, double t, ob::State *state) const function.";
   return;
 }
 
@@ -1177,9 +1171,9 @@ void DubinsAirplaneStateSpace::calculateSegmentStarts(const ob::State* from, con
           stateInterpolation_->addToZ(interpol_v_ * interpol_tanGamma_);
           break;
         } else {
-          ROS_ERROR(
-              "This should never happen, otherwise something wrong in the DubinsAirplaneStateSpace::interpolate"
-              "(const ob::State *from, const DubinsPath &path, double t, ob::State *state) const function.");
+          std::cout
+              << "This should never happen, otherwise something wrong in the DubinsAirplaneStateSpace::interpolate"
+                 "(const ob::State *from, const DubinsPath &path, double t, ob::State *state) const function.";
           break;
         }
     }
