@@ -119,11 +119,11 @@ class TerrainPlanner {
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishVehiclePose(const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
   void publishViewpoints(std::vector<ViewPoint> &viewpoint_vector);
-  void publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory);
+  void publishPathSegments(ros::Publisher &pub, Path &trajectory);
   void publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, const double radius,
                    Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0), std::string name_space = "goal");
   void generateCircle(const Eigen::Vector3d end_position, const Eigen::Vector3d end_velocity,
-                      const Eigen::Vector3d center_pos, Trajectory &trajectory);
+                      const Eigen::Vector3d center_pos, PathSegment &trajectory);
   void dynamicReconfigureCallback(terrain_navigation_ros::HeightRateTuningConfig &config, uint32_t level);
 
   ros::NodeHandle nh_;
@@ -187,8 +187,8 @@ class TerrainPlanner {
   // std::shared_ptr<ViewUtilityMap> viewutility_map_;
   std::shared_ptr<TerrainOmplRrt> global_planner_;
   std::shared_ptr<Profiler> planner_profiler_;
-  TrajectorySegments reference_primitive_;
-  TrajectorySegments candidate_primitive_;
+  Path reference_primitive_;
+  Path candidate_primitive_;
   mavros_msgs::State current_state_;
   std::optional<GeographicLib::LocalCartesian> enu_;
 

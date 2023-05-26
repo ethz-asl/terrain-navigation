@@ -1,7 +1,7 @@
 #ifndef TERRAIN_PLANNER_VISUALIZATION_H
 #define TERRAIN_PLANNER_VISUALIZATION_H
 
-#include "terrain_navigation/trajectory.h"
+#include "terrain_navigation/path.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/ompl_setup.h"
 
@@ -20,7 +20,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-void publishCandidateManeuvers(const ros::Publisher& pub, const std::vector<TrajectorySegments>& candidate_maneuvers,
+void publishCandidateManeuvers(const ros::Publisher& pub, const std::vector<Path>& candidate_maneuvers,
                                bool visualize_invalid_trajectories = false) {
   visualization_msgs::MarkerArray msg;
 

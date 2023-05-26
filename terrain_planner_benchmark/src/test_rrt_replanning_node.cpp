@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
 
   // Repeatedly publish results
   planner->setupProblem(start, goal);
-  TrajectorySegments reference_primitive_;
+  Path reference_primitive_;
   bool new_problem = true;
 
   int i = 0;
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
 
     double traverse_time = 1.0;
 
-    TrajectorySegments planner_solution_path;
+    Path planner_solution_path;
     bool found_solution = planner->Solve(traverse_time, planner_solution_path);
 
     if (found_solution) {

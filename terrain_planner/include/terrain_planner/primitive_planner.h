@@ -26,7 +26,7 @@ class PrimitivePlanner : public Planner {
    * @param current_path
    */
   virtual void setup(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
-                     const Eigen::Vector4d current_att, TrajectorySegments& current_path) override;
+                     const Eigen::Vector4d current_att, Path& current_path) override;
 
   /**
    * @brief Solve exhaustively with motion primitive trees
@@ -36,9 +36,9 @@ class PrimitivePlanner : public Planner {
    * @param current_att
    * @param current_path
    */
-  virtual TrajectorySegments solve(const double time = 0.0) override;
+  virtual Path solve(const double time = 0.0) override;
 
-  std::vector<TrajectorySegments>& getMotionPrimitives() { return maneuver_library_->getMotionPrimitives(); };
+  std::vector<Path>& getMotionPrimitives() { return maneuver_library_->getMotionPrimitives(); };
   // bool checkViewUtilityTree(std::shared_ptr<Primitive> primitive);
   bool setGoalPosition(const Eigen::Vector3d position);
 

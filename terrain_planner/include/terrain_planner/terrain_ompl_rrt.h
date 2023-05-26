@@ -11,7 +11,7 @@
 #include <Eigen/Dense>
 
 #include <terrain_navigation/terrain_map.h>
-#include "terrain_navigation/trajectory.h"
+#include "terrain_navigation/path.h"
 
 #include "terrain_planner/ompl_setup.h"
 
@@ -106,12 +106,12 @@ class TerrainOmplRrt {
    * @return true Found exact solution
    * @return false Did not find an exact solution
    */
-  bool Solve(double time_budget, TrajectorySegments& path);
+  bool Solve(double time_budget, Path& path);
   bool Solve(double time_budget, std::vector<Eigen::Vector3d>& path);
   double getSegmentCurvature(std::shared_ptr<ompl::OmplSetup> problem_setup,
                              fw_planning::spaces::DubinsPath& dubins_path, const size_t start_idx) const;
-  void solutionPathToTrajectorySegments(ompl::geometric::PathGeometric path, TrajectorySegments& trajectory_segments,
-                                        double resolution = 0.05) const;
+  void solutionPathToPath(ompl::geometric::PathGeometric path, Path& trajectory_segments,
+                          double resolution = 0.05) const;
   void solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric path,
                                       std::vector<Eigen::Vector3d>& trajectory_points) const;
   std::shared_ptr<ompl::base::PlannerData> getPlannerData() { return planner_data_; };

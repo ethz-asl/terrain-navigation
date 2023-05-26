@@ -180,7 +180,7 @@ void TerrainOmplRrt::setBoundsFromMap(const grid_map::GridMap& map) {
   setBounds(lower_bounds, upper_bounds);
 }
 
-bool TerrainOmplRrt::Solve(double time_budget, TrajectorySegments& path) {
+bool TerrainOmplRrt::Solve(double time_budget, Path& path) {
   if (problem_setup_->solve(time_budget)) {
     // problem_setup_.getSolutionPath().print(std::cout);
     // problem_setup_.simplifySolution();
@@ -194,7 +194,7 @@ bool TerrainOmplRrt::Solve(double time_budget, TrajectorySegments& path) {
 
   if (problem_setup_->haveExactSolutionPath()) {
     std::cout << "Found Exact solution!" << std::endl;
-    solutionPathToTrajectorySegments(problem_setup_->getSolutionPath(), path);
+    solutionPathToPath(problem_setup_->getSolutionPath(), path);
     return true;
   }
   return false;
@@ -262,9 +262,8 @@ double TerrainOmplRrt::getSegmentCurvature(std::shared_ptr<ompl::OmplSetup> prob
   return segment_curvature;
 }
 
-void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeometric path,
-                                                      TrajectorySegments& trajectory_segments,
-                                                      double resolution) const {
+void TerrainOmplRrt::solutionPathToPath(ompl::geometric::PathGeometric path, Path& trajectory_segments,
+                                        double resolution) const {
   trajectory_segments.segments.clear();
 
   std::vector<ompl::base::State*>& state_vector = path.getStates();
@@ -298,7 +297,7 @@ void TerrainOmplRrt::solutionPathToTrajectorySegments(ompl::geometric::PathGeome
         }
 
         // Append to trajectory
-        Trajectory trajectory;
+        PathSegment trajectory;
         trajectory.curvature = getSegmentCurvature(problem_setup_, dubins_path, start_idx);
         ompl::base::State* state = problem_setup_->getStateSpace()->allocState();
         trajectory.flightpath_angle = dubins_path.getGamma();

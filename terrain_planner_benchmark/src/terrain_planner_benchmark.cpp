@@ -12,7 +12,7 @@ TerrainPlannerBenchmark::~TerrainPlannerBenchmark() {}
 
 void TerrainPlannerBenchmark::runBenchmark(const int num_experiments) {
   // Set start and end goals
-  TrajectorySegments path;
+  Path path;
   std::vector<Eigen::Vector3d> interpolated_path;
 
   std::vector<std::string> benchmark_methods;

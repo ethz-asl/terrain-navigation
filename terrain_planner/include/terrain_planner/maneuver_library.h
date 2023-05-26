@@ -51,17 +51,15 @@ class ManeuverLibrary {
  public:
   ManeuverLibrary();
   virtual ~ManeuverLibrary();
-  std::vector<TrajectorySegments>& generateMotionPrimitives(const Eigen::Vector3d current_pos,
-                                                            const Eigen::Vector3d current_vel,
-                                                            const Eigen::Vector4d current_att,
-                                                            TrajectorySegments& current_path);
-  std::vector<TrajectorySegments>& getMotionPrimitives() { return motion_primitives_; }
-  std::vector<TrajectorySegments>& getValidPrimitives() { return valid_primitives_; }
-  TrajectorySegments getBestPrimitive();
-  TrajectorySegments getRandomPrimitive();
-  Trajectory generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
-                                   Eigen::Vector3d current_vel, const double dt = 0.1);
-  Trajectory generateCircleTrajectory(Eigen::Vector3d center_pos, double radius, const double dt = 0.1);
+  std::vector<Path>& generateMotionPrimitives(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
+                                              const Eigen::Vector4d current_att, Path& current_path);
+  std::vector<Path>& getMotionPrimitives() { return motion_primitives_; }
+  std::vector<Path>& getValidPrimitives() { return valid_primitives_; }
+  Path getBestPrimitive();
+  Path getRandomPrimitive();
+  PathSegment generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
+                                    Eigen::Vector3d current_vel, const double dt = 0.1);
+  PathSegment generateCircleTrajectory(Eigen::Vector3d center_pos, double radius, const double dt = 0.1);
   double getPlanningHorizon() { return planning_horizon_; };
 
   /**
@@ -113,28 +111,28 @@ class ManeuverLibrary {
    * @return true
    * @return false
    */
-  bool checkCollisionsTree(std::shared_ptr<Primitive>& primitive, std::vector<TrajectorySegments>& valid_primitives,
+  bool checkCollisionsTree(std::shared_ptr<Primitive>& primitive, std::vector<Path>& valid_primitives,
                            bool check_valid_child = true);
 
-  static std::vector<ViewPoint> sampleViewPointFromTrajectorySegment(TrajectorySegments& segment);
-  static std::vector<ViewPoint> sampleViewPointFromTrajectory(Trajectory& segment);
+  static std::vector<ViewPoint> sampleViewPointFromPath(Path& segment);
+  static std::vector<ViewPoint> sampleViewPointFromPathSegment(PathSegment& segment);
 
  private:
   static Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw);
-  std::vector<TrajectorySegments> AppendSegment(std::vector<TrajectorySegments>& first_segment,
-                                                const std::vector<Eigen::Vector3d>& rates, const double horizon);
+  std::vector<Path> AppendSegment(std::vector<Path>& first_segment, const std::vector<Eigen::Vector3d>& rates,
+                                  const double horizon);
   bool checkCollisions();
-  std::vector<TrajectorySegments> checkRelaxedCollisions();
+  std::vector<Path> checkRelaxedCollisions();
 
-  bool checkTrajectoryCollision(Trajectory& trajectory, const std::string& layer, bool is_above = true);
-  bool checkTrajectoryCollision(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
-  double getTrajectoryCollisionCost(TrajectorySegments& trajectory, const std::string& layer, bool is_above = true);
+  bool checkTrajectoryCollision(PathSegment& trajectory, const std::string& layer, bool is_above = true);
+  bool checkTrajectoryCollision(Path& trajectory, const std::string& layer, bool is_above = true);
+  double getTrajectoryCollisionCost(Path& trajectory, const std::string& layer, bool is_above = true);
 
   std::shared_ptr<TerrainMap> terrain_map_;
 
   // Planner configurations
-  std::vector<TrajectorySegments> motion_primitives_;
-  std::vector<TrajectorySegments> valid_primitives_;
+  std::vector<Path> motion_primitives_;
+  std::vector<Path> valid_primitives_;
   std::vector<Eigen::Vector3d> primitive_rates_;
   std::shared_ptr<Primitive> motion_primitive_tree_;
   int num_segments{3};

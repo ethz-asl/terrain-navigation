@@ -291,7 +291,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
       Eigen::Vector3d start_velocity = vehicle_velocity_;
       // Solve planning problem with RRT*
       if (!reference_primitive_.segments.empty()) {
-        Trajectory current_segment = reference_primitive_.getCurrentSegment(vehicle_position_);
+        PathSegment current_segment = reference_primitive_.getCurrentSegment(vehicle_position_);
         start_position = current_segment.states.back().position;
         start_velocity = current_segment.states.back().velocity;
 
@@ -311,7 +311,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
           new_problem = true;
         }
 
-        TrajectorySegments planner_solution_path;
+        Path planner_solution_path;
         bool found_solution = global_planner_->Solve(1.0, planner_solution_path);
 
         // If a solution is found, check if the new solution is better than the previous solution
@@ -345,7 +345,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
           // If a better solution is found, update the path
           if (update_solution) {
             std::cout << "  - Updating solution" << std::endl;
-            TrajectorySegments updated_segment;
+            Path updated_segment;
             updated_segment.segments.clear();
             updated_segment.appendSegment(current_segment);
             updated_segment.appendSegment(planner_solution_path);
@@ -358,7 +358,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
                 20.0 * end_velocity.normalized().cross(radial_vector.normalized()) / radial_vector.norm();
             double horizon = 2 * M_PI / std::abs(emergency_rates(2));
             // Append a loiter at the end of the planned path
-            Trajectory loiter_trajectory =
+            PathSegment loiter_trajectory =
                 maneuver_library_->generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
             updated_segment.appendSegment(loiter_trajectory);
             reference_primitive_ = updated_segment;
@@ -549,7 +549,7 @@ void TerrainPlanner::publishReferenceMarker(const ros::Publisher &pub, const Eig
   pub.publish(marker);
 }
 
-void TerrainPlanner::publishPathSegments(ros::Publisher &pub, TrajectorySegments &trajectory) {
+void TerrainPlanner::publishPathSegments(ros::Publisher &pub, Path &trajectory) {
   visualization_msgs::MarkerArray msg;
 
   std::vector<visualization_msgs::Marker> marker;
@@ -862,7 +862,7 @@ bool TerrainPlanner::setCurrentSegmentCallback(planner_msgs::SetService::Request
       Eigen::Vector3d segment_start = last_segment.states.front().position;
       Eigen::Vector3d segment_start_tangent = (last_segment.states.front().velocity).normalized();
       auto arc_center =
-          Trajectory::getArcCenter(segment_start.head(2), segment_start_tangent.head(2), last_segment.curvature);
+          PathSegment::getArcCenter(segment_start.head(2), segment_start_tangent.head(2), last_segment.curvature);
       Eigen::Vector3d candidate_start = Eigen::Vector3d(arc_center(0), arc_center(1), 0.0);
       Eigen::Vector3d new_start;
       bool is_safe = validatePosition(terrain_map_->getGridMap(), candidate_start, new_start);
@@ -927,14 +927,14 @@ bool TerrainPlanner::setPathCallback(planner_msgs::SetVector3::Request &req, pla
     // Add initial loiter
     Eigen::Vector3d start_position = candidate_primitive_.firstSegment().states.front().position;
     Eigen::Vector3d start_velocity = candidate_primitive_.firstSegment().states.front().velocity;
-    Trajectory start_loiter;
+    PathSegment start_loiter;
     generateCircle(start_position, start_velocity, start_pos_, start_loiter);
     candidate_primitive_.prependSegment(start_loiter);
 
     // Add terminal loiter
     Eigen::Vector3d end_position = candidate_primitive_.lastSegment().states.back().position;
     Eigen::Vector3d end_velocity = candidate_primitive_.lastSegment().states.back().velocity;
-    Trajectory terminal_loiter;
+    PathSegment terminal_loiter;
     generateCircle(end_position, end_velocity, goal_pos_, terminal_loiter);
     candidate_primitive_.appendSegment(terminal_loiter);
 
@@ -947,7 +947,7 @@ bool TerrainPlanner::setPathCallback(planner_msgs::SetVector3::Request &req, pla
 }
 
 void TerrainPlanner::generateCircle(const Eigen::Vector3d end_position, const Eigen::Vector3d end_velocity,
-                                    const Eigen::Vector3d center_pos, Trajectory &trajectory) {
+                                    const Eigen::Vector3d center_pos, PathSegment &trajectory) {
   Eigen::Vector3d radial_vector = (end_position - center_pos);
   radial_vector(2) = 0.0;  // Only consider horizontal loiters
   Eigen::Vector3d emergency_rates =

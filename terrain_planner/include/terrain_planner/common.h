@@ -34,7 +34,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "terrain_navigation/trajectory.h"
+#include "terrain_navigation/path.h"
 
 #include <Eigen/Dense>
 #include <fstream>
@@ -161,7 +161,7 @@ visualization_msgs::Marker vector2ArrowsMsg(const Eigen::Vector3d &position, con
   return marker;
 }
 
-visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, const int id) {
+visualization_msgs::Marker trajectory2MarkerMsg(Path &trajectory, const int id) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
@@ -198,7 +198,7 @@ visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, 
   return marker;
 }
 
-visualization_msgs::Marker trajectory2MarkerMsg(Trajectory &trajectory, const int id,
+visualization_msgs::Marker trajectory2MarkerMsg(PathSegment &trajectory, const int id,
                                                 Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0)) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";

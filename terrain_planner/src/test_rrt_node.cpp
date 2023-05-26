@@ -50,7 +50,7 @@
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
 
-void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
+void publishPathSegments(ros::Publisher& pub, Path& trajectory) {
   visualization_msgs::MarkerArray msg;
 
   std::vector<visualization_msgs::Marker> marker;
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
 
-  TrajectorySegments path;
+  Path path;
   std::vector<Eigen::Vector3d> interpolated_path;
   double terrain_altitude{100.0};
 

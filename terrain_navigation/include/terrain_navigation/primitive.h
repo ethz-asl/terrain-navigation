@@ -33,11 +33,11 @@
 #ifndef PRIMITIVE_H
 #define PRIMITIVE_H
 
-#include "terrain_navigation/trajectory.h"
+#include "terrain_navigation/path.h"
 
 class Primitive {
  public:
-  Primitive(Trajectory &trajectory) { segment = trajectory; };
+  Primitive(PathSegment &trajectory) { segment = trajectory; };
   virtual ~Primitive(){};
   Eigen::Vector3d getEndofSegmentPosition() { return segment.states.back().position; }
   Eigen::Vector3d getEndofSegmentVelocity() { return segment.states.back().velocity; }
@@ -66,14 +66,14 @@ class Primitive {
   /**
    * @brief Get the Motion Primitives object
    *
-   * @return std::vector<TrajectorySegments>
+   * @return std::vector<Path>
    */
-  std::vector<TrajectorySegments> getMotionPrimitives() {
-    std::vector<TrajectorySegments> all_primitives;
+  std::vector<Path> getMotionPrimitives() {
+    std::vector<Path> all_primitives;
     if (has_child()) {
       int i = 0;
       for (const auto &child : child_primitives) {
-        std::vector<TrajectorySegments> extended_primitives = child->getMotionPrimitives();
+        std::vector<Path> extended_primitives = child->getMotionPrimitives();
         // Append current segment
         for (auto &primitive : extended_primitives) {
           primitive.prependSegment(segment);
@@ -83,7 +83,7 @@ class Primitive {
         i++;
       }
     } else {  // Append primitive segments
-      TrajectorySegments trajectory_segments;
+      Path trajectory_segments;
       trajectory_segments.appendSegment(segment);
       trajectory_segments.validity = validity;
       trajectory_segments.utility = (visits < 1) ? 0.0 : utility / visits;
@@ -137,7 +137,7 @@ class Primitive {
   // A primitive is not valid if none of the child primitives are valid
   bool validity{true};
   bool evaluation{false};
-  Trajectory segment;
+  PathSegment segment;
   std::vector<std::shared_ptr<Primitive>> child_primitives;
 
  private:

@@ -59,11 +59,10 @@ ManeuverLibrary::ManeuverLibrary() {
 
 ManeuverLibrary::~ManeuverLibrary() {}
 
-std::vector<TrajectorySegments> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
-                                                                           const Eigen::Vector3d current_vel,
-                                                                           const Eigen::Vector4d current_att,
-                                                                           TrajectorySegments &current_path) {
-  Trajectory current_segment;
+std::vector<Path> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
+                                                             const Eigen::Vector3d current_vel,
+                                                             const Eigen::Vector4d current_att, Path &current_path) {
+  PathSegment current_segment;
   if (!current_path.segments.empty()) {
     current_segment = current_path.getCurrentSegment(current_pos);
   } else {
@@ -112,7 +111,7 @@ void ManeuverLibrary::expandPrimitives(std::shared_ptr<Primitive> primitive, std
     Eigen::Vector3d current_pos = primitive->getEndofSegmentPosition();
     Eigen::Vector3d current_vel = primitive->getEndofSegmentVelocity();
     for (auto rate : rates) {
-      Trajectory trajectory = generateArcTrajectory(rate, horizon, current_pos, current_vel);
+      PathSegment trajectory = generateArcTrajectory(rate, horizon, current_pos, current_vel);
       primitive->child_primitives.push_back(std::make_shared<Primitive>(trajectory));
       primitive->child_primitives.back()->depth = primitive->depth + 1;
     }
@@ -141,11 +140,11 @@ bool ManeuverLibrary::updateValidity(std::shared_ptr<Primitive> &primitive) {
   return primitive->validity;
 }
 
-bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> &primitive,
-                                          std::vector<TrajectorySegments> &valid_primitives, bool check_valid_child) {
+bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> &primitive, std::vector<Path> &valid_primitives,
+                                          bool check_valid_child) {
   bool valid_segment{true};
   // Check collision with terrain
-  Trajectory &current_trajectory = primitive->segment;
+  PathSegment &current_trajectory = primitive->segment;
   valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "distance_surface", true);
   // Check collision with maximum terrain altitude
   valid_segment = valid_segment && checkTrajectoryCollision(current_trajectory, "max_elevation", false);
@@ -157,11 +156,11 @@ bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> &primitive,
     // If the primitive segment is valid and has a child it needs to have at least one child that is valid
     bool has_valid_child{false};
     for (auto &child : primitive->child_primitives) {
-      std::vector<TrajectorySegments> child_segments;
+      std::vector<Path> child_segments;
       if (checkCollisionsTree(child, child_segments)) {
         has_valid_child = true;
         // for (auto &child : child_segments) {
-        //   TrajectorySegments valid_segments;
+        //   Path valid_segments;
         //   child.prependSegment(current_trajectory);
         //   valid_primitives.push_back(valid_segments);
         // }
@@ -173,17 +172,17 @@ bool ManeuverLibrary::checkCollisionsTree(std::shared_ptr<Primitive> &primitive,
 }
 
 bool ManeuverLibrary::checkCollisions() {
-  std::vector<TrajectorySegments> valid_primitives;
+  std::vector<Path> valid_primitives;
   bool valid = checkCollisionsTree(motion_primitive_tree_, valid_primitives);
   valid_primitives_ = valid_primitives;
   return valid;
 }
 
-std::vector<TrajectorySegments> ManeuverLibrary::checkRelaxedCollisions() {
+std::vector<Path> ManeuverLibrary::checkRelaxedCollisions() {
   // Iterate through all motion primtiives and only return collision free primitives
   // This is assuming that there are no collision free primitives, therefore the violation of the constraint is measured
 
-  std::vector<TrajectorySegments> valid_primitives;
+  std::vector<Path> valid_primitives;
   for (auto &trajectory : motion_primitives_) {
     double distance_surface_violation = getTrajectoryCollisionCost(trajectory, "distance_surface");
     double max_elevation_violation = getTrajectoryCollisionCost(trajectory, "max_elevation", false);
@@ -194,7 +193,7 @@ std::vector<TrajectorySegments> ManeuverLibrary::checkRelaxedCollisions() {
   return valid_primitives;
 }
 
-bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory, const std::string &layer, bool is_above) {
+bool ManeuverLibrary::checkTrajectoryCollision(PathSegment &trajectory, const std::string &layer, bool is_above) {
   /// TODO: Reference gridmap terrain
   for (auto position : trajectory.position()) {
     // TODO: Make max terrain optional
@@ -205,8 +204,7 @@ bool ManeuverLibrary::checkTrajectoryCollision(Trajectory &trajectory, const std
   return true;
 }
 
-bool ManeuverLibrary::checkTrajectoryCollision(TrajectorySegments &trajectory, const std::string &layer,
-                                               bool is_above) {
+bool ManeuverLibrary::checkTrajectoryCollision(Path &trajectory, const std::string &layer, bool is_above) {
   /// TODO: Reference gridmap terrain
   for (auto position : trajectory.position()) {
     // TODO: Make max terrain optional
@@ -217,8 +215,7 @@ bool ManeuverLibrary::checkTrajectoryCollision(TrajectorySegments &trajectory, c
   return true;
 }
 
-double ManeuverLibrary::getTrajectoryCollisionCost(TrajectorySegments &trajectory, const std::string &layer,
-                                                   bool is_above) {
+double ManeuverLibrary::getTrajectoryCollisionCost(Path &trajectory, const std::string &layer, bool is_above) {
   double cost{0.0};
   /// Iterate through whole trajectory to calculate collision depth
   for (auto position : trajectory.position()) {
@@ -227,17 +224,16 @@ double ManeuverLibrary::getTrajectoryCollisionCost(TrajectorySegments &trajector
   return cost;
 }
 
-std::vector<TrajectorySegments> ManeuverLibrary::AppendSegment(std::vector<TrajectorySegments> &first_segment,
-                                                               const std::vector<Eigen::Vector3d> &rates,
-                                                               const double horizon) {
+std::vector<Path> ManeuverLibrary::AppendSegment(std::vector<Path> &first_segment,
+                                                 const std::vector<Eigen::Vector3d> &rates, const double horizon) {
   // Append second segment for each primitive
-  std::vector<TrajectorySegments> second_segment;
+  std::vector<Path> second_segment;
   for (auto trajectory_segments : first_segment) {
     for (auto rate : rates) {
       Eigen::Vector3d end_pos = trajectory_segments.lastSegment().states.back().position;
       Eigen::Vector3d end_vel = trajectory_segments.lastSegment().states.back().velocity;
-      Trajectory new_segment = generateArcTrajectory(rate, horizon, end_pos, end_vel);
-      TrajectorySegments trajectory_2 = trajectory_segments;
+      PathSegment new_segment = generateArcTrajectory(rate, horizon, end_pos, end_vel);
+      Path trajectory_2 = trajectory_segments;
       trajectory_2.appendSegment(new_segment);
       second_segment.push_back(trajectory_2);
     }
@@ -246,10 +242,10 @@ std::vector<TrajectorySegments> ManeuverLibrary::AppendSegment(std::vector<Traje
 }
 
 /// TODO: Change rate vector for curvature and climbrates
-Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const double horizon,
-                                                  Eigen::Vector3d current_pos, Eigen::Vector3d current_vel,
-                                                  const double dt) {
-  Trajectory trajectory;
+PathSegment ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const double horizon,
+                                                   Eigen::Vector3d current_pos, Eigen::Vector3d current_vel,
+                                                   const double dt) {
+  PathSegment trajectory;
   trajectory.states.clear();
 
   double time = 0.0;
@@ -285,8 +281,8 @@ Trajectory ManeuverLibrary::generateArcTrajectory(Eigen::Vector3d rate, const do
   return trajectory;
 }
 
-Trajectory ManeuverLibrary::generateCircleTrajectory(Eigen::Vector3d center_pos, double radius, const double dt) {
-  Trajectory trajectory;
+PathSegment ManeuverLibrary::generateCircleTrajectory(Eigen::Vector3d center_pos, double radius, const double dt) {
+  PathSegment trajectory;
   trajectory.states.clear();
 
   /// TODO: Fix sign conventions for curvature
@@ -307,9 +303,9 @@ Trajectory ManeuverLibrary::generateCircleTrajectory(Eigen::Vector3d center_pos,
   return trajectory;
 }
 
-TrajectorySegments ManeuverLibrary::getBestPrimitive() {
+Path ManeuverLibrary::getBestPrimitive() {
   /// TODO: Implement best first search on tree
-  TrajectorySegments primitive;
+  Path primitive;
   // Calculate utilities of each primitives
   for (auto &trajectory : valid_primitives_) {
     if (!trajectory.valid()) continue;
@@ -340,8 +336,8 @@ TrajectorySegments ManeuverLibrary::getBestPrimitive() {
   return primitive;
 }
 
-TrajectorySegments ManeuverLibrary::getRandomPrimitive() {
-  TrajectorySegments primitive;
+Path ManeuverLibrary::getRandomPrimitive() {
+  Path primitive;
 
   std::shared_ptr<Primitive> primitives = motion_primitive_tree_;
   primitive.appendSegment(primitives->segment);
@@ -392,7 +388,7 @@ Eigen::Vector4d ManeuverLibrary::rpy2quaternion(double roll, double pitch, doubl
   return q;
 }
 
-std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectorySegment(TrajectorySegments &segment) {
+std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromPath(Path &segment) {
   std::vector<ViewPoint> viewpoint_vector;
   double sample_freq = 1.0;
   std::vector<Eigen::Vector3d> pos_vector = segment.position();
@@ -413,7 +409,7 @@ std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectorySegment(Tra
   return viewpoint_vector;
 }
 
-std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromTrajectory(Trajectory &segment) {
+std::vector<ViewPoint> ManeuverLibrary::sampleViewPointFromPathSegment(PathSegment &segment) {
   std::vector<ViewPoint> viewpoint_vector;
   double sample_freq = 1.0;
   std::vector<Eigen::Vector3d> pos_vector = segment.position();
