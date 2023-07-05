@@ -588,15 +588,23 @@ void DubinsAirplaneStateSpace::calcDubPathWithClassification(DubinsPath& path, d
       break;
     }
     case DubinsPath::CLASS_A12: {  // class a_12: depending on S_12, optimal path is either RSR (S_12<0) or RSL (S_12>0)
-      if (d * cb - 3.0 * sb * cb + sb * ca - cb * sa + ca * sb > 0.0) {  // RSL is optimal
-        path = dubinsRSL(d, alpha, beta, sa, sb, ca, cb);
-      } else {  // RSL or RSR is optimal
+      if (t_rsr(d, alpha, beta, sa, sb, ca, cb) - pi < 0.0) {
         if (p_rsr(d, alpha, beta, sa, sb, ca, cb) - p_rsl(d, alpha, beta, sa, sb, ca, cb) -
                 2.0 * (q_rsl(d, alpha, beta, sa, sb, ca, cb) - pi) >
             0.0) {  // S_12>0: RSL is optimal
           path = dubinsRSL(d, alpha, beta, sa, sb, ca, cb);
         } else {  // S_12<0: RSR is optimal
           path = dubinsRSR(d, alpha, beta, sa, sb, ca, cb);
+        }
+      } else {
+        if (p_lsr(d, alpha, beta, sa, sb, ca, cb) + t_lsr(d, alpha, beta, sa, sb, ca, cb) +
+                q_lsr(d, alpha, beta, sa, sb, ca, cb) - p_rsl(d, alpha, beta, sa, sb, ca, cb) -
+                q_rsl(d, alpha, beta, sa, sb, ca, cb) - t_rsl(d, alpha, beta, sa, sb, ca, cb) <
+            0.0) {  // S_12>0: RSL is optimal
+          // LSR is optimal
+          path = dubinsLSR(d, alpha, beta, sa, sb, ca, cb);
+        } else {  // RSL is optimal
+          path = dubinsRSL(d, alpha, beta, sa, sb, ca, cb);
         }
       }
       break;
@@ -622,12 +630,23 @@ void DubinsAirplaneStateSpace::calcDubPathWithClassification(DubinsPath& path, d
     }
     case DubinsPath::CLASS_A21: {  // class a_21 (top. equiv. a_12): depending on S_21, optimal path is either LSL
                                    // (S_21<0) or RSL (S_12>0)
-      if (p_lsl(d, alpha, beta, sa, sb, ca, cb) - p_rsl(d, alpha, beta, sa, sb, ca, cb) -
-              2.0 * (t_rsl(d, alpha, beta, sa, sb, ca, cb) - pi) <
-          0.0) {  // S_21<0: LSL is optimal
-        path = dubinsLSL(d, alpha, beta, sa, sb, ca, cb);
-      } else {  // S_21>0: RSL is optimal
-        path = dubinsRSL(d, alpha, beta, sa, sb, ca, cb);
+      if (q_lsl(d, alpha, beta, sa, sb, ca, cb) - pi < 0.0) {
+        if (p_lsl(d, alpha, beta, sa, sb, ca, cb) - p_rsl(d, alpha, beta, sa, sb, ca, cb) -
+                2.0 * (t_rsl(d, alpha, beta, sa, sb, ca, cb) - pi) <
+            0.0) {  // S_21<0: LSL is optimal
+          path = dubinsLSL(d, alpha, beta, sa, sb, ca, cb);
+        } else {  // S_21>0: RSL is optimal
+          path = dubinsRSL(d, alpha, beta, sa, sb, ca, cb);
+        }
+      } else {
+        if (p_lsr(d, alpha, beta, sa, sb, ca, cb) + t_lsr(d, alpha, beta, sa, sb, ca, cb) +
+                q_lsr(d, alpha, beta, sa, sb, ca, cb) - p_lsl(d, alpha, beta, sa, sb, ca, cb) -
+                q_lsl(d, alpha, beta, sa, sb, ca, cb) - t_lsl(d, alpha, beta, sa, sb, ca, cb) <
+            0.0) {  // S_21<0: LSL is optimal
+          path = dubinsLSL(d, alpha, beta, sa, sb, ca, cb);
+        } else {  // S_21>0: RSL is optimal
+          path = dubinsLSR(d, alpha, beta, sa, sb, ca, cb);
+        }
       }
       break;
     }
@@ -687,14 +706,25 @@ void DubinsAirplaneStateSpace::calcDubPathWithClassification(DubinsPath& path, d
       }
       break;
     }
-    case DubinsPath::CLASS_A34: {  // class a_34 (top. equiv. to a_12): depending on S_34, optimal path is RSR (S_34<0)
-                                   // or LSR (S_34>0)
-      if (p_rsr(d, alpha, beta, sa, sb, ca, cb) - p_lsr(d, alpha, beta, sa, sb, ca, cb) -
-              2.0 * (t_lsr(d, alpha, beta, sa, sb, ca, cb) - pi) <
-          0) {  // S_34<0: RSR is optimal
-        path = dubinsRSR(d, alpha, beta, sa, sb, ca, cb);
-      } else {  // S_34>0: LSR is optimal
-        path = dubinsLSR(d, alpha, beta, sa, sb, ca, cb);
+    case DubinsPath::CLASS_A34: {  // class a_34 (top. equiv. to a_12): depending on S_34, optimal path is RSR
+                                   // (S_34<0) or LSR (S_34>0)
+      if (q_rsr(d, alpha, beta, sa, sb, ca, cb) - pi < 0.0) {
+        if (p_rsr(d, alpha, beta, sa, sb, ca, cb) - p_lsr(d, alpha, beta, sa, sb, ca, cb) -
+                2.0 * (t_lsr(d, alpha, beta, sa, sb, ca, cb) - pi) <
+            0) {  // S_34<0: RSR is optimal
+          path = dubinsRSR(d, alpha, beta, sa, sb, ca, cb);
+        } else {  // S_34>0: LSR is optimal
+          path = dubinsLSR(d, alpha, beta, sa, sb, ca, cb);
+        }
+      } else {
+        if (p_lsr(d, alpha, beta, sa, sb, ca, cb) + t_lsr(d, alpha, beta, sa, sb, ca, cb) +
+                q_lsr(d, alpha, beta, sa, sb, ca, cb) - p_rsl(d, alpha, beta, sa, sb, ca, cb) -
+                q_rsl(d, alpha, beta, sa, sb, ca, cb) - t_rsl(d, alpha, beta, sa, sb, ca, cb) <
+            0.0) {  // S_34<0: RSR is optimal
+          path = dubinsLSR(d, alpha, beta, sa, sb, ca, cb);
+        } else {  // S_34>0: LSR is optimal
+          path = dubinsRSL(d, alpha, beta, sa, sb, ca, cb);
+        }
       }
       break;
     }
@@ -718,14 +748,26 @@ void DubinsAirplaneStateSpace::calcDubPathWithClassification(DubinsPath& path, d
       }
       break;
     }
-    case DubinsPath::CLASS_A43: {  // class a_43 (top. equiv. to a_34): depending on S_43, optimal path is LSL (S_43<0)
-                                   // or LSR (S_43>0)
-      if (p_lsl(d, alpha, beta, sa, sb, ca, cb) - p_lsr(d, alpha, beta, sa, sb, ca, cb) -
-              2.0 * (q_lsr(d, alpha, beta, sa, sb, ca, cb) - pi) <
-          0.0) {  // S_43<0: LSL is optimal
-        path = dubinsLSL(d, alpha, beta, sa, sb, ca, cb);
-      } else {  // S_43>0: LSR is optimal
-        path = dubinsLSR(d, alpha, beta, sa, sb, ca, cb);
+    case DubinsPath::CLASS_A43: {  // class a_43 (top. equiv. to a_34): depending on S_43, optimal path is LSL
+                                   // (S_43<0) or LSR (S_43>0)
+      if (t_lsl(d, alpha, beta, sa, sb, ca, cb) - pi < 0.0) {
+        if (p_lsl(d, alpha, beta, sa, sb, ca, cb) - p_lsr(d, alpha, beta, sa, sb, ca, cb) -
+                2.0 * (q_lsr(d, alpha, beta, sa, sb, ca, cb) - pi) <
+            0.0) {  // S_43<0: LSL is optimal
+          path = dubinsLSL(d, alpha, beta, sa, sb, ca, cb);
+        } else {  // S_43>0: LSR is optimal
+          path = dubinsLSR(d, alpha, beta, sa, sb, ca, cb);
+        }
+      } else {
+        if (p_lsr(d, alpha, beta, sa, sb, ca, cb) + t_lsr(d, alpha, beta, sa, sb, ca, cb) +
+                q_lsr(d, alpha, beta, sa, sb, ca, cb) - p_rsl(d, alpha, beta, sa, sb, ca, cb) -
+                q_rsl(d, alpha, beta, sa, sb, ca, cb) - t_rsl(d, alpha, beta, sa, sb, ca, cb) <
+            0.0) {  // S_12>0: RSL is optimal
+          // LSR is optimal
+          path = dubinsLSR(d, alpha, beta, sa, sb, ca, cb);
+        } else {  // RSL is optimal
+          path = dubinsRSL(d, alpha, beta, sa, sb, ca, cb);
+        }
       }
       break;
     }
