@@ -1,0 +1,17 @@
+# Terrain Information
+#
+
+std_msgs/Header header
+
+std_msgs/Int32 segment_id
+geometry_msgs/Vector3 reference_position
+geometry_msgs/Vector3 vehicle_position
+std_msgs/Float64 reference_terrain_altitude
+std_msgs/Float64 reference_maximum_altitude
+std_msgs/Float64 reference_minimum_altitude
+std_msgs/Float64 reference_safety_lower_altitude
+std_msgs/Float64 reference_safety_upper_altitude
+std_msgs/Float64 vehicle_terrain_altitude
+std_msgs/Float64 vehicle_maximum_altitude
+std_msgs/Float64 vehicle_minimum_altitude
+std_msgs/Float64 distance_to_terrain

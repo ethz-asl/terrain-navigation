@@ -9,6 +9,7 @@ add_message_files(
   DIRECTORY msg
   FILES
   NavigationStatus.msg
+  TerrainInfo.msg
 )
 
 add_service_files(

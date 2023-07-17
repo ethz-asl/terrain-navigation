@@ -77,7 +77,7 @@ bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const 
   double horizon = 2 * M_PI / std::abs(rate.z());
   Eigen::Vector3d pos = Eigen::Vector3d(pos_2d.x(), pos_2d.y(), 0.0);
 
-  Trajectory trajectory = manuever_library->generateArcTrajectory(rate, horizon, pos, vel);
+  PathSegment trajectory = manuever_library->generateArcTrajectory(rate, horizon, pos, vel);
   for (auto& position : trajectory.position()) {
     if (!map.isInside(Eigen::Vector2d(position.x(), position.y()))) {
       // Handle outside states as part of collision surface
