@@ -390,7 +390,7 @@ each planner."""
             bottom=False,      # ticks along the bottom edge are off
             top=False,         # ticks along the top edge are off
             labelbottom=False)
-        ax1.legend(plannerNames, loc='upper left')
+        ax1.legend(["Sargans", "Dischma Valley", "Gotthard Pass"], loc='upper left')
 
         # Success Rate plot
         ax2.set_xlabel('Time [s]')

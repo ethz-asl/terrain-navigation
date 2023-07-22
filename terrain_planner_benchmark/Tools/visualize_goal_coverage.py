@@ -50,7 +50,7 @@ with open(sys.argv[1]) as file:
     fig = plt.figure("Coverage", figsize=(5, 3))
     ax = fig.add_subplot(1, 1, 1)
 
-    fig2 = plt.figure("Coverage Boxplot", figsize=(5, 3))
+    fig2 = plt.figure("Coverage Boxplot", figsize=(5, 3.5))
     ax2 = fig2.add_subplot(1, 1, 1)
     colors = ['lightblue', 'pink']
 
