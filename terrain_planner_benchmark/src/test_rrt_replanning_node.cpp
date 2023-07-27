@@ -113,7 +113,8 @@ void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
   pub.publish(msg);
 }
 
-void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius, Eigen::Vector3d color=Eigen::Vector3d(0.0, 1.0, 0.0)) {
+void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius,
+                            Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0)) {
   visualization_msgs::Marker marker;
   marker.header.stamp = ros::Time::now();
   marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -161,15 +162,15 @@ void addErrorLayer(const std::string layer_name, const std::string query_layer, 
 }
 
 Eigen::Vector3d getColor(double intensity) {
-    const std::vector<std::vector<float>> &ctable = colorMap.at("plasma");
+  const std::vector<std::vector<float>>& ctable = colorMap.at("plasma");
 
-    int idx = int(floor(intensity * 255));
-    idx = std::min(idx, 255);
-    idx = std::max(idx, 0);
+  int idx = int(floor(intensity * 255));
+  idx = std::min(idx, 255);
+  idx = std::max(idx, 0);
 
-    // Get color from table
-    std::vector<float> rgb = ctable.at(idx);
-    return Eigen::Vector3d(rgb[0], rgb[1], rgb[2]);
+  // Get color from table
+  std::vector<float> rgb = ctable.at(idx);
+  return Eigen::Vector3d(rgb[0], rgb[1], rgb[2]);
 }
 
 int main(int argc, char** argv) {
@@ -318,7 +319,6 @@ int main(int argc, char** argv) {
     std::cout << " - goal pos: " << goal.transpose() << std::endl;
     double min_altitude = 1964.41;
     double max_altitude = 2307.01;
-
 
     publishCircleSetpoints(start_pos_pub, start, radius, getColor(1.0));
     publishCircleSetpoints(goal_pos_pub, goal, radius, getColor(0.0));
