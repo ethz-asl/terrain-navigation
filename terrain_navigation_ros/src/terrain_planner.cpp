@@ -842,11 +842,11 @@ bool TerrainPlanner::setStartCallback(planner_msgs::SetVector3::Request &req, pl
   if (is_safe) {
     start_pos_ = new_start;
     res.success = true;
-    publishGoal(candidate_start_pub_, start_pos_, goal_radius_, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
+    publishGoal(candidate_start_pub_, new_start, goal_radius_, Eigen::Vector3d(0.0, 1.0, 0.0), "start");
     return true;
   } else {
     res.success = false;
-    publishGoal(candidate_start_pub_, start_pos_, goal_radius_, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
+    publishGoal(candidate_start_pub_, new_start, goal_radius_, Eigen::Vector3d(1.0, 0.0, 0.0), "start");
     return false;
   }
 }
