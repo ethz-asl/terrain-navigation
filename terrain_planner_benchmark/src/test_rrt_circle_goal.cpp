@@ -51,9 +51,9 @@
 
 #include "terrain_navigation/data_logger.h"
 #include "terrain_planner/common.h"
+#include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
-#include "terrain_planner/maneuver_library.h"
 
 void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
   visualization_msgs::Marker marker;
@@ -238,11 +238,11 @@ int main(int argc, char** argv) {
   publishCircleSetpoints(start_pos_pub, start, radius);
   publishCircleSetpoints(goal_pos_pub, goal, radius);
   publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
-  ///TODO: Save planned path into a csv file for plotting
+  /// TODO: Save planned path into a csv file for plotting
   for (auto& point : path.position()) {
     std::unordered_map<std::string, std::any> state;
-    state.insert(std::pair<std::string, double>("x", point(0) + 0.5*map_width_x));
-    state.insert(std::pair<std::string, double>("y", point(1) + 0.5*map_width_y));
+    state.insert(std::pair<std::string, double>("x", point(0) + 0.5 * map_width_x));
+    state.insert(std::pair<std::string, double>("y", point(1) + 0.5 * map_width_y));
     state.insert(std::pair<std::string, double>("z", point(2)));
     data_logger->record(state);
   }
