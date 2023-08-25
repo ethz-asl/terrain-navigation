@@ -48,10 +48,10 @@ ax = fig.add_subplot(1, 1, 1)
 ax.set_ylabel('Altitude [m]')
 ax.set_xlabel('Time [s]')
 ymin, ymax = min(reference_position), max(reference_position)
-reference, = ax.plot([],[], lw=2)
-handle_vehicle_position, = ax.plot([],[], lw=2)
+handle_vehicle_position, = ax.plot([],[], lw=2, label='Vehicle Position')
+reference, = ax.plot([],[], lw=2, label='Reference')
 handle_min_altitude, = ax.plot([],[], lw=2)
-handle_max_altitude, = ax.plot([],[], lw=2)
+handle_max_altitude, = ax.plot([],[], lw=2, color=handle_min_altitude.get_color())
 handle_marker = ax.scatter([], [], s=20, facecolor='red')
 
 idx = [(s,e) for s,e in zip(np.arange(0,len(reference_position), 1), np.arange(499,len(reference_position)+1, 1))]
@@ -71,28 +71,29 @@ def animate(i):
   reference.set_data(time[id[0]: id[1]], reference_position[id[0]:id[1]])
   handle_min_altitude.set_data(time[id[0]: id[1]], minimum_altitude[id[0]:id[1]])
   reference_color = handle_min_altitude.get_color()
-  ax.fill_between(time[id[0]: id[1]],  minimum_altitude[id[0]:id[1]], maximum_altitude[id[0]:id[1]], alpha=0.8, label='_nolegend_', color=reference_color)
+  ax.fill_between(time[id[0]: id[1]],  minimum_altitude[id[0]:id[1]], maximum_altitude[id[0]:id[1]], alpha=0.4, label='_nolegend_', color=reference_color)
   handle_max_altitude.set_data(time[id[0]: id[1]], maximum_altitude[id[0]:id[1]])
   handle_vehicle_position.set_data(time[id[0]: id[1]], vehicle_position[id[0]:id[1]])
   # TODO: handle data with constraint-> handle_constraint
-  ax.scatter(time[id[1]], vehicle_position[id[1]], c='red')
+  ax.scatter(time[id[1]], vehicle_position[id[1]], c=handle_vehicle_position.get_color())
 #   ax.scatter(x, y, s=20, c='red')
   ax.set_xlim(time[id[0]], time[id[0]]+70)
-  ax.set_ylim(ymin-80, ymax+80)
+  ax.set_ylim(ymin-150, ymax+80)
   ax.set_ylabel('Altitude [m]')
   ax.set_xlabel('Time [s]')
+  ax.legend(loc='lower left')
   ax.grid(True)
   return reference, handle_min_altitude, handle_max_altitude, handle_vehicle_position,
 
 anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(reference_position)-500, interval=30, blit=False)
 fig.tight_layout()
 
-# anim.save(
-#     "circle_anim.mov",
-#     codec="png",
-#     dpi=100,
-#     bitrate=-1,
-#     savefig_kwargs={"transparent": True, "facecolor": "none"},
-# )
+anim.save(
+    "circle_anim.mov",
+    codec="png",
+    dpi=100,
+    bitrate=-1,
+    savefig_kwargs={"transparent": True, "facecolor": "none"},
+)
 
 plt.show()
