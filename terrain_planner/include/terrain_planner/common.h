@@ -677,7 +677,7 @@ visualization_msgs::Marker vector2ArrowsMsg(const Eigen::Vector3d &position, con
   return marker;
 }
 
-visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, const int id) {
+visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, const int id, double scale = 1.0) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
@@ -716,9 +716,9 @@ visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, 
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
   marker.pose.orientation.w = 1.0;
-  marker.scale.x = 0.5;
-  marker.scale.y = 1.0;
-  marker.scale.z = 1.0;
+  marker.scale.x = scale;
+  marker.scale.y = scale;
+  marker.scale.z = scale;
   marker.color.a = 0.2;
   if (!trajectory.valid()) {
     marker.color.r = 1.0;
@@ -733,7 +733,8 @@ visualization_msgs::Marker trajectory2MarkerMsg(TrajectorySegments &trajectory, 
 }
 
 visualization_msgs::Marker trajectory2MarkerMsg(Trajectory &trajectory, const int id, double min_altitude,
-                                                double max_altitude, std::string color_map = "plasma") {
+                                                double max_altitude, std::string color_map = "plasma",
+                                                double scale = 1.0) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
@@ -778,14 +779,15 @@ visualization_msgs::Marker trajectory2MarkerMsg(Trajectory &trajectory, const in
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
   marker.pose.orientation.w = 1.0;
-  marker.scale.x = 10.0;
-  marker.scale.y = 10.0;
-  marker.scale.z = 10.0;
+  marker.scale.x = scale;
+  marker.scale.y = scale;
+  marker.scale.z = scale;
   return marker;
 }
 
 visualization_msgs::Marker trajectory2MarkerMsg(Trajectory &trajectory, const int id,
-                                                Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0)) {
+                                                Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0),
+                                                double scale = 1.0) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();
@@ -806,9 +808,9 @@ visualization_msgs::Marker trajectory2MarkerMsg(Trajectory &trajectory, const in
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
   marker.pose.orientation.w = 1.0;
-  marker.scale.x = 1.0;
-  marker.scale.y = 1.0;
-  marker.scale.z = 1.0;
+  marker.scale.x = scale;
+  marker.scale.y = scale;
+  marker.scale.z = scale;
   marker.color.a = 1.0;
   marker.color.r = color.x();
   marker.color.g = color.y();

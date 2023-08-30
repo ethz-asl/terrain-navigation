@@ -76,7 +76,8 @@ void writeToFile(const std::string path, std::vector<Eigen::Vector3d> solution_p
   return;
 }
 
-void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
+void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory,
+                         Eigen::Vector3d color = Eigen::Vector3d(1.0, 0.0, 0.0)) {
   visualization_msgs::MarkerArray msg;
 
   std::vector<visualization_msgs::Marker> marker;
@@ -103,8 +104,7 @@ void publishPathSegments(ros::Publisher& pub, TrajectorySegments& trajectory) {
   }
 
   for (auto& segment : trajectory.segments) {
-    Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0);
-    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, min_altitude, max_altitude));
+    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, color, 10.0));
     segment_markers.insert(segment_markers.begin(),
                            vector2ArrowsMsg(segment.position().front(), 5.0 * segment.velocity().front(), i++, color));
     segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().back(), i++, color));
@@ -159,18 +159,6 @@ void addErrorLayer(const std::string layer_name, const std::string query_layer, 
     const grid_map::Index index = *iterator;
     map.at(layer_name, index) = map.at(query_layer, index) > map.at(reference_layer, index);
   }
-}
-
-Eigen::Vector3d getColor(double intensity) {
-  const std::vector<std::vector<float>>& ctable = colorMap.at("plasma");
-
-  int idx = int(floor(intensity * 255));
-  idx = std::min(idx, 255);
-  idx = std::max(idx, 0);
-
-  // Get color from table
-  std::vector<float> rgb = ctable.at(idx);
-  return Eigen::Vector3d(rgb[0], rgb[1], rgb[2]);
 }
 
 int main(int argc, char** argv) {
@@ -239,28 +227,28 @@ int main(int argc, char** argv) {
 
   TrajectorySegments circlegoal_solution_path;
   planner->setupProblem(start, goal);
-  planner->Solve(5.0, circlegoal_solution_path);
+  planner->Solve(10.0, circlegoal_solution_path);
 
-  Eigen::Vector3d start_vel(1.0, 0.0, 0.0);
-  Eigen::Vector3d goal_vel(1.0, 0.0, 0.0);
+  Eigen::Vector3d start_vel(0.0, 1.0, 0.0);
+  Eigen::Vector3d goal_vel(0.0, 1.0, 0.0);
 
   TrajectorySegments yawgoal_solution_path;
   planner->setupProblem(start, start_vel, goal, goal_vel);
-  planner->Solve(5.0, yawgoal_solution_path);
+  planner->Solve(10.0, yawgoal_solution_path);
 
   terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
   grid_map_msgs::GridMap message;
   grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
   grid_map_pub.publish(message);
-  publishPathSegments(circle_path_pub, circlegoal_solution_path);
-  publishPathSegments(yaw_path_pub, yawgoal_solution_path);
+  publishPathSegments(circle_path_pub, circlegoal_solution_path, Eigen::Vector3d(0.0, 1.0, 1.0));
+  publishPathSegments(yaw_path_pub, yawgoal_solution_path, Eigen::Vector3d(1.0, 0.0, 1.0));
   std::cout << " - start pos: " << start.transpose() << std::endl;
   std::cout << " - goal pos: " << goal.transpose() << std::endl;
   double min_altitude = 1964.41;
   double max_altitude = 2307.01;
 
-  publishCircleSetpoints(start_pos_pub, start, radius, getColor(1.0));
-  publishCircleSetpoints(goal_pos_pub, goal, radius, getColor(0.0));
+  publishCircleSetpoints(start_pos_pub, start, radius, Eigen::Vector3d(0.0, 1.0, 1.0));
+  publishCircleSetpoints(goal_pos_pub, goal, radius, Eigen::Vector3d(0.0, 1.0, 1.0));
   publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
   data_logger->setPrintHeader(true);
   std::string output_file_path = output_directory + "/" + location + "_replanning.csv";
