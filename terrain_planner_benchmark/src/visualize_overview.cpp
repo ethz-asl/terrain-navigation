@@ -227,14 +227,14 @@ int main(int argc, char** argv) {
 
   TrajectorySegments circlegoal_solution_path;
   planner->setupProblem(start, goal);
-  planner->Solve(10.0, circlegoal_solution_path);
+  planner->Solve(15.0, circlegoal_solution_path);
 
   Eigen::Vector3d start_vel(0.0, 1.0, 0.0);
   Eigen::Vector3d goal_vel(0.0, 1.0, 0.0);
 
   TrajectorySegments yawgoal_solution_path;
   planner->setupProblem(start, start_vel, goal, goal_vel);
-  planner->Solve(10.0, yawgoal_solution_path);
+  planner->Solve(15.0, yawgoal_solution_path);
 
   terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
   grid_map_msgs::GridMap message;
