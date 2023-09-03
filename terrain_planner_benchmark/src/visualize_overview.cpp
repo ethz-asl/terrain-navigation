@@ -161,6 +161,28 @@ void addErrorLayer(const std::string layer_name, const std::string query_layer, 
   }
 }
 
+void extractCrossSection(grid_map::GridMap& map, std::shared_ptr<DataLogger>& logger) {
+  const Eigen::Vector2d map_pos = map.getPosition();
+  const double map_width_x = map.getLength().x();
+  const double map_width_y = map.getLength().y();
+
+  const Eigen::Vector2d start{Eigen::Vector2d(map_pos(0) - 0.5 * map_width_x, map_pos(1))};
+  const Eigen::Vector2d end{Eigen::Vector2d(map_pos(0) + 0.5 * map_width_x, map_pos(1))};
+  for (grid_map::LineIterator submapIterator(map, start, end); !submapIterator.isPastEnd(); ++submapIterator) {
+    const grid_map::Index index = *submapIterator;
+    std::unordered_map<std::string, std::any> state;
+    Eigen::Vector2d position;
+    map.getPosition(index, position);
+    state.insert(std::pair<std::string, double>("x", -position(0)));
+    state.insert(std::pair<std::string, double>("terrain_height", map.at("elevation", index)));
+    state.insert(std::pair<std::string, double>("minimum_distance", map.at("distance_surface", index)));
+    state.insert(std::pair<std::string, double>("maximum_distance",  map.at("max_elevation", index)));
+    state.insert(std::pair<std::string, double>("H_+", map.at("ics_+", index)));
+    state.insert(std::pair<std::string, double>("H_-", map.at("ics_-", index)));
+    logger->record(state);
+  }
+}
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ompl_rrt_planner");
   ros::NodeHandle nh("");
@@ -181,7 +203,7 @@ int main(int argc, char** argv) {
   nh_private.param<std::string>("output_directory", output_directory, "");
 
   auto data_logger = std::make_shared<DataLogger>();
-  data_logger->setKeys({"time", "path_length"});
+  data_logger->setKeys({"x", "terrain_height", "minimum_distance", "maximum_distance", "H_+", "H_-"});
 
   // Load terrain map from defined tif paths
   auto terrain_map = std::make_shared<TerrainMap>();
@@ -197,6 +219,8 @@ int main(int argc, char** argv) {
   terrain_map->getGridMap().add("offset");
   terrain_map->getGridMap()["offset"].setConstant(1000.0);
   addErrorLayer("error", "ics_-", "ics_+", terrain_map->getGridMap());
+
+  extractCrossSection(terrain_map->getGridMap(), data_logger);
   // Initialize planner with loaded terrain map
   auto planner = std::make_shared<TerrainOmplRrt>();
   planner->setMap(terrain_map);
@@ -251,7 +275,7 @@ int main(int argc, char** argv) {
   publishCircleSetpoints(goal_pos_pub, goal, radius, Eigen::Vector3d(0.0, 1.0, 1.0));
   publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
   data_logger->setPrintHeader(true);
-  std::string output_file_path = output_directory + "/" + location + "_replanning.csv";
+  std::string output_file_path = output_directory + "/" + location + "_cross_section.csv";
   data_logger->writeToFile(output_file_path);
 
   ros::spin();
