@@ -12,14 +12,14 @@ def visualizeCoverage(ax, name, data_df):
     yaw = np.array(data_df["yaw"])
     yaw_coverage = np.array(data_df["yaw_coverage"])
     circle_coverage = np.array(data_df["circle_coverage"])
-    line, = ax.plot(yaw, yaw_coverage, '--', label=name + ' Goal Yaw')
-    ax.plot(yaw, circle_coverage, '-', color=line.get_color(), label=name + ' Goal Circle')
+    line, = ax.plot(yaw, yaw_coverage, '--', label=name + ' Position+Yaw')
+    ax.plot(yaw, circle_coverage, '-', color=line.get_color(), label=name + ' Circle Set')
 
     return circle_coverage, yaw_coverage
 
 def boxPlot(ax, idx, data, colors):
     circle_bp = ax.boxplot(data, \
-        positions=np.array([idx-0.3, idx+0.3])+ 1.0 * idx + 1.0, \
+        positions=np.array([idx+0.3])+ 1.0 * idx + 1.0, \
         widths=0.4, \
         patch_artist=True, \
         notch=0, \
@@ -34,7 +34,16 @@ def boxPlot(ax, idx, data, colors):
     ticks = ['Sargans', 'Dischma', 'Gotthard']
     ax.set_xticks([1.0, 3.0, 5.0], ticks)
     ax.set_xlim(0, len(ticks)*2)
+    print("idx: ", idx)
+    print("  - Position + heading: ")
+    print("    - max: ", np.max(data))
+    print("    - min: ", np.min(data))
 
+    return
+
+def dotPlot(ax, idx, data, colors):
+    print("  - Circle coverage: ", data[0])
+    ax.plot(idx-0.3+ 1.0 * idx + 1.0, data[0],  marker='D', linestyle='dashed', markeredgecolor=colors, markerfacecolor=colors)
     return
 
 with open(sys.argv[1]) as file:
@@ -52,7 +61,7 @@ with open(sys.argv[1]) as file:
 
     fig2 = plt.figure("Coverage Boxplot", figsize=(5, 3.5))
     ax2 = fig2.add_subplot(1, 1, 1)
-    colors = ['lightblue', 'pink']
+    colors = ['c', 'm']
 
     for category_name, category in list.items():
         name = {}
@@ -67,8 +76,9 @@ with open(sys.argv[1]) as file:
                 data_df = pd.read_csv(value)
                 circle_goal, yaw_goal = visualizeCoverage(ax, name, data_df)
 
-                dataset = [circle_goal, yaw_goal]
-                boxPlot(ax2, idx, dataset, colors)
+                dataset = [yaw_goal]
+                boxPlot(ax2, idx, dataset, [colors[1]])
+                dotPlot(ax2, idx, circle_goal, colors[0])
                 idx = idx + 1
 
                 continue
@@ -84,7 +94,7 @@ with open(sys.argv[1]) as file:
     custom_lines = [plt.Line2D([0], [0], color=colors[0], lw=4),
                     plt.Line2D([0], [0], color=colors[1], lw=4)]
 
-    ax2.legend(custom_lines, ['Circle Goal', 'Yaw Goal'], loc='lower left')
+    ax2.legend(custom_lines, ['Valid Loiter Position', 'Tangential Loiter Position'], loc='lower left')
     ax2.set_ylabel('Coverage')
     # ax.set_ylim([0.0, 1.0])
     ax2.grid(True)
