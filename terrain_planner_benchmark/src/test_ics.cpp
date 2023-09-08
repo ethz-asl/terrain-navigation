@@ -66,12 +66,12 @@ void calculateCircleICS(const std::string layer_name, std::shared_ptr<TerrainMap
   addErrorLayer(layer_name, "ics_-", "ics_+", terrain_map->getGridMap());
 }
 
-bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const double yaw, const double yaw_rate) {
+bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const double yaw, const double radius) {
   auto manuever_library = std::make_shared<ManeuverLibrary>();
 
   double upper_altitude = std::numeric_limits<double>::infinity();
   double lower_altitude = -std::numeric_limits<double>::infinity();
-
+  double yaw_rate = (1 / radius) * 20.0;
   Eigen::Vector3d rate = Eigen::Vector3d(0.0, 0.0, yaw_rate);
   Eigen::Vector3d vel = Eigen::Vector3d(std::cos(yaw), std::sin(yaw), 0.0);
   double horizon = 2 * M_PI / std::abs(rate.z());
@@ -98,21 +98,26 @@ bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const 
   }
 }
 
-void calculateYawICS(const std::string layer_name, grid_map::GridMap& map, const double yaw, const double yaw_rate) {
+void calculateYawICS(const std::string layer_name, grid_map::GridMap& map, const double yaw, const double radius) {
   /// Choose yaw state to calculate ICS state
 
   auto manuever_library = std::make_shared<ManeuverLibrary>();
 
   map.add(layer_name);
+  map.add("yaw_error_right");
+  map.add("yaw_error_left");
+
 
   for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index index = *iterator;
     Eigen::Vector2d pos_2d;
     map.getPosition(index, pos_2d);
 
-    bool right_hand_circle_in_collision = checkCollision(map, pos_2d, yaw, yaw_rate);
-    bool left_hand_circle_in_collision = checkCollision(map, pos_2d, yaw, -yaw_rate);
+    bool right_hand_circle_in_collision = checkCollision(map, pos_2d, yaw, radius);
+    bool left_hand_circle_in_collision = checkCollision(map, pos_2d, yaw, -radius);
     map.at(layer_name, index) = (!right_hand_circle_in_collision || !left_hand_circle_in_collision);
+    map.at("yaw_error_right", index) = !right_hand_circle_in_collision;
+    map.at("yaw_error_left", index) = !left_hand_circle_in_collision;
   }
 }
 
@@ -179,7 +184,9 @@ int main(int argc, char** argv) {
   Eigen::Vector2d reference_map_position = Eigen::Vector2d(0.0, 1.5 * width);
   reference_map->getGridMap().setPosition(reference_map_position);
 
-  calculateCircleICS("circle_error", reference_map, 60.0);
+  const double radius = 66.67;
+
+  calculateCircleICS("circle_error", reference_map, radius);
   double circle_coverage = getCoverage("circle_error", 0.0, reference_map->getGridMap());
   std::cout << "  - coverage: " << circle_coverage << std::endl;
   Eigen::Vector3d marker_position{Eigen::Vector3d(reference_map_position(0), reference_map_position(1), 400.0)};
@@ -193,7 +200,7 @@ int main(int argc, char** argv) {
 
   std::cout << "Valid yaw terminal state coverage" << std::endl;
   auto data_logger = std::make_shared<DataLogger>();
-  data_logger->setKeys({"yaw", "yaw_coverage", "circle_coverage"});
+  data_logger->setKeys({"yaw", "yaw_coverage", "circle_coverage", "yaw_error_left", "yaw_error_right"});
   std::cout << "Valid circlular terminal state coverage" << std::endl;
 
   std::shared_ptr<TerrainMap> terrain_map = std::make_shared<TerrainMap>();
@@ -202,14 +209,18 @@ int main(int argc, char** argv) {
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
 
   for (double yaw = 0.0; yaw < 2 * M_PI; yaw += 0.125 * M_PI) {
-    calculateYawICS("yaw_error", terrain_map->getGridMap(), yaw, 0.25);
+    calculateYawICS("yaw_error", terrain_map->getGridMap(), yaw, radius);
     double coverage = getCoverage("yaw_error", 0.0, terrain_map->getGridMap());
-    std::cout << "  - yaw: " << yaw << std::endl;
-    std::cout << "  - coverage: " << coverage << std::endl;
+    double coverage_left = getCoverage("yaw_error_left", 0.0, terrain_map->getGridMap());
+    double coverage_right = getCoverage("yaw_error_right", 0.0, terrain_map->getGridMap());
+    std::cout << "  - yaw: " << yaw / M_PI << " pi / coverage: " << coverage << " right: " << coverage_right
+              << " left: " << coverage_left << std::endl;
 
     std::unordered_map<std::string, std::any> state;
     state.insert(std::pair<std::string, double>("yaw", yaw));
     state.insert(std::pair<std::string, double>("yaw_coverage", coverage));
+    state.insert(std::pair<std::string, double>("yaw_error_left", coverage_left));
+    state.insert(std::pair<std::string, double>("yaw_error_right", coverage_right));
     state.insert(std::pair<std::string, double>("circle_coverage", circle_coverage));
     data_logger->record(state);
 
