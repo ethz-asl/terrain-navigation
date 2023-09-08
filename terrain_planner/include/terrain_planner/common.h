@@ -45,6 +45,7 @@
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <grid_map_core/GridMap.hpp>
 
 const std::map<std::string, std::vector<std::vector<float>>> colorMap{
     {"viridis", {{0.267004, 0.004874, 0.329415}, {0.268510, 0.009605, 0.335427}, {0.269944, 0.014625, 0.341379},
