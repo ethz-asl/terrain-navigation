@@ -43,13 +43,14 @@ reference_position[~mask]=np.nan
 terrain_altitude[~mask]=np.nan
 vehicle_position[~mask]=np.nan
 
-fig = plt.figure('Reference', figsize=(3, 3))
+fig = plt.figure('Reference', figsize=(4, 3))
 ax = fig.add_subplot(1, 1, 1)
-ax.set_ylabel('Altitude [m]')
+ax.set_ylabel('Altitude(AMSL) [m]')
 ax.set_xlabel('Time [s]')
 ymin, ymax = min(reference_position), max(reference_position)
-handle_vehicle_position, = ax.plot([],[], lw=2, label='Vehicle Position')
+handle_vehicle_position, = ax.plot([],[], lw=2, label='Vehicle')
 reference, = ax.plot([],[], lw=2, label='Reference')
+handle_terrain_altitude, = ax.plot([],[], lw=2, label='Terrain')
 handle_min_altitude, = ax.plot([],[], lw=2)
 handle_max_altitude, = ax.plot([],[], lw=2, color=handle_min_altitude.get_color())
 handle_marker = ax.scatter([], [], s=20, facecolor='red')
@@ -61,27 +62,30 @@ def init():
     handle_min_altitude.set_data([], []) 
     handle_max_altitude.set_data([], [])
     handle_vehicle_position.set_data([], [])
+    handle_terrain_altitude.set_data([], [])
 
-    return reference, handle_min_altitude, handle_max_altitude, handle_vehicle_position, 
+    return reference, handle_min_altitude, handle_max_altitude, handle_vehicle_position, handle_terrain_altitude
 
 
 def animate(i):
   id = idx[i]
   ax.collections.clear()
   reference.set_data(time[id[0]: id[1]], reference_position[id[0]:id[1]])
-  handle_min_altitude.set_data(time[id[0]: id[1]], minimum_altitude[id[0]:id[1]])
+  # handle_min_altitude.set_data(time[id[0]: id[1]], minimum_altitude[id[0]:id[1]])
   reference_color = handle_min_altitude.get_color()
-  ax.fill_between(time[id[0]: id[1]],  minimum_altitude[id[0]:id[1]], maximum_altitude[id[0]:id[1]], alpha=0.4, label='_nolegend_', color=reference_color)
-  handle_max_altitude.set_data(time[id[0]: id[1]], maximum_altitude[id[0]:id[1]])
+  constraint_handle = ax.fill_between(time[id[0]: id[1]],  minimum_altitude[id[0]:id[1]], maximum_altitude[id[0]:id[1]], alpha=0.4, label='_nolegend_', color=reference_color)
+  # handle_max_altitude.set_data(time[id[0]: id[1]], maximum_altitude[id[0]:id[1]])
   handle_vehicle_position.set_data(time[id[0]: id[1]], vehicle_position[id[0]:id[1]])
+  handle_terrain_altitude.set_data(time[id[0]: id[1]], terrain_altitude[id[0]:id[1]])
   # TODO: handle data with constraint-> handle_constraint
   ax.scatter(time[id[1]], vehicle_position[id[1]], c=handle_vehicle_position.get_color())
 #   ax.scatter(x, y, s=20, c='red')
   ax.set_xlim(time[id[0]], time[id[0]]+70)
-  ax.set_ylim(ymin-150, ymax+80)
+  ax.set_ylim(ymin-200, ymax+80)
   ax.set_ylabel('Altitude [m]')
   ax.set_xlabel('Time [s]')
-  ax.legend(loc='lower left')
+  ax.legend([handle_vehicle_position, reference, handle_terrain_altitude, constraint_handle], ["Vehicle", "Reference", "Terrain", "Min/Max Alt"]\
+      , framealpha=1, loc='lower center', ncol=2)
   ax.grid(True)
   return reference, handle_min_altitude, handle_max_altitude, handle_vehicle_position,
 
