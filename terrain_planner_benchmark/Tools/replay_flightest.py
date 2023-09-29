@@ -55,7 +55,13 @@ handle_min_altitude, = ax.plot([],[], lw=2)
 handle_max_altitude, = ax.plot([],[], lw=2, color=handle_min_altitude.get_color())
 handle_marker = ax.scatter([], [], s=20, facecolor='red')
 
-idx = [(s,e) for s,e in zip(np.arange(0,len(reference_position), 1), np.arange(499,len(reference_position)+1, 1))]
+index_increment = np.arange(0,len(reference_position), 1)
+capped_index_increment = np.arange(0,len(reference_position), 1)
+capped_index_increment = np.roll(capped_index_increment, 499)
+capped_index_increment[0:499] = np.zeros_like(capped_index_increment[0:499])
+
+
+idx = [(s,e) for s,e in zip(capped_index_increment, index_increment)]
 
 def init():
     reference.set_data([], []) 
