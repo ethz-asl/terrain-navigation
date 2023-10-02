@@ -95,7 +95,7 @@ def animate(i):
   ax.grid(True)
   return reference, handle_min_altitude, handle_max_altitude, handle_vehicle_position,
 
-anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(reference_position)-500, interval=30, blit=False)
+anim = animation.FuncAnimation(fig, animate, init_func=init, frames=len(reference_position), interval=30, blit=False)
 fig.tight_layout()
 
 anim.save(
