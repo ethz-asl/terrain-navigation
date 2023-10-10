@@ -20,7 +20,7 @@ void TerrainOmplRrt::configureProblem() {
 
   problem_setup_->setDefaultPlanner();
   problem_setup_->setDefaultObjective();
-  assert(map);
+  // assert(map);
   problem_setup_->setTerrainCollisionChecking(map_->getGridMap(), check_max_altitude_);
   // problem_setup_->getStateSpace()->setStateSamplerAllocator(
   //     std::bind(&TerrainOmplRrt::allocTerrainStateSampler, this, std::placeholders::_1));

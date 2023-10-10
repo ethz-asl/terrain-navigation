@@ -80,7 +80,7 @@ class TerrainStateSampler : public base::StateSampler {
     state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(y);
     state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(z);
     state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(yaw);
-    assert(si_->isValid(state));
+    // assert(si_->isValid(state));
     return;
   }
   void sampleUniformNear(ompl::base::State* /*state*/, const ompl::base::State* /*near*/,

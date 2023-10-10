@@ -107,7 +107,6 @@ void calculateYawICS(const std::string layer_name, grid_map::GridMap& map, const
   map.add("yaw_error_right");
   map.add("yaw_error_left");
 
-
   for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator) {
     const grid_map::Index index = *iterator;
     Eigen::Vector2d pos_2d;
