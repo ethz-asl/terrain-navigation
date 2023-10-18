@@ -98,3 +98,40 @@ double TerrainMap::getCollisionDepth(const std::string &layer, const Eigen::Vect
   }
   return collision_depth;
 }
+
+void TerrainMap::AddLayerNormals(const std::string reference_layer) {
+  grid_map_.add(reference_layer + "_normal_x");
+  grid_map_.add(reference_layer + "_normal_y");
+  grid_map_.add(reference_layer + "_normal_z");
+
+  grid_map::Matrix &layer_elevation = grid_map_[reference_layer];
+  grid_map::Matrix &layer_normal_x = grid_map_[reference_layer + "_normal_x"];
+  grid_map::Matrix &layer_normal_y = grid_map_[reference_layer + "_normal_y"];
+  grid_map::Matrix &layer_normal_z = grid_map_[reference_layer + "_normal_z"];
+
+  unsigned width = grid_map_.getSize()(0);
+  unsigned height = grid_map_.getSize()(1);
+  double resolution = grid_map_.getResolution();
+  // Compute normals from elevation map
+  // Surface normal calculation from: https://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml
+  for (grid_map::GridMapIterator iterator(grid_map_); !iterator.isPastEnd(); ++iterator) {
+    const grid_map::Index gridMapIndex = *iterator;
+
+    /// TODO: Verify normal by visualization
+    int x = gridMapIndex(0);
+    int y = height - 1 - gridMapIndex(1);
+
+    float sx = layer_elevation(x < width - 1 ? x + 1 : x, y) - layer_elevation(x > 0 ? x - 1 : x, y);
+    if (x == 0 || x == width - 1) sx *= 2;
+
+    float sy = layer_elevation(x, y < height - 1 ? y + 1 : y) - layer_elevation(x, y > 0 ? y - 1 : y);
+    if (y == 0 || y == height - 1) sy *= 2;
+
+    Eigen::Vector3d normal(Eigen::Vector3d(sx, sy, 2 * resolution));
+    normal.normalize();
+
+    layer_normal_x(x, y) = normal(0);
+    layer_normal_y(x, y) = normal(1);
+    layer_normal_z(x, y) = normal(2);
+  }
+}

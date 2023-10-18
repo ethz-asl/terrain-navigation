@@ -18,6 +18,8 @@
 #include <std_srvs/Empty.h>
 
 #include <mavros_msgs/SetMode.h>
+#include <planner_msgs/NavigationStatus.h>
+#include <planner_msgs/SetPlannerState.h>
 #include <planner_msgs/SetService.h>
 #include <planner_msgs/SetString.h>
 #include <planner_msgs/SetVector3.h>
@@ -32,6 +34,8 @@ namespace mav_planning_rviz {
 PlanningPanel::PlanningPanel(QWidget* parent) : rviz::Panel(parent), nh_(ros::NodeHandle()), interactive_markers_(nh_) {
   createLayout();
   goal_marker_ = std::make_shared<GoalMarker>(nh_);
+  planner_state_sub_ = nh_.subscribe("/planner_status", 1, &PlanningPanel::plannerstateCallback, this,
+                                     ros::TransportHints().tcpNoDelay());
 }
 
 void PlanningPanel::onInitialize() {
@@ -51,18 +55,44 @@ void PlanningPanel::onInitialize() {
 void PlanningPanel::createLayout() {
   QGridLayout* service_layout = new QGridLayout;
 
-  // Input the namespace.
-  service_layout->addWidget(new QLabel("Terrain Location:"), 0, 0, 1, 1);
-  planner_name_editor_ = new QLineEdit;
-  service_layout->addWidget(planner_name_editor_, 0, 1, 1, 1);
-  terrain_align_checkbox_ = new QCheckBox("Virtual Terrain");
-  service_layout->addWidget(terrain_align_checkbox_, 0, 2, 1, 1);
-  load_terrain_button_ = new QPushButton("Load Terrain");
-  service_layout->addWidget(load_terrain_button_, 0, 3, 1, 1);
-
   // Planner services and publications.
+  service_layout->addWidget(createTerrainLoaderGroup(), 0, 0, 1, 1);
+  service_layout->addWidget(createPlannerCommandGroup(), 1, 0, 1, 1);
+  service_layout->addWidget(createPlannerModeGroup(), 2, 0, 4, 1);
+
+  // First the names, then the start/goal, then service buttons.
+  QVBoxLayout* layout = new QVBoxLayout;
+  layout->addLayout(service_layout);
+  setLayout(layout);
+}
+
+QGroupBox* PlanningPanel::createPlannerModeGroup() {
+  QGroupBox* groupBox = new QGroupBox(tr("Planner Actions"));
+  QGridLayout* service_layout = new QGridLayout;
+  set_planner_state_buttons_.push_back(new QPushButton("NAVIGATE"));
+  set_planner_state_buttons_.push_back(new QPushButton("ROLLOUT"));
+  set_planner_state_buttons_.push_back(new QPushButton("ABORT"));
+  set_planner_state_buttons_.push_back(new QPushButton("RETURN"));
+
+  service_layout->addWidget(set_planner_state_buttons_[0], 0, 0, 1, 1);
+  service_layout->addWidget(set_planner_state_buttons_[1], 0, 1, 1, 1);
+  service_layout->addWidget(set_planner_state_buttons_[3], 0, 2, 1, 1);
+  service_layout->addWidget(set_planner_state_buttons_[2], 0, 3, 1, 1);
+  groupBox->setLayout(service_layout);
+
+  connect(set_planner_state_buttons_[0], SIGNAL(released()), this, SLOT(setPlannerModeServiceNavigate()));
+  connect(set_planner_state_buttons_[1], SIGNAL(released()), this, SLOT(setPlannerModeServiceRollout()));
+  connect(set_planner_state_buttons_[2], SIGNAL(released()), this, SLOT(setPlannerModeServiceAbort()));
+  connect(set_planner_state_buttons_[3], SIGNAL(released()), this, SLOT(setPlannerModeServiceReturn()));
+
+  return groupBox;
+}
+
+QGroupBox* PlanningPanel::createPlannerCommandGroup() {
+  QGroupBox* groupBox = new QGroupBox(tr("Set Planner Problem"));
+  QGridLayout* service_layout = new QGridLayout;
+
   planner_service_button_ = new QPushButton("Engage Planner");
-  goal_altitude_editor_ = new QLineEdit;
   set_goal_button_ = new QPushButton("Update Goal");
   set_start_button_ = new QPushButton("Update Start");
   set_current_loiter_button_ = new QPushButton("Loiter Start");
@@ -72,36 +102,30 @@ void PlanningPanel::createLayout() {
   planning_budget_editor_ = new QLineEdit;
   max_altitude_button_enable_ = new QPushButton("Enable Max altitude");
   max_altitude_button_disable_ = new QPushButton("Disable Max altitude");
+
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
-  service_layout->addWidget(new QLabel("Goal Altitude:"), 1, 0, 1, 1);
-  service_layout->addWidget(goal_altitude_editor_, 1, 1, 1, 1);
-  service_layout->addWidget(set_start_button_, 1, 2, 1, 1);
-  service_layout->addWidget(set_goal_button_, 1, 3, 1, 1);
 
-  service_layout->addWidget(set_current_loiter_button_, 2, 2, 1, 1);
-  service_layout->addWidget(set_current_segment_button_, 2, 3, 1, 1);
+  // Input the namespace.
+  service_layout->addWidget(set_start_button_, 0, 0, 1, 1);
+  service_layout->addWidget(set_goal_button_, 0, 1, 1, 1);
 
-  service_layout->addWidget(new QLabel("Planning budget:"), 3, 0, 1, 1);
-  service_layout->addWidget(planning_budget_editor_, 3, 1, 1, 1);
-  service_layout->addWidget(trigger_planning_button_, 3, 2, 1, 2);
-  service_layout->addWidget(update_path_button_, 4, 0, 1, 4);
-  service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 5, 0, 1, 1);
-  service_layout->addWidget(max_altitude_button_enable_, 5, 1, 1, 1);
-  service_layout->addWidget(max_altitude_button_disable_, 5, 2, 1, 1);
-  service_layout->addWidget(planner_service_button_, 6, 0, 1, 2);
-  service_layout->addWidget(waypoint_button_, 6, 2, 1, 2);
+  service_layout->addWidget(set_current_loiter_button_, 0, 2, 1, 1);
+  service_layout->addWidget(set_current_segment_button_, 0, 3, 1, 1);
 
-  // First the names, then the start/goal, then service buttons.
-  QVBoxLayout* layout = new QVBoxLayout;
-  layout->addLayout(service_layout);
-  setLayout(layout);
+  service_layout->addWidget(new QLabel("Planning budget:"), 2, 0, 1, 1);
+  service_layout->addWidget(planning_budget_editor_, 2, 1, 1, 1);
+  service_layout->addWidget(trigger_planning_button_, 2, 2, 1, 2);
+  service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 3, 0, 1, 1);
+  service_layout->addWidget(max_altitude_button_enable_, 3, 1, 1, 1);
+  service_layout->addWidget(max_altitude_button_disable_, 3, 2, 1, 1);
+  service_layout->addWidget(planner_service_button_, 4, 0, 1, 2);
+  service_layout->addWidget(waypoint_button_, 4, 2, 1, 2);
+
+  groupBox->setLayout(service_layout);
 
   // Hook up connections.
-  connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
-  connect(goal_altitude_editor_, SIGNAL(editingFinished()), this, SLOT(updateGoalAltitude()));
   connect(planner_service_button_, SIGNAL(released()), this, SLOT(callPlannerService()));
-  connect(load_terrain_button_, SIGNAL(released()), this, SLOT(setPlannerName()));
   connect(set_goal_button_, SIGNAL(released()), this, SLOT(setGoalService()));
   connect(update_path_button_, SIGNAL(released()), this, SLOT(setPathService()));
   connect(set_start_button_, SIGNAL(released()), this, SLOT(setStartService()));
@@ -114,6 +138,28 @@ void PlanningPanel::createLayout() {
   connect(max_altitude_button_disable_, SIGNAL(released()), this, SLOT(DisableMaxAltitude()));
   connect(controller_button_, SIGNAL(released()), this, SLOT(publishToController()));
   connect(terrain_align_checkbox_, SIGNAL(stateChanged(int)), this, SLOT(terrainAlignmentStateChanged(int)));
+
+  return groupBox;
+}
+
+QGroupBox* PlanningPanel::createTerrainLoaderGroup() {
+  QGroupBox* groupBox = new QGroupBox(tr("Terrain Loader"));
+  QGridLayout* service_layout = new QGridLayout;
+  // Input the namespace.
+  service_layout->addWidget(new QLabel("Terrain Location:"), 0, 0, 1, 1);
+  planner_name_editor_ = new QLineEdit;
+  service_layout->addWidget(planner_name_editor_, 0, 1, 1, 1);
+  terrain_align_checkbox_ = new QCheckBox("Virtual Terrain");
+  service_layout->addWidget(terrain_align_checkbox_, 0, 2, 1, 1);
+  load_terrain_button_ = new QPushButton("Load Terrain");
+  service_layout->addWidget(load_terrain_button_, 0, 3, 1, 1);
+
+  connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
+  connect(load_terrain_button_, SIGNAL(released()), this, SLOT(setPlannerName()));
+
+  groupBox->setLayout(service_layout);
+
+  return groupBox;
 }
 
 void PlanningPanel::terrainAlignmentStateChanged(int state) {
@@ -173,15 +219,6 @@ void PlanningPanel::setPlannerName() {
     }
   });
   t.detach();
-}
-
-void PlanningPanel::updateGoalAltitude() { setGoalAltitude(goal_altitude_editor_->text()); }
-
-void PlanningPanel::setGoalAltitude(const QString& new_goal_altitude) {
-  if (new_goal_altitude != goal_altitude_value_) {
-    goal_altitude_value_ = new_goal_altitude;
-    Q_EMIT configChanged();
-  }
 }
 
 void PlanningPanel::updatePlanningBudget() { setPlanningBudget(planning_budget_editor_->text()); }
@@ -265,7 +302,6 @@ void PlanningPanel::save(rviz::Config config) const {
   rviz::Panel::save(config);
   config.mapSetValue("namespace", namespace_);
   config.mapSetValue("planner_name", planner_name_);
-  config.mapSetValue("goal_altitude", goal_altitude_value_);
   config.mapSetValue("planning_budget", planning_budget_value_);
   config.mapSetValue("odometry_topic", odometry_topic_);
 }
@@ -277,9 +313,6 @@ void PlanningPanel::load(const rviz::Config& config) {
   QString ns;
   if (config.mapGetString("planner_name", &planner_name_)) {
     planner_name_editor_->setText(planner_name_);
-  }
-  if (config.mapGetString("goal_altitude", &goal_altitude_value_)) {
-    goal_altitude_editor_->setText(goal_altitude_value_);
   }
   if (config.mapGetString("planning_budget", &planning_budget_value_)) {
     planning_budget_editor_->setText(planning_budget_value_);
@@ -388,12 +421,6 @@ void PlanningPanel::setGoalService() {
   // invalidates the altitude setpoint
   double goal_altitude{-1.0};
 
-  try {
-    goal_altitude = std::stod(goal_altitude_value_.toStdString());
-    std::cout << "[PlanningPanel] Set Goal Altitude: " << goal_altitude << std::endl;
-  } catch (const std::exception& e) {
-    std::cout << "[PlanningPanel] Invalid Goal Altitude Set: " << e.what() << std::endl;
-  }
   std::thread t([service_name, goal_pos, goal_altitude] {
     planner_msgs::SetVector3 req;
     req.request.vector.x = goal_pos(0);
@@ -461,6 +488,39 @@ void PlanningPanel::setPlanningBudgetService() {
   t.detach();
 }
 
+void PlanningPanel::setPlannerModeServiceNavigate() {
+  callSetPlannerStateService("/terrain_planner/set_planner_state", 2);
+}
+
+void PlanningPanel::setPlannerModeServiceAbort() {
+  callSetPlannerStateService("/terrain_planner/set_planner_state", 4);
+}
+
+void PlanningPanel::setPlannerModeServiceReturn() {
+  callSetPlannerStateService("/terrain_planner/set_planner_state", 5);
+}
+
+void PlanningPanel::setPlannerModeServiceRollout() {
+  callSetPlannerStateService("/terrain_planner/set_planner_state", 3);
+}
+
+void PlanningPanel::callSetPlannerStateService(std::string service_name, const int mode) {
+  std::thread t([service_name, mode] {
+    planner_msgs::SetPlannerState req;
+    req.request.state = mode;
+
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
 void PlanningPanel::setStartService() {
   std::string service_name = "/terrain_planner/set_start";
   Eigen::Vector3d goal_pos = goal_marker_->getGoalPosition();
@@ -468,12 +528,6 @@ void PlanningPanel::setStartService() {
   // invalidates the altitude setpoint
   double goal_altitude{-1.0};
 
-  try {
-    goal_altitude = std::stod(goal_altitude_value_.toStdString());
-    std::cout << "[PlanningPanel] Set Goal Altitude: " << goal_altitude << std::endl;
-  } catch (const std::exception& e) {
-    std::cout << "[PlanningPanel] Invalid Start Altitude Set: " << e.what() << std::endl;
-  }
   std::thread t([service_name, goal_pos, goal_altitude] {
     planner_msgs::SetVector3 req;
     req.request.vector.x = goal_pos(0);
@@ -551,6 +605,46 @@ void PlanningPanel::odometryCallback(const nav_msgs::Odometry& msg) {
     point.orientation_W_B = odometry.orientation_W_B;
     pose_widget_map_["start"]->setPose(point);
     interactive_markers_.updateMarkerPose("start", point);
+  }
+}
+
+void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& msg) {
+  switch (msg.state) {
+    case PLANNER_STATE::HOLD: {
+      set_planner_state_buttons_[0]->setDisabled(false);  // NAVIGATE
+      set_planner_state_buttons_[1]->setDisabled(false);  // ROLLOUT
+      set_planner_state_buttons_[2]->setDisabled(true);   // ABORT
+      set_planner_state_buttons_[3]->setDisabled(false);  // RETURN
+      break;
+    }
+    case PLANNER_STATE::NAVIGATE: {
+      set_planner_state_buttons_[0]->setDisabled(true);   // NAVIGATE
+      set_planner_state_buttons_[1]->setDisabled(true);   // ROLLOUT
+      set_planner_state_buttons_[2]->setDisabled(false);  // ABORT
+      set_planner_state_buttons_[3]->setDisabled(false);   // RETURN
+      break;
+    }
+    case PLANNER_STATE::ROLLOUT: {
+      set_planner_state_buttons_[0]->setDisabled(true);   // NAVIGATE
+      set_planner_state_buttons_[1]->setDisabled(true);   // ROLLOUT
+      set_planner_state_buttons_[2]->setDisabled(false);  // ABORT
+      set_planner_state_buttons_[3]->setDisabled(true);   // RETURN
+      break;
+    }
+    case PLANNER_STATE::ABORT: {
+      set_planner_state_buttons_[0]->setDisabled(true);  // NAVIGATE
+      set_planner_state_buttons_[1]->setDisabled(true);  // ROLLOUT
+      set_planner_state_buttons_[2]->setDisabled(true);  // ABORT
+      set_planner_state_buttons_[3]->setDisabled(true);  // RETURN
+      break;
+    }
+    case PLANNER_STATE::RETURN: {
+      set_planner_state_buttons_[0]->setDisabled(true);  // NAVIGATE
+      set_planner_state_buttons_[1]->setDisabled(true);  // ROLLOUT
+      set_planner_state_buttons_[2]->setDisabled(false);   // ABORT
+      set_planner_state_buttons_[3]->setDisabled(true);  // RETURN
+      break;
+    }
   }
 }
 

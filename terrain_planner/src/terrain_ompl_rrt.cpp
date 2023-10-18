@@ -87,11 +87,16 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
 }
 
 void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
-                                  const Eigen::Vector3d& goal) {
+                                  const Eigen::Vector3d& goal, double goal_radius) {
   configureProblem();
 
-  double radius =
-      problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
+  double radius;
+  if (goal_radius < 0) {
+    radius =
+        problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
+  } else {
+    radius = goal_radius;
+  }
   double delta_theta = 0.1;
   ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
       problem_setup_->getSpaceInformation());
@@ -119,6 +124,51 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
     wrap_pi(goal_yaw);
     goal_ompl->setYaw(goal_yaw);
     goal_states_->addState(goal_ompl);  // Add additional state for bidirectional tangents
+  }
+  problem_setup_->setGoal(goal_states_);
+
+  problem_setup_->setup();
+}
+
+void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
+                                  const std::vector<Eigen::Vector3d>& goal_positions) {
+  if (goal_positions.empty()) {
+    std::cout << "Failed to configure problem: Goal position list empty" << std::endl;
+    return;
+  }
+  configureProblem();
+
+  double radius =
+      problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
+  double delta_theta = 0.1;
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
+      problem_setup_->getSpaceInformation());
+
+  start_ompl->setX(start_pos(0));
+  start_ompl->setY(start_pos(1));
+  start_ompl->setZ(start_pos(2));
+  double start_yaw = std::atan2(start_vel(1), start_vel(0));
+  start_ompl->setYaw(start_yaw);
+  problem_setup_->clearStartStates();  // Clear previous goal states
+  problem_setup_->addStartState(start_ompl);
+
+  goal_states_ = std::make_shared<ompl::base::GoalStates>(problem_setup_->getSpaceInformation());
+  for (auto& goal : goal_positions) {
+    for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
+      ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
+          problem_setup_->getSpaceInformation());
+      goal_ompl->setX(goal(0) + radius * std::cos(theta));
+      goal_ompl->setY(goal(1) + radius * std::sin(theta));
+      goal_ompl->setZ(goal(2));
+      double goal_yaw = theta + M_PI_2;
+      wrap_pi(goal_yaw);
+      goal_ompl->setYaw(goal_yaw);
+      goal_states_->addState(goal_ompl);
+      goal_yaw = theta - M_PI_2;
+      wrap_pi(goal_yaw);
+      goal_ompl->setYaw(goal_yaw);
+      goal_states_->addState(goal_ompl);  // Add additional state for bidirectional tangents
+    }
   }
   problem_setup_->setGoal(goal_states_);
 

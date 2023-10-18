@@ -46,7 +46,6 @@ include_directories(
 
 add_library(${PROJECT_NAME}
   src/maneuver_library.cpp
-  src/primitive_planner.cpp
   src/terrain_ompl.cpp
   src/terrain_ompl_rrt.cpp
   src/DubinsPath.cpp

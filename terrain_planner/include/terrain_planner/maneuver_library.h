@@ -51,16 +51,15 @@ class ManeuverLibrary {
  public:
   ManeuverLibrary();
   virtual ~ManeuverLibrary();
-  std::vector<Path>& generateMotionPrimitives(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
-                                              const Eigen::Vector4d current_att, Path& current_path);
+  std::shared_ptr<Primitive>& generateMotionPrimitives(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
+                                              const Eigen::Vector4d current_att, Path& current_path,
+                                              bool add_emergency = true, int tree_depth = 2, double planning_horizon = 10.0);
   std::vector<Path>& getMotionPrimitives() { return motion_primitives_; }
   std::vector<Path>& getValidPrimitives() { return valid_primitives_; }
-  Path getBestPrimitive();
   Path getRandomPrimitive();
   PathSegment generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
                                     Eigen::Vector3d current_vel, const double dt = 0.1);
   PathSegment generateCircleTrajectory(Eigen::Vector3d center_pos, double radius, const double dt = 0.1);
-  double getPlanningHorizon() { return planning_horizon_; };
 
   /**
    * @brief Get the Primitive Rates of the maneuver library
@@ -70,7 +69,6 @@ class ManeuverLibrary {
   std::vector<Eigen::Vector3d> getPrimitiveRates() const { return primitive_rates_; };
   Eigen::Vector3d getRandomPrimitiveRate() const;
   Eigen::Vector3d getGoalPosition() { return goal_pos_; };
-  void setPlanningHorizon(double horizon) { planning_horizon_ = horizon; };
 
   /**
    * @brief Set the Terrain Map object for collision checking
@@ -137,7 +135,6 @@ class ManeuverLibrary {
   std::shared_ptr<Primitive> motion_primitive_tree_;
   int num_segments{3};
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 100.0)};  // Terrain relative goal position
-  double planning_horizon_{10.0};
   double cruise_speed_{20.0};
   double goal_terrain_altitude_{100.0};
 };

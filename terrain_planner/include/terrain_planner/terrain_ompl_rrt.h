@@ -43,6 +43,14 @@ class TerrainOmplRrt {
         start_pos, goal,
         problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius());
   };
+
+  /**
+   * @brief Setup problem with center position of start and goal loiter circle with specific radius
+   *
+   * @param start_pos
+   * @param goal
+   * @param start_loiter_radius
+   */
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal, double start_loiter_radius);
 
   /**
@@ -52,7 +60,18 @@ class TerrainOmplRrt {
    * @param start_vel velocity of the start state
    * @param goal center of the goal loiter position
    */
-  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal);
+  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal, double goal_radius = -1);
+
+  /**
+   * @brief Setup problem with position, velocity of the start and goal state
+   *
+   * @param start_pos position of the start state
+   * @param start_vel velocity of the start state
+   * @param goal position of the goal state
+   * @param goal_vel velocity of the goal state
+   */
+  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
+                    const std::vector<Eigen::Vector3d>& goal_positions);
 
   /**
    * @brief Setup problem with position, velocity of the start and goal state

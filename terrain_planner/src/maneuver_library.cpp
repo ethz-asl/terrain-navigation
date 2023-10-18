@@ -46,22 +46,21 @@
 ManeuverLibrary::ManeuverLibrary() {
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.0));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.0));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -3.0, 0.0));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.3));
   primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.3));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.3));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, 0.15));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.15));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, 0.15));
-  primitive_rates_.push_back(Eigen::Vector3d(0.0, -1.5, -0.15));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -3.0, 0.3));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 0.0, -0.3));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, 3.0, -0.3));
+  primitive_rates_.push_back(Eigen::Vector3d(0.0, -3.0, -0.3));
 }
 
 ManeuverLibrary::~ManeuverLibrary() {}
 
-std::vector<Path> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
+std::shared_ptr<Primitive>& ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
                                                              const Eigen::Vector3d current_vel,
-                                                             const Eigen::Vector4d current_att, Path &current_path) {
+                                                             const Eigen::Vector4d current_att, Path &current_path,
+                                                             bool add_emergency, int tree_depth, double planning_horizon) {
   PathSegment current_segment;
   if (!current_path.segments.empty()) {
     current_segment = current_path.getCurrentSegment(current_pos);
@@ -76,20 +75,17 @@ std::vector<Path> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector
   motion_primitive_tree_ = std::make_shared<Primitive>(current_segment);
 
   // Expand motion primitives
-  int tree_depth = 2;
   for (int i = 0; i < tree_depth; i++) {
-    expandPrimitives(motion_primitive_tree_, primitive_rates_, planning_horizon_);
+    expandPrimitives(motion_primitive_tree_, primitive_rates_, planning_horizon);
   }
-  // Add emergency primitives at the end of the trajectory
-  std::vector<Eigen::Vector3d> emergency_rates;
-  emergency_rates.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
-  double horizon = 2 * M_PI / emergency_rates[0](2);
-  expandPrimitives(motion_primitive_tree_, emergency_rates, horizon);
+  if (add_emergency) {  // Add emergency primitives at the end of the trajectory
+    std::vector<Eigen::Vector3d> emergency_rates;
+    emergency_rates.push_back(Eigen::Vector3d(0.0, 0.0, 0.3));
+    double horizon = 2 * M_PI / emergency_rates[0](2);
+    expandPrimitives(motion_primitive_tree_, emergency_rates, horizon);
+  }
 
-  motion_primitives_.clear();
-  motion_primitives_ = motion_primitive_tree_->getMotionPrimitives();
-
-  return motion_primitives_;
+  return motion_primitive_tree_;
 }
 
 bool ManeuverLibrary::Solve() {
@@ -301,39 +297,6 @@ PathSegment ManeuverLibrary::generateCircleTrajectory(Eigen::Vector3d center_pos
     trajectory.states.push_back(state_vector);
   }
   return trajectory;
-}
-
-Path ManeuverLibrary::getBestPrimitive() {
-  /// TODO: Implement best first search on tree
-  Path primitive;
-  // Calculate utilities of each primitives
-  for (auto &trajectory : valid_primitives_) {
-    if (!trajectory.valid()) continue;
-    // Calculate goal utility
-    Eigen::Vector3d end_pos = trajectory.lastSegment().states.back().position;
-    double terrain_altitude = end_pos(3);
-    if (terrain_map_->getGridMap().isInside(Eigen::Vector2d(end_pos(0), end_pos(1)))) {
-      terrain_altitude =
-          end_pos(3) - terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(end_pos(0), end_pos(1)));
-    }
-    end_pos(3) = terrain_altitude;
-    Eigen::Vector3d distance_vector = end_pos - Eigen::Vector3d(goal_pos_(0), goal_pos_(1), goal_pos_(2));
-    trajectory.utility += 1 / distance_vector.norm();
-  }
-
-  double best_utility{-std::numeric_limits<double>::infinity()};
-  int best_index{0};
-  if (valid_primitives_.size() > 0) {
-    for (size_t k = 0; k < valid_primitives_.size(); k++) {
-      if (valid_primitives_[k].utility > best_utility) {
-        best_utility = valid_primitives_[k].utility;
-        best_index = k;
-      }
-    }
-    return valid_primitives_[best_index];
-  }
-
-  return primitive;
 }
 
 Path ManeuverLibrary::getRandomPrimitive() {

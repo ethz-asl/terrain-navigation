@@ -142,6 +142,28 @@ class ViewPoint {
   /// TODO: get FOV from ray vectors
   double getPixelResolution() { return 0.5 * M_PI / image_width_; }
 
+  /**
+   * @brief 
+   * 
+   * @param pos 
+   * @return true 
+   * @return false 
+   */
+  bool isInsideViewFustrum(const Eigen::Vector3d &pos) {
+    bool is_inside{false};
+    Eigen::Matrix3d R_att = quat2RotMatrix(orientation_);
+    auto camera_frame_pos = R_att.inverse() * pos;
+    /// TODO: Get camera intrinsics from a file
+    double f = image_width_ / 2;
+    int c1 = f * camera_frame_pos(0) / camera_frame_pos(2);
+    int c2 = f  * camera_frame_pos(1) / camera_frame_pos(2);
+
+    if (std::abs(c1) < image_width_/2 && std::abs(c2) < image_height_/2 && camera_frame_pos(2) > 0.0) {
+      is_inside = true;
+    }
+    return is_inside;
+  }
+
  private:
   int index_;
   Eigen::Vector3d center_local_{Eigen::Vector3d(0.0, 0.0, 0.0)};

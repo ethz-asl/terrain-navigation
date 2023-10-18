@@ -92,25 +92,6 @@ class Primitive {
     return all_primitives;
   }
 
-  std::shared_ptr<Primitive> getBestChild() {
-    int best_idx{0};
-    double best_ucb{-1};
-    double c{0.0001};
-    for (size_t i = 0; i < child_primitives.size(); i++) {
-      std::shared_ptr<Primitive> child = child_primitives[i];
-      if (child->visits < 1) continue;
-      double upper_confidence_bound =
-          child->utility / child->visits + c * std::sqrt(2.0 * std::log(visits) / child->visits);
-      if (upper_confidence_bound > best_ucb) {
-        best_idx = i;
-        best_ucb = upper_confidence_bound;
-      }
-    }
-
-    /// TODO: Safe guard against empty child
-    return child_primitives[best_idx];
-  }
-
   std::shared_ptr<Primitive> getRandomChild() {
     int num_child = child_primitives.size();
     /// TODO: Safe guard against empty child
