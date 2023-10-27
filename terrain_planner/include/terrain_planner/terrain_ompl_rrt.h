@@ -60,7 +60,8 @@ class TerrainOmplRrt {
    * @param start_vel velocity of the start state
    * @param goal center of the goal loiter position
    */
-  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal, double goal_radius = -1);
+  void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel, const Eigen::Vector3d& goal,
+                    double goal_radius = -1);
 
   /**
    * @brief Setup problem with position, velocity of the start and goal state

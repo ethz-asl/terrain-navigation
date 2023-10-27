@@ -143,11 +143,11 @@ class ViewPoint {
   double getPixelResolution() { return 0.5 * M_PI / image_width_; }
 
   /**
-   * @brief 
-   * 
-   * @param pos 
-   * @return true 
-   * @return false 
+   * @brief
+   *
+   * @param pos
+   * @return true
+   * @return false
    */
   bool isInsideViewFustrum(const Eigen::Vector3d &pos) {
     bool is_inside{false};
@@ -156,9 +156,9 @@ class ViewPoint {
     /// TODO: Get camera intrinsics from a file
     double f = image_width_ / 2;
     int c1 = f * camera_frame_pos(0) / camera_frame_pos(2);
-    int c2 = f  * camera_frame_pos(1) / camera_frame_pos(2);
+    int c2 = f * camera_frame_pos(1) / camera_frame_pos(2);
 
-    if (std::abs(c1) < image_width_/2 && std::abs(c2) < image_height_/2 && camera_frame_pos(2) > 0.0) {
+    if (std::abs(c1) < image_width_ / 2 && std::abs(c2) < image_height_ / 2 && camera_frame_pos(2) > 0.0) {
       is_inside = true;
     }
     return is_inside;

@@ -57,10 +57,11 @@ ManeuverLibrary::ManeuverLibrary() {
 
 ManeuverLibrary::~ManeuverLibrary() {}
 
-std::shared_ptr<Primitive>& ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
-                                                             const Eigen::Vector3d current_vel,
-                                                             const Eigen::Vector4d current_att, Path &current_path,
-                                                             bool add_emergency, int tree_depth, double planning_horizon) {
+std::shared_ptr<Primitive> &ManeuverLibrary::generateMotionPrimitives(const Eigen::Vector3d current_pos,
+                                                                      const Eigen::Vector3d current_vel,
+                                                                      const Eigen::Vector4d current_att,
+                                                                      Path &current_path, bool add_emergency,
+                                                                      int tree_depth, double planning_horizon) {
   PathSegment current_segment;
   if (!current_path.segments.empty()) {
     current_segment = current_path.getCurrentSegment(current_pos);

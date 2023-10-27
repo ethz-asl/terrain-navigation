@@ -51,9 +51,11 @@ class ManeuverLibrary {
  public:
   ManeuverLibrary();
   virtual ~ManeuverLibrary();
-  std::shared_ptr<Primitive>& generateMotionPrimitives(const Eigen::Vector3d current_pos, const Eigen::Vector3d current_vel,
-                                              const Eigen::Vector4d current_att, Path& current_path,
-                                              bool add_emergency = true, int tree_depth = 2, double planning_horizon = 10.0);
+  std::shared_ptr<Primitive>& generateMotionPrimitives(const Eigen::Vector3d current_pos,
+                                                       const Eigen::Vector3d current_vel,
+                                                       const Eigen::Vector4d current_att, Path& current_path,
+                                                       bool add_emergency = true, int tree_depth = 2,
+                                                       double planning_horizon = 10.0);
   std::vector<Path>& getMotionPrimitives() { return motion_primitives_; }
   std::vector<Path>& getValidPrimitives() { return valid_primitives_; }
   Path getRandomPrimitive();
