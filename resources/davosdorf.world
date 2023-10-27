@@ -16,18 +16,18 @@
       <uri>model://sun</uri>
     </include>
 
-    <include>
+    <!-- <include>
       <uri>model://ground_plane</uri>
-    </include>
+    </include> -->
     <include>
       <uri>model://asphalt_plane</uri>
     </include>
 
     <spherical_coordinates>
       <surface_model>EARTH_WGS84</surface_model>
-      <latitude_deg>46.720145</latitude_deg>
-      <longitude_deg>9.850628</longitude_deg>
-      <elevation>1820.8</elevation>
+      <latitude_deg>46.812305</latitude_deg>
+      <longitude_deg>9.847215</longitude_deg>
+      <elevation>1561.23</elevation>
       <!-- Bern
       <latitude_deg>46.9524</latitude_deg>
       <longitude_deg>7.43958</longitude_deg>
@@ -36,7 +36,6 @@
       <longitude_deg>9.92481</longitude_deg>
       <elevation>1.3</elevation> -->
     </spherical_coordinates>
-
     <plugin name='wind_plugin' filename='libgazebo_wind_plugin.so'>
       <frameId>base_link</frameId>
       <robotNamespace/>
@@ -49,7 +48,6 @@
       <windGustVelocityMean>0</windGustVelocityMean>
       <windPubTopic>world_wind</windPubTopic>
     </plugin>
-
     <physics name='default_physics' default='0' type='ode'>
       <gravity>0 0 -9.8066</gravity>
       <ode>
