@@ -42,6 +42,7 @@
   <run_depend>terrain_navigation</run_depend>
   <run_depend>terrain_planner</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>mav_planning_rviz</run_depend>
   <export>
   </export>
 </package>
