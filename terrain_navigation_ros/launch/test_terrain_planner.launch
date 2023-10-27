@@ -10,7 +10,7 @@
     <arg name="fcu_protocol" default="v2.0" />
     <arg name="respawn_mavros" default="false" />
     <arg name="visualization" default="true"/>
-    <arg name="location" default="riemenstalden"/>
+    <arg name="location" default="davosdorf"/>
     <arg name="gui" default="false"/>
 
     <include file="$(find mavros)/launch/node.launch">
@@ -28,14 +28,14 @@
 
     <include file="$(find px4)/launch/posix_sitl.launch">
         <arg name="vehicle" value="$(arg mav_name)"/>
-        <arg name="world" default="$(find terrain_models)/worlds/$(arg location).world"/>
+        <arg name="world" default="$(find terrain_navigation_ros)/../resources/$(arg location).world"/>
         <arg name="gui" value="$(arg gui)"/>
     </include>
 
     <node pkg="terrain_navigation_ros" type="terrain_planner_node" name="terrain_planner" output="screen">
-        <param name="terrain_path" value="$(find terrain_models)/models/$(arg location).tif"/>
-        <param name="terrain_color_path" value="$(find terrain_models)/models/$(arg location)_color.tif"/>
-        <param name="resource_path" value="$(find terrain_models)/models"/>
+        <param name="terrain_path" value="$(find terrain_navigation_ros)/../resources/$(arg location).tif"/>
+        <param name="terrain_color_path" value="$(find terrain_navigation_ros)/../resources/$(arg location)_color.tif"/>
+        <param name="resource_path" value="$(find terrain_navigation_ros)/../resources"/>
         <param name="minimum_turn_radius" value="80.0"/>
     </node>
     <group if="$(arg visualization)">
