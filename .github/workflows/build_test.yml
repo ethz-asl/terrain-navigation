@@ -2,14 +2,14 @@ name: Build Test
 on:
   push:
     branches:
-    - 'master'
+    - 'main'
   pull_request:
     branches:
     - '*'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux]
     strategy:
       fail-fast: false
       matrix:
