@@ -8,9 +8,7 @@ This package includes a global planner based on Dubins RRT* enabling low altitud
 
 ## Setup
 Install the dependencies. This package depends on gdal, to read georeferenced images and GeoTIFF files.
-```
-apt install libgdal-dev
-```
+
 Configure the catkin workspace
 ```
 catkin config --extend "/opt/ros/noetic"
