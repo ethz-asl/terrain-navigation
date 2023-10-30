@@ -47,6 +47,7 @@ wstool update -t src -j4
 For dependencies available through binaries, use rosdep.
 This package depends on [GDAL](https://gdal.org/index.html) to read georeferenced images and GeoTIFF files.
 ```
+apt update
 rosdep update
 source /opt/ros/noetic/setup.bash
 rosdep install --from-paths src --ignore-src -y
