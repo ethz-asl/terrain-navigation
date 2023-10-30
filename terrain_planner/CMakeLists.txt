@@ -2,14 +2,10 @@ cmake_minimum_required(VERSION 2.8.12)
 project(terrain_planner)
 
 add_definitions(-std=c++17 -Wall)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(GDAL)
 find_package(OpenCV REQUIRED)
-find_package(GeographicLib REQUIRED)
 find_package(ompl REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization system filesystem)
-include(CheckGeographicLibDatasets)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -28,7 +24,6 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES terrain_planner
   CATKIN_DEPENDS roscpp rospy
-  DEPENDS GeographicLib
 )
 
 #############
@@ -39,8 +34,6 @@ include_directories(
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
-  ${GDAL_INCLUDE_DIRS}
-  ${GeographicLib_INCLUDE_DIRS}
   ${OMPL_INCLUDE_DIR}
 )
 
@@ -51,8 +44,8 @@ add_library(${PROJECT_NAME}
   src/DubinsPath.cpp
   src/DubinsAirplane.cpp
 )
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY} ${Boost_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES} ${OMPL_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES} ${Boost_LIBRARIES})
 
 ############
 # BINARIES #
@@ -60,20 +53,20 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${Open
 add_executable(test_rrt_node
   src/test_rrt_node.cpp
 )
-add_dependencies(test_rrt_node ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_rrt_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+add_dependencies(test_rrt_node ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_rrt_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
 
 add_executable(test_ompl_dubins
   src/test_ompl_dubins.cpp
 )
-add_dependencies(test_ompl_dubins ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_ompl_dubins ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+add_dependencies(test_ompl_dubins ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_ompl_dubins ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
 
 add_executable(test_ompl_dubins_to_circle
   src/test_ompl_dubins_to_circle.cpp
 )
-add_dependencies(test_ompl_dubins_to_circle ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_ompl_dubins_to_circle ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+add_dependencies(test_ompl_dubins_to_circle ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_ompl_dubins_to_circle ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
 
 ##########
 # EXPORT #
@@ -93,7 +86,7 @@ if(CATKIN_ENABLE_TESTING)
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
-                                                 ${YAML_CPP_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES})
+                                                 ${YAML_CPP_LIBRARIES} ${OpenCV_LIBRARIES})
     endif()
 
 endif()
