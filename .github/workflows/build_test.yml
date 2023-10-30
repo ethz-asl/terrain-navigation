@@ -27,9 +27,6 @@ jobs:
       run: |
         apt update
         apt install -y python3-wstool libgdal-dev ros-${{matrix.config.rosdistro}}-tf2-geometry-msgs
-        wget https://ompl.kavrakilab.org/install-ompl-ubuntu.sh
-        chmod +x ./install-ompl-ubuntu.sh
-        ./install-ompl-ubuntu.sh
       shell: bash
     - name: Build Test
       working-directory: 
