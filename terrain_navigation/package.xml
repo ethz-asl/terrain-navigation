@@ -17,7 +17,9 @@
   <build_depend>eigen_catkin</build_depend>
   <build_depend>grid_map_core</build_depend>
   <build_depend>grid_map_geo</build_depend>
+  <build_depend>libgdal-dev</build_depend>
   <run_depend>eigen_catkin</run_depend>
+  <run_depend>gdal-bin</run_depend>
   <export>
   </export>
 </package>
