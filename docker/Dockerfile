@@ -1,5 +1,6 @@
 # https://github.com/osrf/docker_images/blob/df19ab7d5993d3b78a908362cdcd1479a8e78b35/ros/noetic/ubuntu/focal/ros-core/Dockerfile
-FROM ros:noetic-ros-core-focal
+FROM ros:noetic-ros-core-focal as repo-deps
+# This layer installs basic tools and the direct dependencies of terrain-navigation.
 
 SHELL ["/bin/bash", "-c"]
 
@@ -26,4 +27,18 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive rosdep install --from-paths src --ignore-src -r -y \
     && python3 -m pip install \
         wstool \
+    && rm -rf /var/lib/apt/lists/*
+
+
+FROM repo-deps as all-deps
+# This layer installs dependencies of the other source packages.
+
+COPY dependencies.rosinstall src/terrain-navigation/dependencies.rosinstall
+RUN wstool init src src/terrain-navigation/dependencies.rosinstall
+RUN wstool update -t src -j4
+
+RUN apt-get update \
+    && rosdep update \
+    && source /opt/ros/noetic/setup.bash \
+    && rosdep install --from-paths src --ignore-src -y \
     && rm -rf /var/lib/apt/lists/*
