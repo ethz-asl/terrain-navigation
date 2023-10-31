@@ -18,7 +18,6 @@ jobs:
           - {rosdistro: 'noetic', container: 'px4io/px4-dev-ros-noetic:2021-12-11'}
     container: ${{ matrix.config.container }}
     steps:
-    - uses: ethz-asl/asl-actions@feature/delete
     - uses: actions/checkout@v1
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
