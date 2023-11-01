@@ -4,7 +4,9 @@
 
 This package includes a global planner based on Dubins RRT* enabling low altitude navigation for fixedwing vehicles in steep terrain.
 
-![overview3](https://github.com/ethz-asl/terrain-navigation/assets/5248102/90e43b60-ea8c-49db-9fb3-257b145fc35c)
+<p align="center">
+    <img src="https://github.com/ethz-asl/terrain-navigation/assets/5248102/90e43b60-ea8c-49db-9fb3-257b145fc35c" alt="overview">
+</p>
 
 ## Setup
 
