@@ -2,15 +2,17 @@
 #define MAV_PLANNING_RVIZ_PLANNING_PANEL_H_
 
 #ifndef Q_MOC_RUN
-#include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
-#include <rviz/panel.h>
+#include <nav_msgs/msg/odometry.hpp>
+#include <planner_msgs/msg/navigation_status.hpp>
+#include <rclcpp/rclcpp.hpp>
+
+#include <rviz_common/panel.hpp>
+
 #include <QGroupBox>
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/goal_marker.h"
 #include "mav_planning_rviz/planning_interactive_markers.h"
 #include "mav_planning_rviz/pose_widget.h"
-#include "planner_msgs/NavigationStatus.h"
 #endif
 
 enum PLANNER_STATE { HOLD = 1, NAVIGATE = 2, ROLLOUT = 3, ABORT = 4, RETURN = 5 };
@@ -19,7 +21,7 @@ class QLineEdit;
 class QCheckBox;
 namespace mav_planning_rviz {
 
-class PlanningPanel : public rviz::Panel {
+class PlanningPanel : public rviz_common::Panel {
   // This class uses Qt slots and is a subclass of QObject, so it needs
   // the Q_OBJECT macro.
   Q_OBJECT
@@ -36,8 +38,8 @@ class PlanningPanel : public rviz::Panel {
   // Now we declare overrides of rviz::Panel functions for saving and
   // loading data from the config file.  Here the data is the
   // topic name.
-  virtual void load(const rviz::Config& config);
-  virtual void save(rviz::Config config) const;
+  virtual void load(const rviz_common::Config& config);
+  virtual void save(rviz_common::Config config) const;
   virtual void onInitialize();
 
   // All the settings to manage pose <-> edit mapping.
@@ -47,9 +49,9 @@ class PlanningPanel : public rviz::Panel {
   // Callback from ROS when the pose updates:
   void updateInteractiveMarkerPose(const mav_msgs::EigenTrajectoryPoint& pose);
   // And when we get robot odometry:
-  void odometryCallback(const nav_msgs::Odometry& msg);
+  void odometryCallback(const nav_msgs::msg::Odometry& msg);
 
-  void plannerstateCallback(const planner_msgs::NavigationStatus& msg);
+  void plannerstateCallback(const planner_msgs::msg::NavigationStatus& msg);
 
   // Next come a couple of public Qt slots.
  public Q_SLOTS:
@@ -90,11 +92,11 @@ class PlanningPanel : public rviz::Panel {
   QGroupBox* createTerrainLoaderGroup();
 
   // ROS Stuff:
-  ros::NodeHandle nh_;
-  ros::Publisher waypoint_pub_;
-  ros::Publisher controller_pub_;
-  ros::Subscriber odometry_sub_;
-  ros::Subscriber planner_state_sub_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr waypoint_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr controller_pub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odometry_sub_;
+  rclcpp::Subscription<planner_msgs::msg::NavigationStatus>::SharedPtr planner_state_sub_;
 
   std::shared_ptr<GoalMarker> goal_marker_;
 

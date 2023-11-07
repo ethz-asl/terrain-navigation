@@ -3,10 +3,11 @@
 
 #include <functional>
 
-#include <interactive_markers/interactive_marker_server.h>
-#include <mav_msgs/conversions.h>
-#include <mav_msgs/eigen_mav_msgs.h>
-#include <ros/ros.h>
+#include <interactive_markers/interactive_marker_server.hpp>
+#include <rclcpp/rclcpp.hpp>
+
+#include <mav_msgs/conversions.hpp>
+#include <mav_msgs/eigen_mav_msgs.hpp>
 
 namespace mav_planning_rviz {
 
@@ -14,8 +15,9 @@ class PlanningInteractiveMarkers {
  public:
   typedef std::function<void(const mav_msgs::EigenTrajectoryPoint& pose)> PoseUpdatedFunctionType;
 
-  PlanningInteractiveMarkers(const ros::NodeHandle& nh);
-  ~PlanningInteractiveMarkers() {}
+  PlanningInteractiveMarkers(rclcpp::Node::SharedPtr node);
+
+  ~PlanningInteractiveMarkers();
 
   void setFrameId(const std::string& frame_id);
   // Bind callback for whenever pose updates.
@@ -34,14 +36,14 @@ class PlanningInteractiveMarkers {
   void updateMarkerPose(const std::string& id, const mav_msgs::EigenTrajectoryPoint& pose);
   void disableMarker(const std::string& id);
 
-  void processSetPoseFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void processSetPoseFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr& feedback);
 
  private:
   // Creates markers without adding them to the marker server.
   void createMarkers();
 
   // ROS stuff.
-  ros::NodeHandle nh_;
+  rclcpp::Node::SharedPtr node_;
   interactive_markers::InteractiveMarkerServer marker_server_;
 
   // Settings.
@@ -49,12 +51,12 @@ class PlanningInteractiveMarkers {
 
   // State.
   bool initialized_;
-  visualization_msgs::InteractiveMarker set_pose_marker_;
+  visualization_msgs::msg::InteractiveMarker set_pose_marker_;
 
   // This is map for waypoint visualization markers:
-  std::map<std::string, visualization_msgs::InteractiveMarker> marker_map_;
+  std::map<std::string, visualization_msgs::msg::InteractiveMarker> marker_map_;
   // This determines how the markers in the marker map will look:
-  visualization_msgs::InteractiveMarker marker_prototype_;
+  visualization_msgs::msg::InteractiveMarker marker_prototype_;
 
   // State:
   PoseUpdatedFunctionType pose_updated_function_;
