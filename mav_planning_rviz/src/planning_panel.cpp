@@ -1,3 +1,5 @@
+#include "mav_planning_rviz/planning_panel.h"
+
 #include <stdio.h>
 #include <functional>
 #include <thread>
@@ -11,39 +13,46 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/msg/twist.hpp>
 // #include <mav_planning_msgs/PlannerService.h>
-#include <ros/names.h>
-#include <rviz/visualization_manager.h>
-#include <std_srvs/Empty.h>
+// #include <ros/names.h>
+#include <rviz_common/visualization_manager.hpp>
+#include <std_srvs/srv/empty.hpp>
+#include <mavros_msgs/srv/set_mode.hpp>
 
-#include <mavros_msgs/SetMode.h>
-#include <planner_msgs/NavigationStatus.h>
-#include <planner_msgs/SetPlannerState.h>
-#include <planner_msgs/SetService.h>
-#include <planner_msgs/SetString.h>
-#include <planner_msgs/SetVector3.h>
+#include <planner_msgs/msg/navigation_status.hpp>
+#include <planner_msgs/srv/set_planner_state.hpp>
+#include <planner_msgs/srv/set_service.hpp>
+#include <planner_msgs/srv/set_string.hpp>
+#include <planner_msgs/srv/set_vector3.hpp>
 
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/goal_marker.h"
-#include "mav_planning_rviz/planning_panel.h"
 #include "mav_planning_rviz/pose_widget.h"
+
+using std::placeholders::_1;
+using namespace std::chrono_literals;
 
 namespace mav_planning_rviz {
 
-PlanningPanel::PlanningPanel(QWidget* parent) : rviz::Panel(parent), nh_(ros::NodeHandle()), interactive_markers_(nh_) {
+PlanningPanel::PlanningPanel(QWidget* parent)
+  : rviz_common::Panel(parent),
+  node_(std::make_shared<rclcpp::Node>("mav_planning_rviz")),
+  interactive_markers_(node_) {
   createLayout();
-  goal_marker_ = std::make_shared<GoalMarker>(nh_);
-  planner_state_sub_ = nh_.subscribe("/planner_status", 1, &PlanningPanel::plannerstateCallback, this,
-                                     ros::TransportHints().tcpNoDelay());
+  goal_marker_ = std::make_shared<GoalMarker>(node_);
+  planner_state_sub_ = node_->create_subscription<planner_msgs::msg::NavigationStatus>(
+      "/planner_status", 1,
+      std::bind(&PlanningPanel::plannerstateCallback, this, _1));
 }
 
 void PlanningPanel::onInitialize() {
   interactive_markers_.initialize();
   interactive_markers_.setPoseUpdatedCallback(
-      std::bind(&PlanningPanel::updateInteractiveMarkerPose, this, std::placeholders::_1));
+      std::bind(&PlanningPanel::updateInteractiveMarkerPose, this, _1));
 
-  interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
+  //! @todo(srmainwaring) port to ROS 2
+  // interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
   // Initialize all the markers.
   for (const auto& kv : pose_widget_map_) {
     mav_msgs::EigenTrajectoryPoint pose;
@@ -172,18 +181,23 @@ void PlanningPanel::terrainAlignmentStateChanged(int state) {
 
 // Set the topic name we are publishing to.
 void PlanningPanel::setNamespace(const QString& new_namespace) {
-  ROS_DEBUG_STREAM("Setting namespace from: " << namespace_.toStdString() << " to " << new_namespace.toStdString());
+  RCLCPP_DEBUG_STREAM(node_->get_logger(), "Setting namespace from: " << namespace_.toStdString() << " to " << new_namespace.toStdString());
   // Only take action if the name has changed.
   if (new_namespace != namespace_) {
     namespace_ = new_namespace;
     Q_EMIT configChanged();
 
     std::string error;
-    if (ros::names::validate(namespace_.toStdString(), error)) {
-      waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(namespace_.toStdString() + "/waypoint", 1, false);
-      controller_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(namespace_.toStdString() + "/command/pose", 1, false);
-      odometry_sub_ = nh_.subscribe(namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
-                                    &PlanningPanel::odometryCallback, this);
+    //! @todo(srmainwaring) port to ROS 2
+    // if (ros::names::validate(namespace_.toStdString(), error))
+    {
+      waypoint_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+          namespace_.toStdString() + "/waypoint", 1);
+      controller_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+          namespace_.toStdString() + "/command/pose", 1);
+      odometry_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
+          namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
+          std::bind(&PlanningPanel::odometryCallback, this, _1));
     }
   }
 }
@@ -204,19 +218,36 @@ void PlanningPanel::setPlannerName() {
   std::string service_name = "/terrain_planner/set_location";
   std::string new_planner_name = planner_name_.toStdString();
   bool align_terrain = align_terrain_on_load_;
-  std::thread t([service_name, new_planner_name, align_terrain] {
-    planner_msgs::SetString req;
-    req.request.string = new_planner_name;
-    req.request.align = align_terrain;
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name, new_planner_name, align_terrain] {
+    auto client = node_->create_client<planner_msgs::srv::SetString>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetString::Request>();
+    req->string = new_planner_name;
+    req->align = align_terrain;
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger, "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -239,9 +270,12 @@ void PlanningPanel::setOdometryTopic(const QString& new_odometry_topic) {
     Q_EMIT configChanged();
 
     std::string error;
-    if (ros::names::validate(namespace_.toStdString(), error)) {
-      odometry_sub_ = nh_.subscribe(namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
-                                    &PlanningPanel::odometryCallback, this);
+    //! @todo(srmainwaring) port to ROS 2
+    // if (ros::names::validate(namespace_.toStdString(), error))
+    {
+      odometry_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
+          namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
+          std::bind(&PlanningPanel::odometryCallback, this, _1));
     }
   }
 }
@@ -260,8 +294,9 @@ void PlanningPanel::startEditing(const std::string& id) {
   if (search == pose_widget_map_.end()) {
     return;
   }
-  // Update fixed frame (may have changed since last time):
-  interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
+  // Update fixed frame (may have changed since last time):  
+  //! @todo(srmainwaring) port to ROS 2
+  // interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
   mav_msgs::EigenTrajectoryPoint pose;
   search->second->getPose(&pose);
   interactive_markers_.enableSetPoseMarker(pose);
@@ -277,7 +312,7 @@ void PlanningPanel::finishEditing(const std::string& id) {
   if (search == pose_widget_map_.end()) {
     return;
   }
-  ros::spinOnce();
+  rclcpp::spin_some(node_);
   mav_msgs::EigenTrajectoryPoint pose;
   search->second->getPose(&pose);
   interactive_markers_.enableMarker(id, pose);
@@ -298,8 +333,8 @@ void PlanningPanel::registerEditButton(EditButton* button) {
 // Save all configuration data from this panel to the given
 // Config object.  It is important here that you call save()
 // on the parent class so the class id and panel name get saved.
-void PlanningPanel::save(rviz::Config config) const {
-  rviz::Panel::save(config);
+void PlanningPanel::save(rviz_common::Config config) const {
+  rviz_common::Panel::save(config);
   config.mapSetValue("namespace", namespace_);
   config.mapSetValue("planner_name", planner_name_);
   config.mapSetValue("planning_budget", planning_budget_value_);
@@ -307,8 +342,8 @@ void PlanningPanel::save(rviz::Config config) const {
 }
 
 // Load all configuration data for this panel from the given Config object.
-void PlanningPanel::load(const rviz::Config& config) {
-  rviz::Panel::load(config);
+void PlanningPanel::load(const rviz_common::Config& config) {
+  rviz_common::Panel::load(config);
   QString topic;
   QString ns;
   if (config.mapGetString("planner_name", &planner_name_)) {
@@ -340,49 +375,101 @@ void PlanningPanel::widgetPoseUpdated(const std::string& id, mav_msgs::EigenTraj
 void PlanningPanel::callPlannerService() {
   std::string service_name = "/mavros/set_mode";
   std::cout << "Planner Service" << std::endl;
-  std::thread t([service_name] {
-    mavros_msgs::SetMode req;
-    req.request.custom_mode = "OFFBOARD";
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name] {
+    auto client = node_->create_client<mavros_msgs::srv::SetMode>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<mavros_msgs::srv::SetMode::Request>();
+    req->custom_mode = "OFFBOARD";
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
 
 void PlanningPanel::callPublishPath() {
-  std_srvs::Empty req;
   std::string service_name = namespace_.toStdString() + "/" + planner_name_.toStdString() + "/publish_path";
-  try {
-    if (!ros::service::call(service_name, req)) {
-      ROS_WARN_STREAM("Couldn't call service: " << service_name);
-    }
-  } catch (const std::exception& e) {
-    ROS_ERROR_STREAM("Service Exception: " << e.what());
+  auto client = node_->create_client<std_srvs::srv::Empty>(service_name);
+  if (!client->wait_for_service(1s)) {
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+          << service_name << "] not available.");
+      return;
   }
+
+  auto req = std::make_shared<std_srvs::srv::Empty::Request>();
+
+  auto result = client->async_send_request(req);
+
+  if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+        << client->get_service_name()
+        << "] failed.");
+    return;
+  }
+
+  // try {
+  //   if (!ros::service::call(service_name, req)) {
+  //     RCLCPP_WARN_STREAM(node_->get_logger(), "Couldn't call service: " << service_name);
+  //   }
+  // } catch (const std::exception& e) {
+  //   RCLCPP_ERROR_STREAM(node_->get_logger(), "Service Exception: " << e.what());
+  // }
 }
 
 void PlanningPanel::publishWaypoint() {
   std::string service_name = "/mavros/set_mode";
   std::cout << "Planner Service" << std::endl;
-  std::thread t([service_name] {
-    mavros_msgs::SetMode req;
-    req.request.custom_mode = "AUTO.RTL";
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name] {
+    auto client = node_->create_client<mavros_msgs::srv::SetMode>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<mavros_msgs::srv::SetMode::Request>();
+    req->custom_mode = "AUTO.RTL";
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -397,19 +484,36 @@ void PlanningPanel::setMaxAltitudeConstrant(bool set_constraint) {
   std::string service_name = "/terrain_planner/set_max_altitude";
   std::string new_planner_name = "";
   bool align_terrain = set_constraint;
-  std::thread t([service_name, new_planner_name, align_terrain] {
-    planner_msgs::SetString req;
-    req.request.string = new_planner_name;
-    req.request.align = align_terrain;
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name, new_planner_name, align_terrain] {
+    auto client = node_->create_client<planner_msgs::srv::SetString>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetString::Request>();
+    req->string = new_planner_name;
+    req->align = align_terrain;
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -421,21 +525,37 @@ void PlanningPanel::setGoalService() {
   // invalidates the altitude setpoint
   double goal_altitude{-1.0};
 
-  std::thread t([service_name, goal_pos, goal_altitude] {
-    planner_msgs::SetVector3 req;
-    req.request.vector.x = goal_pos(0);
-    req.request.vector.y = goal_pos(1);
-    // if ()
-    req.request.vector.z = goal_altitude;
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name, goal_pos, goal_altitude] {
+    auto client = node_->create_client<planner_msgs::srv::SetVector3>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetVector3::Request>();
+    req->vector.x = goal_pos(0);
+    req->vector.y = goal_pos(1);
+    req->vector.z = goal_altitude;
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -443,17 +563,34 @@ void PlanningPanel::setGoalService() {
 void PlanningPanel::setPathService() {
   std::string service_name = "/terrain_planner/set_path";
   std::cout << "Planner Service" << std::endl;
-  std::thread t([service_name] {
-    planner_msgs::SetVector3 req;
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name] {
+    auto client = node_->create_client<planner_msgs::srv::SetVector3>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetVector3::Request>();
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -471,19 +608,36 @@ void PlanningPanel::setPlanningBudgetService() {
     std::cout << "[PlanningPanel] InvalidPlanning Budget: " << e.what() << std::endl;
   }
 
-  std::thread t([service_name, planning_budget] {
-    planner_msgs::SetVector3 req;
-    // if ()
-    req.request.vector.z = planning_budget;
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name, planning_budget] {
+    auto client = node_->create_client<planner_msgs::srv::SetVector3>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetVector3::Request>();
+    // if ()
+    req->vector.z = planning_budget;
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -505,18 +659,35 @@ void PlanningPanel::setPlannerModeServiceRollout() {
 }
 
 void PlanningPanel::callSetPlannerStateService(std::string service_name, const int mode) {
-  std::thread t([service_name, mode] {
-    planner_msgs::SetPlannerState req;
-    req.request.state = mode;
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name, mode] {
+    auto client = node_->create_client<planner_msgs::srv::SetPlannerState>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetPlannerState::Request>();
+    req->state = mode;
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -528,21 +699,37 @@ void PlanningPanel::setStartService() {
   // invalidates the altitude setpoint
   double goal_altitude{-1.0};
 
-  std::thread t([service_name, goal_pos, goal_altitude] {
-    planner_msgs::SetVector3 req;
-    req.request.vector.x = goal_pos(0);
-    req.request.vector.y = goal_pos(1);
-    // if ()
-    req.request.vector.z = goal_altitude;
-
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name, goal_pos, goal_altitude] {
+    auto client = node_->create_client<planner_msgs::srv::SetVector3>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetVector3::Request>();
+    req->vector.x = goal_pos(0);
+    req->vector.y = goal_pos(1);
+    req->vector.z = goal_altitude;
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -550,16 +737,34 @@ void PlanningPanel::setStartService() {
 void PlanningPanel::setStartLoiterService() {
   std::string service_name = "/terrain_planner/set_start_loiter";
 
-  std::thread t([service_name] {
-    planner_msgs::SetService req;
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name] {
+    auto client = node_->create_client<planner_msgs::srv::SetService>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetService::Request>();
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -567,16 +772,34 @@ void PlanningPanel::setStartLoiterService() {
 void PlanningPanel::setCurrentSegmentService() {
   std::string service_name = "/terrain_planner/set_current_segment";
 
-  std::thread t([service_name] {
-    planner_msgs::SetService req;
-    try {
-      ROS_DEBUG_STREAM("Service name: " << service_name);
-      if (!ros::service::call(service_name, req)) {
-        std::cout << "Couldn't call service: " << service_name << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cout << "Service Exception: " << e.what() << std::endl;
+  std::thread t([this, service_name] {
+    auto client = node_->create_client<planner_msgs::srv::SetService>(service_name);
+    if (!client->wait_for_service(1s)) {
+        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
+            << service_name << "] not available.");
+        return;
     }
+
+    auto req = std::make_shared<planner_msgs::srv::SetService::Request>();
+
+    auto result = client->async_send_request(req);
+
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
+    {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
+          << client->get_service_name()
+          << "] failed.");
+      return;
+    }
+
+    // try {
+    //   RCLCPP_DEBUG_STREAM(node_->get_logger(), "Service name: " << service_name);
+    //   if (!ros::service::call(service_name, req)) {
+    //     std::cout << "Couldn't call service: " << service_name << std::endl;
+    //   }
+    // } catch (const std::exception& e) {
+    //   std::cout << "Service Exception: " << e.what() << std::endl;
+    // }
   });
   t.detach();
 }
@@ -585,18 +808,20 @@ void PlanningPanel::publishToController() {
   mav_msgs::EigenTrajectoryPoint goal_point;
   goal_pose_widget_->getPose(&goal_point);
 
-  geometry_msgs::PoseStamped pose;
-  pose.header.frame_id = vis_manager_->getFixedFrame().toStdString();
+  geometry_msgs::msg::PoseStamped pose;
+  //! @todo(srmainwaring) port to ROS 2
+  // pose.header.frame_id = vis_manager_->getFixedFrame().toStdString();
   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(goal_point, &pose);
 
-  ROS_DEBUG_STREAM("Publishing controller goal on " << controller_pub_.getTopic()
-                                                    << " subscribers: " << controller_pub_.getNumSubscribers());
+  RCLCPP_DEBUG_STREAM(node_->get_logger(),
+      "Publishing controller goal on " << controller_pub_->get_topic_name()
+          << " subscribers: " << controller_pub_->get_subscription_count());
 
-  controller_pub_.publish(pose);
+  controller_pub_->publish(pose);
 }
 
-void PlanningPanel::odometryCallback(const nav_msgs::Odometry& msg) {
-  ROS_INFO_ONCE("Got odometry callback.");
+void PlanningPanel::odometryCallback(const nav_msgs::msg::Odometry& msg) {
+  RCLCPP_INFO_ONCE(node_->get_logger(), "Got odometry callback.");
   if (align_terrain_on_load_) {
     mav_msgs::EigenOdometry odometry;
     mav_msgs::eigenOdometryFromMsg(msg, &odometry);
@@ -608,7 +833,7 @@ void PlanningPanel::odometryCallback(const nav_msgs::Odometry& msg) {
   }
 }
 
-void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& msg) {
+void PlanningPanel::plannerstateCallback(const planner_msgs::msg::NavigationStatus& msg) {
   switch (msg.state) {
     case PLANNER_STATE::HOLD: {
       set_planner_state_buttons_[0]->setDisabled(false);  // NAVIGATE
@@ -650,8 +875,5 @@ void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& m
 
 }  // namespace mav_planning_rviz
 
-// Tell pluginlib about this class.  Every class which should be
-// loadable by pluginlib::ClassLoader must have these two lines
-// compiled in its .cpp file, outside of any namespace scope.
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(mav_planning_rviz::PlanningPanel, rviz::Panel)
+#include <pluginlib/class_list_macros.hpp>  // NOLINT
+PLUGINLIB_EXPORT_CLASS(mav_planning_rviz::PlanningPanel, rviz_common::Panel)
