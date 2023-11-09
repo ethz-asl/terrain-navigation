@@ -1,8 +1,11 @@
+<img align="right" height="60" src="https://user-images.githubusercontent.com/5248102/126074528-004a32b9-7911-486a-9e79-8b78e6e66fdc.png">
+
 # terrain-navigation
 
 [![Build Test](https://github.com/ethz-asl/terrain-navigation/actions/workflows/build_test.yml/badge.svg)](https://github.com/ethz-asl/terrain-navigation/actions/workflows/build_test.yml)
 
-This package includes a global planner based on Dubins RRT* enabling low altitude navigation for fixedwing vehicles in steep terrain.
+This package includes an implementation of the RA-L submission of  "Safe Low-Altitude Navigation in Steep Terrain with Fixed-Wing Aerial Vehicles".
+The implementation includes a global planner based on a RRT* in the Dubins Airplane space enabling low altitude navigation for fixed wing vehicles in steep terrain.
 
 <p align="center">
     <img src="https://github.com/ethz-asl/terrain-navigation/assets/5248102/90e43b60-ea8c-49db-9fb3-257b145fc35c" alt="overview">
