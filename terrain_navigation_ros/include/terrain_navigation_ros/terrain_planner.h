@@ -161,13 +161,13 @@ class TerrainPlanner : public rclcpp::Node {
                               const Eigen::Vector3d &velocity, const double curvature);
   void publishVelocityMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, const Eigen::Vector3d &position,
                              const Eigen::Vector3d &velocity);
-  void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishPathSegments(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr, Path &trajectory);
   void publishGoal(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, const Eigen::Vector3d &position, const double radius,
                    Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0), std::string name_space = "goal");
   void publishRallyPoints(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub, const std::vector<Eigen::Vector3d> &positions, const double radius,
                           Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0),
                           std::string name_space = "rallypoints");
+  // Create a goal marker, a circle located at position with given radius and color.
   visualization_msgs::msg::Marker getGoalMarker(const int id, const Eigen::Vector3d &position, const double radius,
                                            const Eigen::Vector3d color);
   void generateCircle(const Eigen::Vector3d end_position, const Eigen::Vector3d end_velocity,
@@ -205,10 +205,8 @@ class TerrainPlanner : public rclcpp::Node {
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr camera_pose_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr posehistory_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr referencehistory_pub_;
-  rclcpp::Publisher<mavros_msgs::msg::PositionTarget>::SharedPtr position_setpoint_pub_;
   rclcpp::Publisher<mavros_msgs::msg::GlobalPositionTarget>::SharedPtr global_position_setpoint_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr position_target_pub_;
-  rclcpp::Publisher<mavros_msgs::msg::Trajectory>::SharedPtr path_target_pub_;
   rclcpp::Publisher<planner_msgs::msg::NavigationStatus>::SharedPtr planner_status_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr goal_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr rallypoint_pub_;
@@ -258,6 +256,9 @@ class TerrainPlanner : public rclcpp::Node {
   // std::unique_ptr<ros::AsyncSpinner> plannerloop_spinner_;
   // std::unique_ptr<ros::AsyncSpinner> statusloop_spinner_;
   // std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+  // std::shared_ptr<rclcpp::Node> plannerloop_node_;
+  // std::shared_ptr<rclcpp::Node> statusloop_node_;
+  // std::shared_ptr<rclcpp::Node> cmdloop_node_;
   rclcpp::executors::SingleThreadedExecutor cmdloop_executor_;
   rclcpp::executors::SingleThreadedExecutor statusloop_executor_;
   rclcpp::executors::SingleThreadedExecutor plannerloop_executor_;
@@ -298,9 +299,13 @@ class TerrainPlanner : public rclcpp::Node {
 
   // Altitude tracking loop parameters
   /// TODO: This needs to be handed over to TECS
-  double K_z_{2.0};
-  double cruise_speed_{20.0};
-  double max_climb_rate_control_{5.0};
+
+  // Altitude controller P gain.
+  double K_z_{0.5};
+  // Trim (cruise) airpseed. Set to PX4 FW_AIRSPD_TRIM.
+  double cruise_speed_{15.0};
+  // Altitude controller max climb rate. Set to PX4 FW_T_CLMB_R_SP.
+  double max_climb_rate_control_{3.0};
 
   std::string map_path_{};
   std::string map_color_path_{};
