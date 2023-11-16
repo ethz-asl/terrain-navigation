@@ -1,24 +1,21 @@
 Panels:
   - Class: rviz_common/Displays
-    Help Height: 78
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Grid1
-        - /GridMap1
-        - /MarkerArray3
-        - /MarkerArray4
-        - /Marker5
-        - /GridMap4
+        - /Planning1
+        - /Vehicle1
+        - /Vehicle1/VehiclePoseMarker1/Namespaces1
       Splitter Ratio: 0.5
-    Tree Height: 531
+    Tree Height: 285
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
     Expanded:
       - /2D Pose Estimate1
-      - /2D Nav Goal1
       - /Publish Point1
+      - /Interact1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
   - Class: rviz_common/Views
@@ -27,6 +24,7 @@ Panels:
     Name: Views
     Splitter Ratio: 0.5
   - Class: rviz_common/Time
+    Experimental: false
     Name: Time
     SyncMode: 0
     SyncSource: ""
@@ -37,12 +35,8 @@ Panels:
     Name: PlanningPanel
     namespace: ""
     odometry_topic: ""
-    planner_name: sertig
-    planning_budget: 4
-Preferences:
-  PromptSaveOnExit: true
-Toolbars:
-  toolButtonStyle: 2
+    planner_name: davosdorf
+    planning_budget: 10
 Visualization Manager:
   Class: ""
   Displays:
@@ -64,345 +58,436 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz_default_plugins/Path
-      Color: 0; 255; 255
+    - Class: rviz_default_plugins/Axes
       Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Queue Size: 10
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic: /vehicle_path
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz_default_plugins/Path
-      Color: 0; 0; 255
-      Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Queue Size: 10
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic: /geometric_controller/path
-      Unreliable: false
-      Value: true
-    - Alpha: 0.8999999761581421
-      Autocompute Intensity Bounds: true
-      Class: grid_map_rviz_plugin/GridMap
-      Color: 200; 200; 200
-      Color Layer: color
-      Color Transformer: ColorLayer
-      ColorMap: default
-      Enabled: true
-      Grid Cell Decimation: 1
-      Grid Line Thickness: 0.10000000149011612
-      Height Layer: elevation
-      Height Transformer: GridMapLayer
-      History Length: 1
-      Invert ColorMap: false
-      Max Color: 255; 255; 255
-      Max Intensity: 10
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: GridMap
-      Show Grid Lines: false
-      Topic: /grid_map
-      Unreliable: false
-      Use ColorMap: true
-      Value: true
-    - Alpha: 0.5
-      Autocompute Intensity Bounds: true
-      Class: grid_map_rviz_plugin/GridMap
-      Color: 85; 170; 255
-      Color Layer: elevation
-      Color Transformer: FlatColor
-      ColorMap: default
-      Enabled: true
-      Grid Cell Decimation: 1
-      Grid Line Thickness: 0.10000000149011612
-      Height Layer: safety
-      Height Transformer: GridMapLayer
-      History Length: 1
-      Invert ColorMap: false
-      Max Color: 255; 255; 255
-      Max Intensity: 10
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: GridMap
-      Show Grid Lines: false
-      Topic: /grid_map
-      Unreliable: false
-      Use ColorMap: true
-      Value: true
-    - Alpha: 0.20000000298023224
-      Autocompute Intensity Bounds: true
-      Class: grid_map_rviz_plugin/GridMap
-      Color: 255; 0; 0
-      Color Layer: elevation
-      Color Transformer: FlatColor
-      ColorMap: default
-      Enabled: false
-      Grid Cell Decimation: 1
-      Grid Line Thickness: 0.10000000149011612
-      Height Layer: max_elevation
-      Height Transformer: Layer
-      History Length: 1
-      Invert ColorMap: false
-      Max Color: 255; 255; 255
-      Max Intensity: 10
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: GridMap
-      Show Grid Lines: false
-      Topic: /grid_map
-      Unreliable: false
-      Use ColorMap: true
-      Value: false
-    - Alpha: 1
-      Class: rviz_default_plugins/Axes
-      Enabled: false
       Length: 100
-      Name: Axes
+      Name: MapAxes
       Radius: 10
       Reference Frame: map
-      Show Trail: false
-      Value: false
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Marker Topic: /visualization_marker
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
       Value: true
-    - Class: rviz_default_plugins/Marker
+    - Class: rviz_common/Group
+      Displays:
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Class: grid_map_rviz_plugin/GridMap
+          Color: 200; 200; 200
+          Color Layer: color
+          Color Transformer: ColorLayer
+          Enabled: true
+          Height Layer: elevation
+          Height Transformer: GridMapLayer
+          History Length: 1
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 10
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: ElevationGridMap
+          Show Grid Lines: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /grid_map
+          Use Rainbow: true
+          Value: true
+        - Alpha: 0.5
+          Autocompute Intensity Bounds: true
+          Class: grid_map_rviz_plugin/GridMap
+          Color: 85; 170; 255
+          Color Layer: elevation
+          Color Transformer: FlatColor
+          Enabled: false
+          Height Layer: safety
+          Height Transformer: GridMapLayer
+          History Length: 1
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 10
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: SafetyGridMap
+          Show Grid Lines: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /grid_map
+          Use Rainbow: true
+          Value: false
+        - Alpha: 0.20000000298023224
+          Autocompute Intensity Bounds: true
+          Class: grid_map_rviz_plugin/GridMap
+          Color: 255; 0; 0
+          Color Layer: elevation
+          Color Transformer: FlatColor
+          Enabled: false
+          Height Layer: max_elevation
+          Height Transformer: Layer
+          History Length: 1
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 10
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: MaxElevationGridMap
+          Show Grid Lines: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /grid_map
+          Use Rainbow: true
+          Value: false
+        - Alpha: 0.8999999761581421
+          Autocompute Intensity Bounds: true
+          Class: grid_map_rviz_plugin/GridMap
+          Color: 200; 200; 200
+          Color Layer: elevation
+          Color Transformer: GridMapLayer
+          Enabled: false
+          Height Layer: elevation
+          Height Transformer: GridMapLayer
+          History Length: 1
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 10
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: AvalancheGridMap
+          Show Grid Lines: false
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /avalanche_map
+          Use Rainbow: true
+          Value: false
       Enabled: true
-      Marker Topic: /position_target
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz_default_plugins/Marker
-      Enabled: true
-      Marker Topic: /vehicle_pose_marker
-      Name: Marker
-      Namespaces:
-        my_namespace: true
-      Queue Size: 100
-      Value: true
-    - Class: rviz_default_plugins/InteractiveMarkers
-      Enable Transparency: true
-      Enabled: true
-      Name: InteractiveMarkers
-      Show Axes: true
-      Show Descriptions: true
-      Show Visual Aids: true
-      Update Topic: /goal/update
-      Value: true
-    - Class: rviz_default_plugins/Marker
-      Enabled: true
-      Marker Topic: /arc_center
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz_default_plugins/Marker
-      Enabled: true
-      Marker Topic: /goal_marker
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz_default_plugins/Path
-      Color: 255; 255; 0
-      Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Queue Size: 10
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic: /reference/path
-      Unreliable: false
-      Value: true
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Marker Topic: /viewpoints
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
-      Marker Topic: /tree
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
-    - Class: rviz_default_plugins/MarkerArray
-      Enabled: true
-      Marker Topic: /path_segments
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz_default_plugins/Marker
-      Enabled: true
-      Marker Topic: /candidate_start_marker
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz_default_plugins/Marker
-      Enabled: true
-      Marker Topic: /candidate_goal_marker
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz_default_plugins/Marker
-      Enabled: true
-      Marker Topic: /vehicle_velocity
-      Name: Marker
-      Namespaces:
-        normals: true
-      Queue Size: 100
-      Value: true
-    - Alpha: 0.8999999761581421
-      Autocompute Intensity Bounds: true
-      Class: grid_map_rviz_plugin/GridMap
-      Color: 200; 200; 200
-      Color Layer: elevation
-      Color Transformer: GridMapLayer
-      ColorMap: default
-      Enabled: true
-      Grid Cell Decimation: 1
-      Grid Line Thickness: 0.10000000149011612
-      Height Layer: elevation
-      Height Transformer: GridMapLayer
-      History Length: 1
-      Invert ColorMap: false
-      Max Color: 255; 255; 255
-      Max Intensity: 10
-      Min Color: 0; 0; 0
-      Min Intensity: 0
       Name: GridMap
-      Show Grid Lines: false
-      Topic: /avalanche_map
-      Unreliable: false
-      Use ColorMap: true
-      Value: true
-    - Class: rviz_default_plugins/MarkerArray
+    - Class: rviz_common/Group
+      Displays:
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: CandidateGoalMarker
+          Namespaces:
+            goal: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /candidate_goal_marker
+          Value: true
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: CandidateStartMarker
+          Namespaces:
+            start: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /candidate_start_marker
+          Value: true
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: GoalMarker
+          Namespaces:
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /goal_marker
+          Value: true
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: PositionTargetMarker
+          Namespaces:
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /position_target
+          Value: true
+        - Class: rviz_default_plugins/InteractiveMarkers
+          Enable Transparency: true
+          Enabled: true
+          Interactive Markers Namespace: /goal
+          Name: GoalMarkers
+          Show Axes: true
+          Show Descriptions: true
+          Show Visual Aids: true
+          Value: true
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: true
+          Name: GoalMarkerArray
+          Namespaces:
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /goal_marker_array
+          Value: true
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: true
+          Name: PathSegmentsMarkerArray
+          Namespaces:
+            normals: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /path_segments
+          Value: true
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: true
+          Name: RallyPointsMarkerArray
+          Namespaces:
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /rallypoints_marker
+          Value: true
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: false
+          Name: TreeMarkerArray
+          Namespaces:
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /tree
+          Value: false
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz_default_plugins/Path
+          Color: 0; 0; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: GeometricControllerPath
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /geometric_controller/path
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz_default_plugins/Path
+          Color: 255; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: ReferencePath
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /reference/path
+          Value: true
       Enabled: true
-      Marker Topic: /planned_viewpoints
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
+      Name: Planning
+    - Class: rviz_common/Group
+      Displays:
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: VehiclePoseMarker
+          Namespaces:
+            my_namespace: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /vehicle_pose_marker
+          Value: true
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: VehicleVelocityMarker
+          Namespaces:
+            normals: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /vehicle_velocity
+          Value: true
+        - Class: rviz_default_plugins/MarkerArray
+          Enabled: true
+          Name: VehicleVelocityMarkerArray
+          Namespaces:
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /vehicle_velocity_array
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz_default_plugins/Path
+          Color: 0; 255; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: VehiclePath
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /vehicle_path
+          Value: true
+      Enabled: true
+      Name: Vehicle
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Default Light: true
     Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
-    - Class: rviz_default_plugins/Interact
-      Hide Inactive Objects: true
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
     - Class: rviz_default_plugins/FocusCamera
     - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
     - Class: rviz_default_plugins/SetInitialPose
-      Theta std deviation: 0.2617993950843811
-      Topic: /initialpose
-      X std deviation: 0.5
-      Y std deviation: 0.5
+      Covariance x: 0.25
+      Covariance y: 0.25
+      Covariance yaw: 0.06853891909122467
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /initialpose
     - Class: rviz_default_plugins/SetGoal
-      Topic: /move_base_simple/goal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /move_base_simple/goal
     - Class: rviz_default_plugins/PublishPoint
       Single click: true
-      Topic: /clicked_point
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /clicked_point
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: nav2_rviz_plugins/GoalTool
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
   Value: true
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 3920.333984375
+      Distance: 4404.001953125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Field of View: 0.7853981852531433
       Focal Point:
-        X: 55.76494216918945
-        Y: 2079.845703125
-        Z: 315.5940856933594
+        X: -1531.7305908203125
+        Y: -52.1274299621582
+        Z: 1152.6519775390625
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.49479860067367554
+      Pitch: 0.25479769706726074
       Target Frame: map
-      Yaw: 4.263692378997803
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 6.203699588775635
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1163
+  Height: 857
   Hide Left Dock: false
   Hide Right Dock: true
   PlanningPanel:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000247000003f6fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000007a0000029c000000c700fffffffb0000001a0050006c0061006e006e0069006e006700500061006e0065006c010000031c000001540000014e00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000020c000001b10000000000000000fb0000000c00540065006c0065006f00700000000368000000b20000004500ffffff000000010000010f00000317fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000007c00000317000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000078000000039fc0100000002fb0000000800540069006d00650100000000000007800000030700fffffffb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000014efc0100000001fb0000000800540069006d0065010000000000000450000000000000000000000533000003f600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002ad000002dafc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000640000016c000000e300fffffffb0000001a0050006c0061006e006e0069006e006700500061006e0065006c01000001d10000016d0000016d00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000020c000001b10000000000000000fb0000000c00540065006c0065006f00700000000368000000b20000007a00ffffff000000010000010f00000317fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000007c00000317000000c600fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000052b00000037fc0100000002fb0000000800540069006d006501000000000000052b0000023d00fffffffb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000014efc0100000001fb0000000800540069006d006501000000000000045000000000000000000000027d000002da00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Teleop:
@@ -413,6 +498,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 1920
-  X: 1920
-  Y: 0
+  Width: 1323
+  X: 0
+  Y: 25
