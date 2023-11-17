@@ -51,8 +51,7 @@ void PlanningPanel::onInitialize() {
   interactive_markers_.setPoseUpdatedCallback(
       std::bind(&PlanningPanel::updateInteractiveMarkerPose, this, _1));
 
-  //! @todo(srmainwaring) port to ROS 2
-  // interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
+  interactive_markers_.setFrameId(getDisplayContext()->getFixedFrame().toStdString());
   // Initialize all the markers.
   for (const auto& kv : pose_widget_map_) {
     mav_msgs::EigenTrajectoryPoint pose;
@@ -232,6 +231,8 @@ void PlanningPanel::setPlannerName() {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -295,8 +296,7 @@ void PlanningPanel::startEditing(const std::string& id) {
     return;
   }
   // Update fixed frame (may have changed since last time):  
-  //! @todo(srmainwaring) port to ROS 2
-  // interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
+  interactive_markers_.setFrameId(getDisplayContext()->getFixedFrame().toStdString());
   mav_msgs::EigenTrajectoryPoint pose;
   search->second->getPose(&pose);
   interactive_markers_.enableSetPoseMarker(pose);
@@ -385,9 +385,13 @@ void PlanningPanel::callPlannerService() {
 
     auto req = std::make_shared<mavros_msgs::srv::SetMode::Request>();
     req->custom_mode = "OFFBOARD";
+    //! @todo(srmainwaring) for AP custom mode is "GUIDED".
+    // req->custom_mode = "GUIDED";
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -421,6 +425,8 @@ void PlanningPanel::callPublishPath() {
 
   auto result = client->async_send_request(req);
 
+  //! @todo(srmainwaring) prevent race condition with async service calls
+  const std::lock_guard<std::mutex> lock(node_mutex_);
   if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -454,6 +460,8 @@ void PlanningPanel::publishWaypoint() {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -498,6 +506,8 @@ void PlanningPanel::setMaxAltitudeConstrant(bool set_constraint) {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -540,6 +550,8 @@ void PlanningPanel::setGoalService() {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -575,6 +587,8 @@ void PlanningPanel::setPathService() {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -622,6 +636,8 @@ void PlanningPanel::setPlanningBudgetService() {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -672,6 +688,8 @@ void PlanningPanel::callSetPlannerStateService(std::string service_name, const i
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -714,6 +732,8 @@ void PlanningPanel::setStartService() {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -749,6 +769,8 @@ void PlanningPanel::setStartLoiterService() {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -784,6 +806,8 @@ void PlanningPanel::setCurrentSegmentService() {
 
     auto result = client->async_send_request(req);
 
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
     if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
     {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
@@ -809,8 +833,7 @@ void PlanningPanel::publishToController() {
   goal_pose_widget_->getPose(&goal_point);
 
   geometry_msgs::msg::PoseStamped pose;
-  //! @todo(srmainwaring) port to ROS 2
-  // pose.header.frame_id = vis_manager_->getFixedFrame().toStdString();
+  pose.header.frame_id = getDisplayContext()->getFixedFrame().toStdString();
   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(goal_point, &pose);
 
   RCLCPP_DEBUG_STREAM(node_->get_logger(),

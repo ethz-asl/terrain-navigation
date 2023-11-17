@@ -58,14 +58,14 @@ void PoseWidget::setPose(const mav_msgs::EigenTrajectoryPoint& point) {
   table_widget_->blockSignals(false);
 }
 
-void PoseWidget::itemChanged(QTableWidgetItem* item) {
+void PoseWidget::itemChanged(QTableWidgetItem* /*item*/) {
   mav_msgs::EigenTrajectoryPoint point;
   getPose(&point);
   Q_EMIT poseUpdated(id_, point);
 }
 
-QWidget* DoubleTableDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& option,
-                                           const QModelIndex& index) const {
+QWidget* DoubleTableDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem& /*option*/,
+                                           const QModelIndex& /*index*/) const {
   // From:
   // https://stackoverflow.com/questions/22708623/qtablewidget-only-numbers-permitted
   QLineEdit* line_edit = new QLineEdit(parent);

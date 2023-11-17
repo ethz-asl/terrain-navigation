@@ -34,6 +34,15 @@ GoalMarker::GoalMarker(rclcpp::Node::SharedPtr node)
 
 GoalMarker::~GoalMarker() = default;
 
+Eigen::Vector3d GoalMarker::getGoalPosition() {
+  return goal_pos_;
+};
+
+Eigen::Vector3d GoalMarker::toEigen(const geometry_msgs::msg::Pose &p) {
+  Eigen::Vector3d position(p.position.x, p.position.y, p.position.z);
+  return position;
+}
+
 void GoalMarker::processSetPoseFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr &feedback) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   // TODO: Set goal position from menu

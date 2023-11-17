@@ -17,13 +17,10 @@ class GoalMarker {
  public:
   GoalMarker(rclcpp::Node::SharedPtr node);
   virtual ~GoalMarker();
-  Eigen::Vector3d getGoalPosition() { return goal_pos_; };
+  Eigen::Vector3d getGoalPosition();
 
  private:
-  Eigen::Vector3d toEigen(const geometry_msgs::msg::Pose &p) {
-    Eigen::Vector3d position(p.position.x, p.position.y, p.position.z);
-    return position;
-  }
+  Eigen::Vector3d toEigen(const geometry_msgs::msg::Pose &p);
   void processSetPoseFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr &feedback);
   void GridmapCallback(const grid_map_msgs::msg::GridMap &msg);
 

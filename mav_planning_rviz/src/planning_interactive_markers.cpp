@@ -34,6 +34,8 @@ void PlanningInteractiveMarkers::initialize() {
 }
 
 void PlanningInteractiveMarkers::createMarkers() {
+  RCLCPP_INFO_STREAM(node_->get_logger(), "Create markers");
+
   const double kSqrt2Over2 = sqrt(2.0) / 2.0;
 
   // Set up controls: x, y, z, and yaw.
@@ -73,6 +75,8 @@ void PlanningInteractiveMarkers::createMarkers() {
 
 void PlanningInteractiveMarkers::enableSetPoseMarker(
     const mav_msgs::EigenTrajectoryPoint& pose) {
+  RCLCPP_INFO_STREAM(node_->get_logger(), "Enable set pose marker");
+
   geometry_msgs::msg::PoseStamped pose_stamped;
   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(pose, &pose_stamped);
   set_pose_marker_.pose = pose_stamped.pose;
@@ -84,6 +88,8 @@ void PlanningInteractiveMarkers::enableSetPoseMarker(
 }
 
 void PlanningInteractiveMarkers::disableSetPoseMarker() {
+  RCLCPP_INFO_STREAM(node_->get_logger(), "Disable set pose marker");
+
   marker_server_.erase(set_pose_marker_.name);
   marker_server_.applyChanges();
 }
@@ -94,6 +100,9 @@ void PlanningInteractiveMarkers::setPose(const mav_msgs::EigenTrajectoryPoint& p
   set_pose_marker_.pose = pose_stamped.pose;
   marker_server_.setPose(set_pose_marker_.name, set_pose_marker_.pose);
   marker_server_.applyChanges();
+
+  RCLCPP_INFO_STREAM(node_->get_logger(), "Set pose: "
+      << to_yaml(pose_stamped));
 }
 
 void PlanningInteractiveMarkers::processSetPoseFeedback(
@@ -103,6 +112,9 @@ void PlanningInteractiveMarkers::processSetPoseFeedback(
       mav_msgs::EigenTrajectoryPoint pose;
       mav_msgs::eigenTrajectoryPointFromPoseMsg(feedback->pose, &pose);
       pose_updated_function_(pose);
+
+      RCLCPP_INFO_STREAM(node_->get_logger(), "Set pose feedback: "
+          << to_yaml(feedback->pose));
     }
   }
 
@@ -144,6 +156,9 @@ void PlanningInteractiveMarkers::updateMarkerPose(const std::string& id,
   search->second.pose = pose_stamped.pose;
   marker_server_.setPose(id, pose_stamped.pose);
   marker_server_.applyChanges();
+
+  RCLCPP_INFO_STREAM(node_->get_logger(), "Update marker pose: "
+      << to_yaml(pose_stamped));
 }
 
 void PlanningInteractiveMarkers::disableMarker(const std::string& id) {

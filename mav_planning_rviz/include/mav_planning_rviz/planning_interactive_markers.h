@@ -22,7 +22,9 @@ class PlanningInteractiveMarkers {
   void setFrameId(const std::string& frame_id);
   // Bind callback for whenever pose updates.
 
-  void setPoseUpdatedCallback(const PoseUpdatedFunctionType& function) { pose_updated_function_ = function; }
+  void setPoseUpdatedCallback(const PoseUpdatedFunctionType& function) {
+      pose_updated_function_ = function;
+  }
 
   void initialize();
 

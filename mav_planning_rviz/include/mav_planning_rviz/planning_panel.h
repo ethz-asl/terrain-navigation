@@ -2,6 +2,9 @@
 #define MAV_PLANNING_RVIZ_PLANNING_PANEL_H_
 
 #ifndef Q_MOC_RUN
+  //! @todo(srmainwaring) prevent race condition with async service calls
+#include <mutex>
+
 #include <nav_msgs/msg/odometry.hpp>
 #include <planner_msgs/msg/navigation_status.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -99,6 +102,10 @@ class PlanningPanel : public rviz_common::Panel {
   rclcpp::Subscription<planner_msgs::msg::NavigationStatus>::SharedPtr planner_state_sub_;
 
   std::shared_ptr<GoalMarker> goal_marker_;
+
+  //! @todo(srmainwaring) prevent race condition with async service calls
+  std::mutex node_mutex_;  // protects node_
+
 
   // QT stuff:
   QLineEdit* namespace_editor_;
