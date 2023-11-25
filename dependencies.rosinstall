@@ -1,5 +1,5 @@
 - git: {local-name: catkin_simple, uri: 'https://github.com/catkin/catkin_simple'} 
 - git: {local-name: eigen_catkin, uri: 'https://github.com/ethz-asl/eigen_catkin'}
-- git: {local-name: grid_map, uri: 'https://github.com/Jaeyoung-Lim/grid_map.git', version: c45c300ce3930312dcb4deadc811ccb4eaeb4bd0}
-- git: {local-name: grid_map_geo, uri: 'https://github.com/ethz-asl/grid_map_geo.git', branch: master}
+- git: {local-name: grid_map, uri: 'https://github.com/Jaeyoung-Lim/grid_map.git', version: master}
+- git: {local-name: grid_map_geo, uri: 'https://github.com/ethz-asl/grid_map_geo.git', version: master}
 - git: {local-name: mav_comm, uri: 'https://github.com/ethz-asl/mav_comm.git'}
