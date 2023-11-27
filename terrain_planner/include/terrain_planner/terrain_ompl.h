@@ -88,7 +88,7 @@ class TerrainStateSampler : public base::StateSampler {
     // std::cout << "Sample Near" << std::endl;
     return;
   }
-  void sampleGaussian(ompl::base::State* state, const ompl::base::State* mean, double stdDev) override {
+  void sampleGaussian(ompl::base::State* /*state*/, const ompl::base::State* /*mean*/, double /*stdDev*/) override {
     // std::cout << "Sample Gaussian" << std::endl;
     return;
   }

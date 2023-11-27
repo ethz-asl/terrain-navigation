@@ -38,6 +38,7 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 #include "terrain_navigation/data_logger.h"
+
 #include <fstream>
 #include <iostream>
 

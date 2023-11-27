@@ -852,7 +852,7 @@ std::tuple<double, bool, double, double, double> DubinsAirplaneStateSpace::addit
   double t_min = 0.0;
   double p_min = dp.getSegmentLength(3);
   double q_min = dp.getSegmentLength(4);
-  double x1_c, y1_c, z1_c, dx_c, dy_c, dz_c, d_c, th1_c, th_c, alpha_c, beta_c = 0.0;
+  double x1_c, y1_c, /*z1_c,*/ dx_c, dy_c, /*dz_c,*/ d_c, th1_c, th_c, alpha_c, beta_c = 0.0;
 
   ob::State* si = allocState();
   DubinsPath dp_tmp;
@@ -868,11 +868,11 @@ std::tuple<double, bool, double, double, double> DubinsAirplaneStateSpace::addit
         // extract state
         x1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getX();
         y1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getY();
-        z1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getZ();
+        // z1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getZ();
         th1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getYaw();
         dx_c = (x2 - x1_c) * curvature_;
         dy_c = (y2 - y1_c) * curvature_;
-        dz_c = (z2 - z1_c) * curvature_;
+        // dz_c = (z2 - z1_c) * curvature_;
         d_c = sqrtf(dx_c * dx_c + dy_c * dy_c);
         th_c = atan2f(dy_c, dx_c);
         alpha_c = mod2pi(th1_c - th_c);
@@ -903,11 +903,11 @@ std::tuple<double, bool, double, double, double> DubinsAirplaneStateSpace::addit
         // extract state
         x1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getX();
         y1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getY();
-        z1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getZ();
+        // z1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getZ();
         th1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getYaw();
         dx_c = (x2 - x1_c) * curvature_;
         dy_c = (y2 - y1_c) * curvature_;
-        dz_c = (z2 - z1_c) * curvature_;
+        // dz_c = (z2 - z1_c) * curvature_;
         d_c = sqrtf(dx_c * dx_c + dy_c * dy_c);
         th_c = atan2f(dy_c, dx_c);
         alpha_c = mod2pi(th1_c - th_c);
@@ -938,11 +938,11 @@ std::tuple<double, bool, double, double, double> DubinsAirplaneStateSpace::addit
         // extract state
         x1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getX();
         y1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getY();
-        z1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getZ();
+        // z1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getZ();
         th1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getYaw();
         dx_c = (x2 - x1_c) * curvature_;
         dy_c = (y2 - y1_c) * curvature_;
-        dz_c = (z2 - z1_c) * curvature_;
+        // dz_c = (z2 - z1_c) * curvature_;
         d_c = sqrtf(dx_c * dx_c + dy_c * dy_c);
         th_c = atan2f(dy_c, dx_c);
         alpha_c = mod2pi(th1_c - th_c);
@@ -974,11 +974,11 @@ std::tuple<double, bool, double, double, double> DubinsAirplaneStateSpace::addit
         // extract state
         x1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getX();
         y1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getY();
-        z1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getZ();
+        // z1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getZ();
         th1_c = si->as<DubinsAirplaneStateSpace::StateType>()->getYaw();
         dx_c = (x2 - x1_c) * curvature_;
         dy_c = (y2 - y1_c) * curvature_;
-        dz_c = (z2 - z1_c) * curvature_;
+        // dz_c = (z2 - z1_c) * curvature_;
         d_c = sqrtf(dx_c * dx_c + dy_c * dy_c);
         th_c = atan2f(dy_c, dx_c);
         alpha_c = mod2pi(th1_c - th_c);
@@ -1071,7 +1071,7 @@ void DubinsAirplaneStateSpace::interpolate(const DubinsPath& path, const Segment
   else
     interpol_tanGamma_ = tanf(path.getGamma());
 
-  for (interpol_iter_ = 0u; interpol_iter_ < 6u; ++interpol_iter_) {
+  for (interpol_iter_ = 0; interpol_iter_ < 6; ++interpol_iter_) {
     if ((interpol_seg_ < path.getSegmentLength(interpol_iter_) || (interpol_iter_ == 5u))) {
       stateInterpolation_->setXYZYaw(0.0, 0.0, 0.0, segmentStarts.segmentStarts[interpol_iter_].yaw);
       interpol_phiStart_ = stateInterpolation_->getYaw();
@@ -1141,7 +1141,7 @@ void DubinsAirplaneStateSpace::interpolate(const DubinsPath& path, const Segment
   return;
 }
 
-void DubinsAirplaneStateSpace::interpolateWithWind(const ob::State* from, const DubinsPath& path,
+void DubinsAirplaneStateSpace::interpolateWithWind(const ob::State* /*from*/, const DubinsPath& path,
                                                    const SegmentStarts& segmentStarts, double t,
                                                    ob::State* state) const {
   interpolate(path, segmentStarts, t, state);
@@ -1160,7 +1160,7 @@ void DubinsAirplaneStateSpace::calculateSegmentStarts(const ob::State* from, con
     interpol_tanGamma_ = tanf(path.getGamma());
 
   stateInterpolation_->setXYZYaw(0.0, 0.0, 0.0, from->as<StateType>()->getYaw());
-  for (interpol_iter_ = 0u; interpol_iter_ < 6u && interpol_seg_ > 0.0; ++interpol_iter_) {
+  for (interpol_iter_ = 0; interpol_iter_ < 6 && interpol_seg_ > 0.0; ++interpol_iter_) {
     interpol_v_ = std::min(interpol_seg_, path.getSegmentLength(interpol_iter_));
     interpol_phiStart_ = stateInterpolation_->getYaw();
     interpol_seg_ -= interpol_v_;
@@ -1280,7 +1280,7 @@ unsigned int DubinsAirplaneStateSpace::convert_idx(unsigned int i) const {
   }
 }
 
-double DubinsAirplaneStateSpace::t_lsr(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::t_lsr(double d, double alpha, double /*beta*/, double sa, double sb, double ca,
                                        double cb) const {
   const double tmp = -2.0 + d * d + 2.0 * (ca * cb + sa * sb + d * (sa + sb));
   const double p = sqrtf(std::max(tmp, 0.0));
@@ -1288,13 +1288,13 @@ double DubinsAirplaneStateSpace::t_lsr(double d, double alpha, double beta, doub
   return mod2pi(-alpha + theta);  // t
 }
 
-double DubinsAirplaneStateSpace::p_lsr(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::p_lsr(double d, double /*alpha*/, double /*beta*/, double sa, double sb, double ca,
                                        double cb) const {
   const double tmp = -2.0 + d * d + 2.0 * (ca * cb + sa * sb + d * (sa + sb));
   return sqrtf(std::max(tmp, 0.0));  // p
 }
 
-double DubinsAirplaneStateSpace::q_lsr(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::q_lsr(double d, double /*alpha*/, double beta, double sa, double sb, double ca,
                                        double cb) const {
   const double tmp = -2.0 + d * d + 2.0 * (ca * cb + sa * sb + d * (sa + sb));
   const double p = sqrtf(std::max(tmp, 0.0));
@@ -1302,7 +1302,7 @@ double DubinsAirplaneStateSpace::q_lsr(double d, double alpha, double beta, doub
   return mod2pi(-beta + theta);  // q
 }
 
-double DubinsAirplaneStateSpace::t_rsl(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::t_rsl(double d, double alpha, double /*beta*/, double sa, double sb, double ca,
                                        double cb) const {
   const double tmp = d * d - 2.0 + 2.0 * (ca * cb + sa * sb - d * (sa + sb));
   const double p = sqrtf(std::max(tmp, 0.0));
@@ -1310,13 +1310,13 @@ double DubinsAirplaneStateSpace::t_rsl(double d, double alpha, double beta, doub
   return mod2pi(alpha - theta);  // t
 }
 
-double DubinsAirplaneStateSpace::p_rsl(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::p_rsl(double d, double /*alpha*/, double /*beta*/, double sa, double sb, double ca,
                                        double cb) const {
   const double tmp = d * d - 2.0 + 2.0 * (ca * cb + sa * sb - d * (sa + sb));
   return sqrtf(std::max(tmp, 0.0));  // p
 }
 
-double DubinsAirplaneStateSpace::q_rsl(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::q_rsl(double d, double /*alpha*/, double beta, double sa, double sb, double ca,
                                        double cb) const {
   const double tmp = d * d - 2.0 + 2.0 * (ca * cb + sa * sb - d * (sa + sb));
   const double p = sqrtf(std::max(tmp, 0.));
@@ -1324,37 +1324,37 @@ double DubinsAirplaneStateSpace::q_rsl(double d, double alpha, double beta, doub
   return mod2pi(beta - theta);  // q
 }
 
-double DubinsAirplaneStateSpace::t_rsr(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::t_rsr(double d, double alpha, double /*beta*/, double sa, double sb, double ca,
                                        double cb) const {
   const double theta = atan2f(ca - cb, d - sa + sb);
   return mod2pi(alpha - theta);  // t
 }
 
-double DubinsAirplaneStateSpace::p_rsr(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::p_rsr(double d, double /*alpha*/, double /*beta*/, double sa, double sb, double ca,
                                        double cb) const {
   const double tmp = 2.0 + d * d - 2.0 * (ca * cb + sa * sb - d * (sb - sa));
   return sqrtf(std::max(tmp, 0.0));  // p
 }
 
-double DubinsAirplaneStateSpace::q_rsr(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::q_rsr(double d, double /*alpha*/, double beta, double sa, double sb, double ca,
                                        double cb) const {
   const double theta = atan2f(ca - cb, d - sa + sb);
   return mod2pi(-beta + theta);  // q
 }
 
-double DubinsAirplaneStateSpace::t_lsl(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::t_lsl(double d, double alpha, double /*beta*/, double sa, double sb, double ca,
                                        double cb) const {
   const double theta = atan2f(cb - ca, d + sa - sb);
   return mod2pi(-alpha + theta);  // t
 }
 
-double DubinsAirplaneStateSpace::p_lsl(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::p_lsl(double d, double /*alpha*/, double /*beta*/, double sa, double sb, double ca,
                                        double cb) const {
   const double tmp = 2.0 + d * d - 2.0 * (ca * cb + sa * sb - d * (sa - sb));
   return sqrtf(std::max(tmp, 0.0));  // p
 }
 
-double DubinsAirplaneStateSpace::q_lsl(double d, double alpha, double beta, double sa, double sb, double ca,
+double DubinsAirplaneStateSpace::q_lsl(double d, double /*alpha*/, double beta, double sa, double sb, double ca,
                                        double cb) const {
   const double theta = atan2f(cb - ca, d + sa - sb);
   return mod2pi(beta - theta);  // q

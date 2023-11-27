@@ -62,7 +62,8 @@ class DataLogger {
   void writeToFile(const std::string path);
 
  private:
-  int id_{0};
+  //! @todo(srmainwaring) remove unused variable
+  // int id_{0};
   std::vector<std::string> keys_;
   std::vector<std::unordered_map<std::string, std::any>> data_list_;
   bool print_header_{false};

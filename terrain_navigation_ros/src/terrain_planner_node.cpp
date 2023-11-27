@@ -37,26 +37,26 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
+#include <rclcpp/rclcpp.hpp>
+
 #include "terrain_navigation_ros/terrain_planner.h"
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "terrain_planner");
-  ros::NodeHandle nh("");
-  ros::NodeHandle nh_private("~");
+  rclcpp::init(argc, argv);
 
-  std::string file_path, output_file_path;
-  int num_experiments;
-  double max_experiment_duration;
-  nh_private.param<std::string>("file_path", file_path, "");
-  nh_private.param<int>("num_experiments", num_experiments, 1);
-  nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
-  nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
+  // std::string file_path, output_file_path;
+  // int num_experiments;
+  // double max_experiment_duration;
+  // nh_private.param<std::string>("file_path", file_path, "");
+  // nh_private.param<int>("num_experiments", num_experiments, 1);
+  // nh_private.param<double>("max_experiment_duration", max_experiment_duration, 500);
+  // nh_private.param<std::string>("output_file_path", output_file_path, "output/benchmark.csv");
 
-  std::shared_ptr<TerrainPlanner> terrain_planner_node = std::make_shared<TerrainPlanner>(nh, nh_private);
+  auto terrain_planner_node = std::make_shared<TerrainPlanner>();
+  terrain_planner_node->init();
 
-  // Initiate ROS spinners
-  terrain_planner_node->Init();
-
-  ros::spin();
+  rclcpp::spin(terrain_planner_node);
+  rclcpp::shutdown();
   return 0;
+
 }

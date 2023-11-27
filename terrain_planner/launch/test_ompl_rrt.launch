@@ -1,14 +1,17 @@
 <launch>
-    <arg name="visualization" default="true"/>
+    <arg name="rviz" default="true"/>
+    <arg name="tif_path" default="$(find-pkg-share terrain_planner)/../resources/hinwil.tif"/>
+    <arg name="tif_color_path" default="$(find-pkg-share terrain_planner)/../resources/hinwil_color.tif"/>
 
-    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+    <node pkg="tf2_ros" exec="static_transform_publisher" name="world_map" args="--frame-id world --child-frame-id map"/>
 
-    <node pkg="terrain_planner" type="test_rrt_node" name="rrt_planner" output="screen">
-        <param name="map_path" value="$(find terrain_planner)/../resources/hinwil.tif"/>
-        <param name="color_file_path" value="$(find terrain_planner)/../resources/hinwil_color.tif"/>
+    <node pkg="terrain_planner" exec="test_rrt_node" name="rrt_planner" output="screen">
+        <param name="map_path" value="$(var tif_path)"/>
+        <param name="color_file_path" value="$(var tif_color_path)"/>
         <param name="random" value="false"/>
     </node>
-    <group if="$(arg visualization)">
-        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config_ompl_segments.rviz" />
+
+    <group if="$(var rviz)">
+        <node pkg="rviz2" exec="rviz2" name="rviz2" args="-d $(find-pkg-share terrain_planner)/launch/config_ompl_segments.rviz" />
     </group>
 </launch>
