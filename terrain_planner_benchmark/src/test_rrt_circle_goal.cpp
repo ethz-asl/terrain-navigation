@@ -57,12 +57,12 @@
 
 void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
   visualization_msgs::Marker marker;
-  marker.header.stamp = ros::Time::now();
+  marker.header.stamp = rclcpp::Clock().now();
   marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.action = visualization_msgs::Marker::ADD;
   marker.header.frame_id = "map";
   marker.id = 0;
-  marker.header.stamp = ros::Time::now();
+  marker.header.stamp = rclcpp::Clock().now();
   std::vector<geometry_msgs::Point> points;
   for (double t = 0.0; t <= 1.0; t += 0.02) {
     geometry_msgs::Point point;
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
   path.appendSegment(goal_loiter_path);
 
   // Repeatedly publish results
-  terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
+  terrain_map->getGridMap().setTimestamp(rclcpp::Clock().now().toNSec());
   grid_map_msgs::GridMap message;
   grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
   grid_map_pub.publish(message);

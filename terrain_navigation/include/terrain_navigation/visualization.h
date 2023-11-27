@@ -42,30 +42,31 @@
 #ifndef VISUALIZATION_H
 #define VISUALIZATION_H
 
-#include "geometry_msgs/Point.h"
-#include "terrain_navigation/viewpoint.h"
-#include "visualization_msgs/Marker.h"
+#include <rclcpp/clock.hpp>
 
-geometry_msgs::Point toPoint(const Eigen::Vector3d &p) {
-  geometry_msgs::Point position;
+#include <geometry_msgs/msg/point.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+
+geometry_msgs::msg::Point toPoint(const Eigen::Vector3d &p) {
+  geometry_msgs::msg::Point position;
   position.x = p(0);
   position.y = p(1);
   position.z = p(2);
   return position;
 }
 
-visualization_msgs::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint,
+visualization_msgs::msg::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint,
                                                Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0)) {
   double scale{15};  // Size of the viewpoint markers
-  visualization_msgs::Marker marker;
+  visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
-  marker.header.stamp = ros::Time();
+  marker.header.stamp = rclcpp::Clock().now();
   marker.ns = "my_namespace";
   marker.id = id;
-  marker.type = visualization_msgs::Marker::LINE_LIST;
-  marker.action = visualization_msgs::Marker::ADD;
+  marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   const Eigen::Vector3d position = viewpoint.getCenterLocal();
-  std::vector<geometry_msgs::Point> points;
+  std::vector<geometry_msgs::msg::Point> points;
   std::vector<Eigen::Vector3d> corner_ray_vectors = viewpoint.getCornerRayVectors();
   std::vector<Eigen::Vector3d> vertex;
   for (auto &corner_ray : corner_ray_vectors) {

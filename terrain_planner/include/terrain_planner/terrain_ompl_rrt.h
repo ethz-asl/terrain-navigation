@@ -197,7 +197,7 @@ class TerrainOmplRrt {
   }
 
  private:
-  double minimum_turning_radius_{66.67};
+  // double minimum_turning_radius_{66.67};
   std::shared_ptr<ompl::OmplSetup> problem_setup_;
   std::shared_ptr<TerrainMap> map_;
   double min_altitude_{50.0};

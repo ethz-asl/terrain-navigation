@@ -1,27 +1,23 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.14.4)
 project(planner_msgs)
 
-find_package(catkin REQUIRED COMPONENTS geometry_msgs message_generation std_msgs)
+find_package(ament_cmake REQUIRED)
 
-include_directories(include)
+find_package(Eigen3 REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
-add_message_files(
-  DIRECTORY msg
-  FILES
-  NavigationStatus.msg
-  TerrainInfo.msg
+rosidl_generate_interfaces(${PROJECT_NAME}
+  msg/NavigationStatus.msg
+  msg/TerrainInfo.msg
+  srv/SetPlannerState.srv
+  srv/SetService.srv
+  srv/SetString.srv
+  srv/SetVector3.srv
+  DEPENDENCIES std_msgs geometry_msgs
 )
 
-add_service_files(
-  FILES
-  SetString.srv
-  SetVector3.srv
-  SetService.srv
-  SetPlannerState.srv
-)
+ament_export_dependencies(rosidl_default_runtime)
 
-generate_messages(DEPENDENCIES geometry_msgs std_msgs)
-
-catkin_package(
-  INCLUDE_DIRS include
-  CATKIN_DEPENDS geometry_msgs message_runtime std_msgs)
+ament_package()

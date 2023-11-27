@@ -27,19 +27,20 @@ const DubinsPath::DubinsPathSegmentType DubinsPath::dubinsPathType[6][3] = {
     {DUBINS_RIGHT, DUBINS_LEFT, DUBINS_RIGHT},    {DUBINS_LEFT, DUBINS_RIGHT, DUBINS_LEFT}};
 
 DubinsPath::DubinsPath(Index type, double t, double p, double q, double gam, unsigned int ks, unsigned int ke, double r)
-    : k_start_(ks),
-      k_end_(ke),
+    :
+      length_{{0, t, 0, p, q, 0}},
+      length_2D_(t + p + q),
       radiusRatio_{{r, r, r, r, r, r}},
       radiusRatioInverse_{{1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r}},
       gamma_(gam),
       one_div_cos_abs_gamma_(1.0 / cosf(fabs(gamma_))),
+      k_end_(ke),
+      k_start_(ks),
+      classification_(NOT_ASSIGNED),
+      idx_(type),
       lmh_(DubinsPath::ALT_CASE_LOW),
       additionalManeuver_(false),
-      idx_(type),
-      foundOptimalPath_(true),
-      classification_(NOT_ASSIGNED),
-      length_{{0, t, 0, p, q, 0}},
-      length_2D_(t + p + q) {
+      foundOptimalPath_(true) {
   // only 6 different types available
   assert(type < 6u);
   type_ = dubinsPathType[type];

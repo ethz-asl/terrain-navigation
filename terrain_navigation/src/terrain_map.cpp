@@ -39,6 +39,7 @@
  */
 
 #include "terrain_navigation/terrain_map.h"
+
 #include <grid_map_core/GridMapMath.hpp>
 
 TerrainMap::TerrainMap() : GridMapGeo() {}
@@ -110,8 +111,8 @@ void TerrainMap::AddLayerNormals(const std::string reference_layer) {
   grid_map::Matrix &layer_normal_y = grid_map_[reference_layer + "_normal_y"];
   grid_map::Matrix &layer_normal_z = grid_map_[reference_layer + "_normal_z"];
 
-  unsigned width = grid_map_.getSize()(0);
-  unsigned height = grid_map_.getSize()(1);
+  int width = grid_map_.getSize()(0);
+  int height = grid_map_.getSize()(1);
   double resolution = grid_map_.getResolution();
   // Compute normals from elevation map
   // Surface normal calculation from: https://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml

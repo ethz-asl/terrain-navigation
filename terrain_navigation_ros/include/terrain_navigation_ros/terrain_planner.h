@@ -42,99 +42,138 @@
 #ifndef TERRAIN_PLANNER_H
 #define TERRAIN_PLANNER_H
 
-#include <ros/callback_queue.h>
-#include <ros/ros.h>
-
-#include <geographic_msgs/GeoPointStamped.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/TwistStamped.h>
-#include <mavros_msgs/CameraImageCaptured.h>
-#include <mavros_msgs/State.h>
-#include <mavros_msgs/WaypointList.h>
-#include <nav_msgs/Path.h>
-#include <sensor_msgs/NavSatFix.h>
-#include <visualization_msgs/Marker.h>
-
-#include <Eigen/Dense>
 #include <mutex>
 
-#include <terrain_navigation/profiler.h>
-#include <terrain_navigation/viewpoint.h>
+#include <geographic_msgs/msg/geo_point_stamped.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
+#include <grid_map_msgs/msg/grid_map.hpp>
+#include <mavros_msgs/msg/camera_image_captured.hpp>
+#include <mavros_msgs/msg/global_position_target.hpp>
+#include <mavros_msgs/msg/position_target.hpp>
+#include <mavros_msgs/msg/state.hpp>
+#include <mavros_msgs/msg/trajectory.hpp>
+#include <mavros_msgs/msg/waypoint_list.hpp>
+#include <mavros_msgs/srv/command_long.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <planner_msgs/msg/navigation_status.hpp>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
-#include "terrain_planner/common.h"
-#include "terrain_planner/terrain_ompl_rrt.h"
-#include "terrain_planner/visualization.h"
-
-#include <planner_msgs/SetPlannerState.h>
-#include <planner_msgs/SetService.h>
-#include <planner_msgs/SetString.h>
-#include <planner_msgs/SetVector3.h>
+#include <Eigen/Dense>
 
 #include <GeographicLib/Geocentric.hpp>
 #include <GeographicLib/LocalCartesian.hpp>
 
-#include <dynamic_reconfigure/server.h>
-// #include "terrain_navigation_ros/HeightRateTuningConfig.h"
+#include <planner_msgs/srv/set_planner_state.hpp>
+#include <planner_msgs/srv/set_service.hpp>
+#include <planner_msgs/srv/set_string.hpp>
+#include <planner_msgs/srv/set_vector3.hpp>
 
-enum class PLANNER_MODE { ACTIVE_MAPPING, EMERGENCY_ABORT, EXHAUSTIVE, GLOBAL, GLOBAL_REPLANNING, RANDOM, RETURN };
+#include <rclcpp/rclcpp.hpp>
 
-enum class PLANNER_STATE { HOLD = 1, NAVIGATE = 2, ROLLOUT = 3, ABORT = 4, RETURN = 5 };
+#include <terrain_navigation/profiler.h>
+#include <terrain_navigation/viewpoint.h>
 
-class TerrainPlanner {
+#include <terrain_planner/common.h>
+#include <terrain_planner/terrain_ompl_rrt.h>
+#include <terrain_planner/visualization.h>
+
+enum class PLANNER_MODE {
+  ACTIVE_MAPPING,
+  EMERGENCY_ABORT,
+  EXHAUSTIVE,
+  GLOBAL,
+  GLOBAL_REPLANNING,
+  RANDOM,
+  RETURN
+};
+
+enum class PLANNER_STATE {
+  HOLD = 1,
+  NAVIGATE = 2,
+  ROLLOUT = 3,
+  ABORT = 4,
+  RETURN = 5
+};
+
+class TerrainPlanner : public rclcpp::Node {
  public:
-  TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
-  virtual ~TerrainPlanner();
-  void Init();
+  TerrainPlanner();
+
+  void init();
 
  private:
-  void cmdloopCallback(const ros::TimerEvent &event);
-  void statusloopCallback(const ros::TimerEvent &event);
-  void plannerloopCallback(const ros::TimerEvent &event);
-  void publishTrajectory(std::vector<Eigen::Vector3d> trajectory);
-  // States from vehicle
-  void mavLocalPoseCallback(const geometry_msgs::PoseStamped &msg);
-  void mavGlobalPoseCallback(const sensor_msgs::NavSatFix &msg);
-  void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
-  void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
-  void mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
-  void mavMissionCallback(const mavros_msgs::WaypointListPtr &msg);
-  void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
-  bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
-  bool setMaxAltitudeCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
-  bool setGoalCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
-  bool setStartCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
-  bool setCurrentSegmentCallback(planner_msgs::SetService::Request &req, planner_msgs::SetService::Response &res);
-  bool setStartLoiterCallback(planner_msgs::SetService::Request &req, planner_msgs::SetService::Response &res);
-  bool setPlanningCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
-  bool setPlannerStateCallback(planner_msgs::SetPlannerState::Request &req,
-                               planner_msgs::SetPlannerState::Response &res);
-  bool setPathCallback(planner_msgs::SetVector3::Request &req, planner_msgs::SetVector3::Response &res);
+  // void cmdloopCallback(const ros::TimerEvent &event);
+  // void statusloopCallback(const ros::TimerEvent &event);
+  // void plannerloopCallback(const ros::TimerEvent &event);
+  void cmdloopCallback();
+  void statusloopCallback();
+  void plannerloopCallback();
 
-  void MapPublishOnce(const ros::Publisher &pub, const grid_map::GridMap &map);
-  void publishPositionHistory(ros::Publisher &pub, const Eigen::Vector3d &position,
-                              std::vector<geometry_msgs::PoseStamped> &history_vector);
-  void publishPositionSetpoints(const ros::Publisher &pub, const Eigen::Vector3d &position,
+  void publishTrajectory(std::vector<Eigen::Vector3d> trajectory);
+
+  // States from vehicle
+  void mavLocalPoseCallback(const geometry_msgs::msg::PoseStamped &msg);
+  void mavGlobalPoseCallback(const sensor_msgs::msg::NavSatFix &msg);
+  void mavtwistCallback(const geometry_msgs::msg::TwistStamped &msg);
+  void mavstateCallback(const mavros_msgs::msg::State &msg);
+  void mavGlobalOriginCallback(const geographic_msgs::msg::GeoPointStamped &msg);
+  void mavMissionCallback(const mavros_msgs::msg::WaypointList &msg);
+  void mavImageCapturedCallback(const mavros_msgs::msg::CameraImageCaptured &msg);
+
+  bool setLocationCallback(
+      const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetString::Response> res);
+  bool setMaxAltitudeCallback(
+      const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetString::Response> res);
+  bool setGoalCallback(
+      const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetVector3::Response> res);
+  bool setStartCallback(
+      const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetVector3::Response> res);
+  bool setCurrentSegmentCallback(
+      const std::shared_ptr<planner_msgs::srv::SetService::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetService::Response> res);
+  bool setStartLoiterCallback(
+      const std::shared_ptr<planner_msgs::srv::SetService::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetService::Response> res);
+  bool setPlanningCallback(
+      const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetVector3::Response> res);
+  bool setPlannerStateCallback(
+      const std::shared_ptr<planner_msgs::srv::SetPlannerState::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetPlannerState::Response> res);
+  bool setPathCallback(
+      const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
+      std::shared_ptr<planner_msgs::srv::SetVector3::Response> res);
+
+  void MapPublishOnce(rclcpp::Publisher<grid_map_msgs::msg::GridMap>::SharedPtr pub, const grid_map::GridMap &map);
+  void publishPositionHistory(rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr, const Eigen::Vector3d &position,
+                              std::vector<geometry_msgs::msg::PoseStamped> &history_vector);
+  void publishPositionSetpoints(rclcpp::Publisher<mavros_msgs::msg::PositionTarget>::SharedPtr pub, const Eigen::Vector3d &position,
                                 const Eigen::Vector3d &velocity, const double curvature);
-  void publishGlobalPositionSetpoints(const ros::Publisher &pub, const double latitude, const double longitude,
+  void publishGlobalPositionSetpoints(rclcpp::Publisher<mavros_msgs::msg::GlobalPositionTarget>::SharedPtr pub, const double latitude, const double longitude,
                                       const double altitude, const Eigen::Vector3d &velocity, const double curvature);
-  void publishReferenceMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
+  void publishReferenceMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, const Eigen::Vector3d &position,
                               const Eigen::Vector3d &velocity, const double curvature);
-  void publishVelocityMarker(const ros::Publisher &pub, const Eigen::Vector3d &position,
+  void publishVelocityMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, const Eigen::Vector3d &position,
                              const Eigen::Vector3d &velocity);
   void publishPathSetpoints(const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
-  void publishPathSegments(ros::Publisher &pub, Path &trajectory);
-  void publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, const double radius,
+  void publishPathSegments(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr, Path &trajectory);
+  void publishGoal(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, const Eigen::Vector3d &position, const double radius,
                    Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0), std::string name_space = "goal");
-  void publishRallyPoints(const ros::Publisher &pub, const std::vector<Eigen::Vector3d> &positions, const double radius,
+  void publishRallyPoints(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub, const std::vector<Eigen::Vector3d> &positions, const double radius,
                           Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0),
                           std::string name_space = "rallypoints");
-  visualization_msgs::Marker getGoalMarker(const int id, const Eigen::Vector3d &position, const double radius,
+  visualization_msgs::msg::Marker getGoalMarker(const int id, const Eigen::Vector3d &position, const double radius,
                                            const Eigen::Vector3d color);
   void generateCircle(const Eigen::Vector3d end_position, const Eigen::Vector3d end_velocity,
                       const Eigen::Vector3d center_pos, PathSegment &trajectory);
   PathSegment generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
                                     Eigen::Vector3d current_vel, const double dt = 0.1);
-  // void dynamicReconfigureCallback(terrain_navigation_ros::HeightRateTuningConfig &config, uint32_t level);
 
   void printPlannerState(PLANNER_STATE state) {
     switch (state) {
@@ -150,6 +189,9 @@ class TerrainPlanner {
       case PLANNER_STATE::ABORT:
         std::cout << "PLANNER_STATE::ABORT" << std::endl;
         break;
+      case PLANNER_STATE::RETURN:
+        std::cout << "PLANNER_STATE::RETURN" << std::endl;
+        break;
     }
   }
 
@@ -157,64 +199,68 @@ class TerrainPlanner {
 
   PLANNER_STATE finiteStateMachine(const PLANNER_STATE current_state, const PLANNER_STATE query_state);
 
-  ros::NodeHandle nh_;
-  ros::NodeHandle nh_private_;
-  ros::Publisher vehicle_path_pub_;
-  ros::Publisher grid_map_pub_;
-  ros::Publisher vehicle_pose_pub_;
-  ros::Publisher camera_pose_pub_;
-  ros::Publisher posehistory_pub_;
-  ros::Publisher referencehistory_pub_;
-  ros::Publisher position_setpoint_pub_;
-  ros::Publisher global_position_setpoint_pub_;
-  ros::Publisher position_target_pub_;
-  ros::Publisher path_target_pub_;
-  ros::Publisher planner_status_pub_;
-  ros::Publisher goal_pub_;
-  ros::Publisher rallypoint_pub_;
-  ros::Publisher candidate_goal_pub_;
-  ros::Publisher candidate_start_pub_;
-  ros::Publisher viewpoint_pub_;
-  ros::Publisher planned_viewpoint_pub_;
-  ros::Publisher tree_pub_;
-  ros::Publisher vehicle_velocity_pub_;
-  ros::Publisher path_segment_pub_;
-  ros::Subscriber mavlocalpose_sub_;
-  ros::Subscriber mavglobalpose_sub_;
-  ros::Subscriber mavtwist_sub_;
-  ros::Subscriber mavstate_sub_;
-  ros::Subscriber mavmission_sub_;
-  ros::Subscriber global_origin_sub_;
-  ros::Subscriber image_captured_sub_;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr vehicle_path_pub_;
+  rclcpp::Publisher<grid_map_msgs::msg::GridMap>::SharedPtr grid_map_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr vehicle_pose_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr camera_pose_pub_;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr posehistory_pub_;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr referencehistory_pub_;
+  rclcpp::Publisher<mavros_msgs::msg::PositionTarget>::SharedPtr position_setpoint_pub_;
+  rclcpp::Publisher<mavros_msgs::msg::GlobalPositionTarget>::SharedPtr global_position_setpoint_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr position_target_pub_;
+  rclcpp::Publisher<mavros_msgs::msg::Trajectory>::SharedPtr path_target_pub_;
+  rclcpp::Publisher<planner_msgs::msg::NavigationStatus>::SharedPtr planner_status_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr goal_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr rallypoint_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr candidate_goal_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr candidate_start_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viewpoint_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr planned_viewpoint_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr tree_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr vehicle_velocity_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr path_segment_pub_;
 
-  ros::ServiceServer setlocation_serviceserver_;
-  ros::ServiceServer setmaxaltitude_serviceserver_;
-  ros::ServiceServer setgoal_serviceserver_;
-  ros::ServiceServer setstart_serviceserver_;
-  ros::ServiceServer setstartloiter_serviceserver_;
-  ros::ServiceServer setplanning_serviceserver_;
-  ros::ServiceServer updatepath_serviceserver_;
-  ros::ServiceServer setcurrentsegment_serviceserver_;
-  ros::ServiceServer setplannerstate_service_server_;
-  ros::ServiceClient msginterval_serviceclient_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr mavlocalpose_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr mavglobalpose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr mavtwist_sub_;
+  rclcpp::Subscription<mavros_msgs::msg::State>::SharedPtr mavstate_sub_;
+  rclcpp::Subscription<mavros_msgs::msg::WaypointList>::SharedPtr mavmission_sub_;
+  rclcpp::Subscription<geographic_msgs::msg::GeoPointStamped>::SharedPtr global_origin_sub_;
+  rclcpp::Subscription<mavros_msgs::msg::CameraImageCaptured>::SharedPtr image_captured_sub_;
 
-  ros::Timer cmdloop_timer_, statusloop_timer_, plannerloop_timer_;
-  ros::Time plan_time_;
-  ros::Time last_triggered_time_;
+  rclcpp::Service<planner_msgs::srv::SetString>::SharedPtr setlocation_serviceserver_;
+  rclcpp::Service<planner_msgs::srv::SetString>::SharedPtr setmaxaltitude_serviceserver_;
+  rclcpp::Service<planner_msgs::srv::SetVector3>::SharedPtr setgoal_serviceserver_;
+  rclcpp::Service<planner_msgs::srv::SetVector3>::SharedPtr setstart_serviceserver_;
+  rclcpp::Service<planner_msgs::srv::SetService>::SharedPtr setstartloiter_serviceserver_;
+  rclcpp::Service<planner_msgs::srv::SetVector3>::SharedPtr setplanning_serviceserver_;
+  rclcpp::Service<planner_msgs::srv::SetVector3>::SharedPtr updatepath_serviceserver_;
+  rclcpp::Service<planner_msgs::srv::SetService>::SharedPtr setcurrentsegment_serviceserver_;
+  rclcpp::Service<planner_msgs::srv::SetPlannerState>::SharedPtr setplannerstate_service_server_;
+
+  rclcpp::Client<mavros_msgs::srv::CommandLong>::SharedPtr msginterval_serviceclient_;
+
+  // ros::Timer cmdloop_timer_, statusloop_timer_, plannerloop_timer_;
+  rclcpp::TimerBase::SharedPtr cmdloop_timer_;
+  rclcpp::TimerBase::SharedPtr statusloop_timer_;
+  rclcpp::TimerBase::SharedPtr plannerloop_timer_;
+
+  rclcpp::Time plan_time_;
+  rclcpp::Time last_triggered_time_;
   Eigen::Vector3d goal_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
   Eigen::Vector3d start_pos_{Eigen::Vector3d(0.0, 0.0, 20.0)};
   Eigen::Vector3d home_position_{Eigen::Vector3d(0.0, 0.0, 20.0)};
   double home_position_radius_{0.0};
   Eigen::Vector3d tracking_error_{Eigen::Vector3d::Zero()};
-  ros::CallbackQueue plannerloop_queue_;
-  ros::CallbackQueue statusloop_queue_;
-  ros::CallbackQueue cmdloop_queue_;
-  std::unique_ptr<ros::AsyncSpinner> plannerloop_spinner_;
-  std::unique_ptr<ros::AsyncSpinner> statusloop_spinner_;
-  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
-
-  // dynamic_reconfigure::Server<terrain_navigation_ros::HeightRateTuningConfig> server;
-  // dynamic_reconfigure::Server<terrain_navigation_ros::HeightRateTuningConfig>::CallbackType f;
+  // ros::CallbackQueue plannerloop_queue_;
+  // ros::CallbackQueue statusloop_queue_;
+  // ros::CallbackQueue cmdloop_queue_;
+  // std::unique_ptr<ros::AsyncSpinner> plannerloop_spinner_;
+  // std::unique_ptr<ros::AsyncSpinner> statusloop_spinner_;
+  // std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+  rclcpp::executors::SingleThreadedExecutor cmdloop_executor_;
+  rclcpp::executors::SingleThreadedExecutor statusloop_executor_;
+  rclcpp::executors::SingleThreadedExecutor plannerloop_executor_;
 
   PLANNER_MODE planner_mode_{PLANNER_MODE::EXHAUSTIVE};
   PLANNER_STATE planner_state_{PLANNER_STATE::HOLD};
@@ -229,7 +275,7 @@ class TerrainPlanner {
   Path reference_primitive_;
   Path candidate_primitive_;
   Path rollout_primitive_;
-  mavros_msgs::State current_state_;
+  mavros_msgs::msg::State current_state_;
   std::optional<GeographicLib::LocalCartesian> enu_;
 
   std::mutex goal_mutex_;  // protects g_i
@@ -237,8 +283,8 @@ class TerrainPlanner {
   std::vector<Eigen::Vector3d> vehicle_position_history_;
   std::vector<ViewPoint> added_viewpoint_list;
   std::vector<ViewPoint> planned_viewpoint_list;
-  std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
-  std::vector<geometry_msgs::PoseStamped> referencehistory_vector_;
+  std::vector<geometry_msgs::msg::PoseStamped> posehistory_vector_;
+  std::vector<geometry_msgs::msg::PoseStamped> referencehistory_vector_;
   std::vector<ViewPoint> viewpoints_;
   Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};

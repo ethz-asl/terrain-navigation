@@ -72,7 +72,8 @@ class Primitive {
   std::vector<Path> getMotionPrimitives() {
     std::vector<Path> all_primitives;
     if (has_child()) {
-      int i = 0;
+      //! @todo(srmainwaring) remove set but unused variable
+      // int i = 0;
       for (const auto &child : child_primitives) {
         std::vector<Path> extended_primitives = child->getMotionPrimitives();
         // Append current segment
@@ -81,7 +82,8 @@ class Primitive {
           primitive.validity = validity && primitive.validity;
           all_primitives.push_back(primitive);
         }
-        i++;
+        //! @todo(srmainwaring) remove set but unused variable
+        // i++;
       }
     } else {  // Append primitive segments
       Path trajectory_segments;
@@ -102,6 +104,7 @@ class Primitive {
     for (auto &child : child_primitives) {
       if (child->valid()) return child;
     }
+    return nullptr;
   }
 
   std::shared_ptr<Primitive> copy() const {

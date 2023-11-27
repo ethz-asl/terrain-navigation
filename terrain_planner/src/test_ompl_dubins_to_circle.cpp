@@ -38,37 +38,44 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include <geometry_msgs/Point.h>
-#include <ros/ros.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_eigen/tf2_eigen.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <terrain_navigation/terrain_map.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_eigen/tf2_eigen.hpp>
+
+#include <geometry_msgs/msg/point.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
 
+using namespace std::chrono_literals;
+
 double mod2pi(double x) { return x - 2 * M_PI * floor(x * (0.5 / M_PI)); }
 
-void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
-  visualization_msgs::Marker marker;
-  marker.header.stamp = ros::Time::now();
-  marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.action = visualization_msgs::Marker::ADD;
+void publishCircleSetpoints(
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+  const Eigen::Vector3d& position,
+  const double radius) {
+  visualization_msgs::msg::Marker marker;
+  marker.header.stamp = rclcpp::Clock().now();
+  marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   marker.header.frame_id = "map";
   marker.id = 0;
-  marker.header.stamp = ros::Time::now();
-  std::vector<geometry_msgs::Point> points;
+  marker.header.stamp = rclcpp::Clock().now();
+  std::vector<geometry_msgs::msg::Point> points;
   for (double t = 0.0; t <= 1.0; t += 0.02) {
-    geometry_msgs::Point point;
+    geometry_msgs::msg::Point point;
     point.x = position.x() + radius * std::cos(t * 2 * M_PI);
     point.y = position.y() + radius * std::sin(t * 2 * M_PI);
     point.z = position.z();
     points.push_back(point);
   }
-  geometry_msgs::Point start_point;
+  geometry_msgs::msg::Point start_point;
   start_point.x = position.x() + radius * std::cos(0.0);
   start_point.y = position.y() + radius * std::sin(0.0);
   start_point.z = position.z();
@@ -86,7 +93,7 @@ void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& po
   marker.pose.orientation.x = 0.0;
   marker.pose.orientation.y = 0.0;
   marker.pose.orientation.z = 0.0;
-  pub.publish(marker);
+  pub->publish(marker);
 }
 
 void getDubinsShortestPath(std::shared_ptr<fw_planning::spaces::DubinsAirplaneStateSpace>& dubins_ss,
@@ -170,51 +177,71 @@ double getDubinsTangentPoint(std::shared_ptr<fw_planning::spaces::DubinsAirplane
   }
 }
 
+class OmplRrtPlanner : public rclcpp::Node
+{
+  public:
+    OmplRrtPlanner()
+    : Node("ompl_rrt_planner")
+    {
+      // Initialize ROS related publishers for visualization
+      start_pos_pub = this->create_publisher<visualization_msgs::msg::Marker>("start_position", 1);
+      goal_pos_pub = this->create_publisher<visualization_msgs::msg::Marker>("goal_position", 1);
+      tangent_pos_pub = this->create_publisher<visualization_msgs::msg::Marker>("tangent_position", 1);
+      path_pub = this->create_publisher<nav_msgs::msg::Path>("path", 1);
+      path_pub_2 = this->create_publisher<nav_msgs::msg::Path>("candidate_path", 1);
+      trajectory_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("tree", 1);
+
+      timer = this->create_wall_timer(
+        1s, std::bind(&OmplRrtPlanner::timer_callback, this));
+    }
+
+    void timer_callback() {
+      auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
+      Eigen::Vector3d start_pos(0.0, 0.0, 0.0);
+      /// Goal circular radius
+      Eigen::Vector3d goal_pos(400.0, 0.0, 0.0);
+      double goal_radius = 66.6667;
+      double tangent_yaw = getDubinsTangentPoint(dubins_ss, start_pos, start_yaw, goal_pos, goal_radius);
+
+      /// TODO: Compare two different positions with same tangent yaw
+      Eigen::Vector3d tangent_pos;
+      tangent_pos << goal_pos.x() + goal_radius * std::cos(tangent_yaw - 0.5 * M_PI),
+          goal_pos.y() + goal_radius * std::sin(tangent_yaw - 0.5 * M_PI), goal_pos.z();
+      std::vector<Eigen::Vector3d> path_candidate_1;
+      getDubinsShortestPath(dubins_ss, start_pos, start_yaw, tangent_pos, tangent_yaw, path_candidate_1);
+
+      tangent_pos << goal_pos.x() + goal_radius * std::cos(tangent_yaw + 0.5 * M_PI),
+          goal_pos.y() + goal_radius * std::sin(tangent_yaw + 0.5 * M_PI), goal_pos.z();
+      std::vector<Eigen::Vector3d> path_candidate_2;
+      getDubinsShortestPath(dubins_ss, start_pos, start_yaw, tangent_pos, tangent_yaw, path_candidate_2);
+
+      // Visualize
+      publishTrajectory(path_pub, path_candidate_1);
+      publishTrajectory(path_pub_2, path_candidate_2);
+      Eigen::Vector3d start_velocity(std::cos(start_yaw), std::sin(start_yaw), 0.0);
+      publishPositionSetpoints(start_pos_pub, start_pos, start_velocity);
+      Eigen::Vector3d tangent_velocity(std::cos(tangent_yaw), std::sin(tangent_yaw), 0.0);
+      publishPositionSetpoints(tangent_pos_pub, tangent_pos, tangent_velocity);
+      publishCircleSetpoints(goal_pos_pub, goal_pos, goal_radius);
+      start_yaw += 0.1;
+    }
+
+  private:
+    double start_yaw{M_PI_2};
+
+    rclcpp::TimerBase::SharedPtr timer;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr start_pos_pub;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr goal_pos_pub;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr tangent_pos_pub;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_2;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr trajectory_pub;
+};
+
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "ompl_rrt_planner");
-  ros::NodeHandle nh("");
-  ros::NodeHandle nh_private("~");
-
-  // Initialize ROS related publishers for visualization
-  auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
-  auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
-  auto tangent_pos_pub = nh.advertise<visualization_msgs::Marker>("tangent_position", 1, true);
-  auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
-  auto path_pub_2 = nh.advertise<nav_msgs::Path>("candidate_path", 1, true);
-  auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
-
-  double start_yaw{M_PI_2};
-  while (true) {
-    auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
-    Eigen::Vector3d start_pos(0.0, 0.0, 0.0);
-    /// Goal circular radius
-    Eigen::Vector3d goal_pos(400.0, 0.0, 0.0);
-    double goal_radius = 66.6667;
-    double tangent_yaw = getDubinsTangentPoint(dubins_ss, start_pos, start_yaw, goal_pos, goal_radius);
-
-    /// TODO: Compare two different positions with same tangent yaw
-    Eigen::Vector3d tangent_pos;
-    tangent_pos << goal_pos.x() + goal_radius * std::cos(tangent_yaw - 0.5 * M_PI),
-        goal_pos.y() + goal_radius * std::sin(tangent_yaw - 0.5 * M_PI), goal_pos.z();
-    std::vector<Eigen::Vector3d> path_candidate_1;
-    getDubinsShortestPath(dubins_ss, start_pos, start_yaw, tangent_pos, tangent_yaw, path_candidate_1);
-
-    tangent_pos << goal_pos.x() + goal_radius * std::cos(tangent_yaw + 0.5 * M_PI),
-        goal_pos.y() + goal_radius * std::sin(tangent_yaw + 0.5 * M_PI), goal_pos.z();
-    std::vector<Eigen::Vector3d> path_candidate_2;
-    getDubinsShortestPath(dubins_ss, start_pos, start_yaw, tangent_pos, tangent_yaw, path_candidate_2);
-
-    // Visualize
-    publishTrajectory(path_pub, path_candidate_1);
-    publishTrajectory(path_pub_2, path_candidate_2);
-    Eigen::Vector3d start_velocity(std::cos(start_yaw), std::sin(start_yaw), 0.0);
-    publishPositionSetpoints(start_pos_pub, start_pos, start_velocity);
-    Eigen::Vector3d tangent_velocity(std::cos(tangent_yaw), std::sin(tangent_yaw), 0.0);
-    publishPositionSetpoints(tangent_pos_pub, tangent_pos, tangent_velocity);
-    publishCircleSetpoints(goal_pos_pub, goal_pos, goal_radius);
-    start_yaw += 0.1;
-    ros::Duration(1.0).sleep();
-  }
-  ros::spin();
+  rclcpp::init(argc, argv);
+  auto ompl_rrt_planner = std::make_shared<OmplRrtPlanner>();
+  rclcpp::spin(ompl_rrt_planner);
+  rclcpp::shutdown();
   return 0;
 }

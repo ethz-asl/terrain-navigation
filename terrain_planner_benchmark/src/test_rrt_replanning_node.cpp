@@ -210,7 +210,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
+    terrain_map->getGridMap().setTimestamp(rclcpp::Clock().now().toNSec());
     grid_map_msgs::GridMap message;
     grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
     grid_map_pub.publish(message);

@@ -3,6 +3,16 @@
 #include <gtest/gtest.h>
 #include <iostream>
 
+//! @todo(srmainwaring)check includes
+// #include "terrain_navigation/data_logger.h"
+// #include "terrain_navigation/path_segment.h"
+// #include "terrain_navigation/path.h"
+// #include "terrain_navigation/primitive.h"
+// #include "terrain_navigation/profiler.h"
+// #include "terrain_navigation/terrain_map.h"
+// #include "terrain_navigation/viewpoint.h"
+// #include "terrain_navigation/visualization.h"
+
 #define FLOAT_EPS 1e-6
 
 TEST(PathSegmentTest, getArcCenter) {
