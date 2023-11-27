@@ -59,9 +59,9 @@
 #include <mutex>
 
 #include <terrain_navigation/profiler.h>
+#include <terrain_navigation/viewpoint.h>
 
 #include "terrain_planner/common.h"
-#include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
 
@@ -132,6 +132,8 @@ class TerrainPlanner {
                                            const Eigen::Vector3d color);
   void generateCircle(const Eigen::Vector3d end_position, const Eigen::Vector3d end_velocity,
                       const Eigen::Vector3d center_pos, PathSegment &trajectory);
+  PathSegment generateArcTrajectory(Eigen::Vector3d rates, const double horizon, Eigen::Vector3d current_pos,
+                                    Eigen::Vector3d current_vel, const double dt = 0.1);
   // void dynamicReconfigureCallback(terrain_navigation_ros::HeightRateTuningConfig &config, uint32_t level);
 
   void printPlannerState(PLANNER_STATE state) {
@@ -218,7 +220,6 @@ class TerrainPlanner {
   PLANNER_STATE planner_state_{PLANNER_STATE::HOLD};
   PLANNER_STATE query_planner_state_{PLANNER_STATE::HOLD};
 
-  std::shared_ptr<ManeuverLibrary> maneuver_library_;
   std::shared_ptr<TerrainMap> terrain_map_;
 
   std::shared_ptr<fw_planning::spaces::DubinsAirplaneStateSpace> dubins_state_space_;
