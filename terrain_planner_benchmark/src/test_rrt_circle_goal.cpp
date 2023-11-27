@@ -52,7 +52,6 @@
 
 #include "terrain_navigation/data_logger.h"
 #include "terrain_planner/common.h"
-#include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
 
@@ -133,8 +132,6 @@ bool validatePosition(std::shared_ptr<TerrainMap> map, const Eigen::Vector3d goa
 double mod2pi(double x) { return x - 2 * M_PI * floor(x * (0.5 / M_PI)); }
 
 PathSegment getLoiterPath(Eigen::Vector3d end_position, Eigen::Vector3d end_velocity, Eigen::Vector3d center_pos) {
-  auto maneuver_library_ = std::make_shared<ManeuverLibrary>();
-
   Eigen::Vector3d radial_vector = (end_position - center_pos);
   radial_vector(2) = 0.0;  // Only consider horizontal loiters
   Eigen::Vector3d emergency_rates =
