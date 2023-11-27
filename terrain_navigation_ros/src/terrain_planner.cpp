@@ -120,12 +120,8 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   nh_private.param<std::string>("meshresource_path", mesh_resource_path_, "../resources/believer.dae");
   nh_private.param<std::string>("avalanche_map_path", avalanche_map_path, "../data/believer.dae");
   nh_private.param<double>("minimum_turn_radius", goal_radius_, 66.67);
-  maneuver_library_ = std::make_shared<ManeuverLibrary>();
-  // maneuver_library_->setPlanningHorizon(4.0);
 
   terrain_map_ = std::make_shared<TerrainMap>();
-
-  maneuver_library_->setTerrainMap(terrain_map_);
 
   // Initialize Dubins state space
   dubins_state_space_ = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>(goal_radius_);
@@ -997,7 +993,6 @@ bool TerrainPlanner::setMaxAltitudeCallback(planner_msgs::SetString::Request &re
   bool check_max_altitude = req.align;
   std::cout << "[TerrainPlanner] Max altitude constraint configured: " << check_max_altitude << std::endl;
   global_planner_->setMaxAltitudeCollisionChecks(check_max_altitude);
-  // maneuver_library_->setMaxAltitudeConstraint(set_max_alitude_constraint);
   res.success = true;
   return true;
 }
@@ -1171,7 +1166,46 @@ void TerrainPlanner::generateCircle(const Eigen::Vector3d end_position, const Ei
       20.0 * end_velocity.normalized().cross(radial_vector.normalized()) / radial_vector.norm();
   double horizon = 2 * M_PI / std::abs(emergency_rates(2));
   // Append a loiter at the end of the planned path
-  trajectory = maneuver_library_->generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
+  trajectory = generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
   trajectory.is_periodic = true;
   return;
+}
+
+PathSegment TerrainPlanner::generateArcTrajectory(Eigen::Vector3d rate, const double horizon,
+                                                  Eigen::Vector3d current_pos, Eigen::Vector3d current_vel,
+                                                  const double dt) {
+  PathSegment trajectory;
+  trajectory.states.clear();
+
+  double time = 0.0;
+  const double current_yaw = std::atan2(-1.0 * current_vel(1), current_vel(0));
+  const double climb_rate = rate(1);
+  trajectory.flightpath_angle = std::asin(climb_rate / cruise_speed_);
+  /// TODO: Fix sign conventions for curvature
+  trajectory.curvature = -rate(2) / cruise_speed_;
+  trajectory.dt = dt;
+  for (int i = 0; i < std::max(1.0, horizon / dt); i++) {
+    if (std::abs(rate(2)) < 0.0001) {
+      rate(2) > 0.0 ? rate(2) = 0.0001 : rate(2) = -0.0001;
+    }
+    double yaw = rate(2) * time + current_yaw;
+
+    Eigen::Vector3d pos =
+        cruise_speed_ / rate(2) *
+            Eigen::Vector3d(std::sin(yaw) - std::sin(current_yaw), std::cos(yaw) - std::cos(current_yaw), 0) +
+        Eigen::Vector3d(0, 0, climb_rate * time) + current_pos;
+    Eigen::Vector3d vel = Eigen::Vector3d(cruise_speed_ * std::cos(yaw), -cruise_speed_ * std::sin(yaw), -climb_rate);
+    const double roll = std::atan(rate(2) * cruise_speed_ / 9.81);
+    const double pitch = std::atan(climb_rate / cruise_speed_);
+    Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);  // TODO: why the hell do you need to reverse signs?
+
+    State state_vector;
+    state_vector.position = pos;
+    state_vector.velocity = vel;
+    state_vector.attitude = att;
+    trajectory.states.push_back(state_vector);
+
+    time = time + dt;
+  }
+  return trajectory;
 }

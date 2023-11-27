@@ -38,7 +38,6 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/visualization.h"
 
 #include <terrain_navigation/terrain_map.h>

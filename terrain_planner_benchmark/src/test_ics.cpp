@@ -2,7 +2,7 @@
  *
  *   Copyright (c) 2022 Jaeyoung Lim, Autonomous Systems Lab,
  *  ETH Zürich. All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -38,7 +38,6 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner/maneuver_library.h"
 #include "terrain_planner/visualization.h"
 
 #include <terrain_navigation/terrain_map.h>

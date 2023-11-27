@@ -38,7 +38,6 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-  src/maneuver_library.cpp
   src/terrain_ompl.cpp
   src/terrain_ompl_rrt.cpp
   src/DubinsPath.cpp
@@ -80,8 +79,7 @@ target_link_libraries(test_ompl_dubins_to_circle ${PROJECT_NAME} ${catkin_LIBRAR
 if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test 
-      test/main.cpp
-      test/test_maneuver_library.cpp)
+      test/main.cpp)
 
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
