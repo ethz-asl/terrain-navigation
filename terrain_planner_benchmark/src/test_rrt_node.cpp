@@ -48,9 +48,9 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
+#include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
-#include "terrain_planner/visualization.h"
 
 void publishPathSegments(ros::Publisher& pub, Path& trajectory) {
   visualization_msgs::MarkerArray msg;

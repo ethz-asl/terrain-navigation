@@ -4,9 +4,9 @@
 #include <terrain_navigation/terrain_map.h>
 #include "terrain_navigation/data_logger.h"
 
+#include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
-#include "terrain_planner/visualization.h"
 
 struct BenchmarkResult {
   int id;

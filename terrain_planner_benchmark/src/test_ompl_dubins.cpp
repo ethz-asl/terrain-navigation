@@ -47,9 +47,9 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
+#include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
-#include "terrain_planner/visualization.h"
 
 void getDubinsShortestPath(const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
                            const double goal_yaw, std::vector<Eigen::Vector3d>& path) {

@@ -61,9 +61,9 @@
 #include <terrain_navigation/profiler.h>
 #include <terrain_navigation/viewpoint.h>
 
+#include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
-#include "terrain_planner/visualization.h"
 
 #include <planner_msgs/SetPlannerState.h>
 #include <planner_msgs/SetService.h>
