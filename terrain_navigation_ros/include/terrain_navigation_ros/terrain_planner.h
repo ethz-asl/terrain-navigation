@@ -165,7 +165,6 @@ class TerrainPlanner {
   ros::Publisher camera_pose_pub_;
   ros::Publisher posehistory_pub_;
   ros::Publisher referencehistory_pub_;
-  ros::Publisher position_setpoint_pub_;
   ros::Publisher global_position_setpoint_pub_;
   ros::Publisher position_target_pub_;
   ros::Publisher path_target_pub_;
