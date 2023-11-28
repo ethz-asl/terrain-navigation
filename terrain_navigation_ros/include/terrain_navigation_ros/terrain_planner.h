@@ -59,7 +59,6 @@
 #include <mutex>
 
 #include <terrain_navigation/profiler.h>
-#include <terrain_navigation/viewpoint.h>
 
 #include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
@@ -173,8 +172,6 @@ class TerrainPlanner {
   ros::Publisher rallypoint_pub_;
   ros::Publisher candidate_goal_pub_;
   ros::Publisher candidate_start_pub_;
-  ros::Publisher viewpoint_pub_;
-  ros::Publisher planned_viewpoint_pub_;
   ros::Publisher tree_pub_;
   ros::Publisher vehicle_velocity_pub_;
   ros::Publisher path_segment_pub_;
@@ -184,7 +181,6 @@ class TerrainPlanner {
   ros::Subscriber mavstate_sub_;
   ros::Subscriber mavmission_sub_;
   ros::Subscriber global_origin_sub_;
-  ros::Subscriber image_captured_sub_;
 
   ros::ServiceServer setlocation_serviceserver_;
   ros::ServiceServer setmaxaltitude_serviceserver_;
@@ -234,11 +230,8 @@ class TerrainPlanner {
   std::mutex goal_mutex_;  // protects g_i
 
   std::vector<Eigen::Vector3d> vehicle_position_history_;
-  std::vector<ViewPoint> added_viewpoint_list;
-  std::vector<ViewPoint> planned_viewpoint_list;
   std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
   std::vector<geometry_msgs::PoseStamped> referencehistory_vector_;
-  std::vector<ViewPoint> viewpoints_;
   Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
