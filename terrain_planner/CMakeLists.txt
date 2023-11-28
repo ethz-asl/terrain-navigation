@@ -3,7 +3,6 @@ project(terrain_planner)
 
 add_definitions(-std=c++17 -Wall)
 
-find_package(OpenCV REQUIRED)
 find_package(ompl REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization system filesystem)
 
@@ -12,10 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   tf
   grid_map_core
-  grid_map_cv
-  grid_map_msgs
-  grid_map_ros
-  grid_map_pcl
   grid_map_geo
   terrain_navigation
 )
