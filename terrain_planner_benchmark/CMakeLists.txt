@@ -86,3 +86,21 @@ add_executable(test_rrt_circle_goal
 )
 add_dependencies(test_rrt_circle_goal terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
 target_link_libraries(test_rrt_circle_goal ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+
+add_executable(test_rrt_node
+  src/test_rrt_node.cpp
+)
+add_dependencies(test_rrt_node ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_rrt_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+
+add_executable(test_ompl_dubins
+  src/test_ompl_dubins.cpp
+)
+add_dependencies(test_ompl_dubins ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_ompl_dubins ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+
+add_executable(test_ompl_dubins_to_circle
+  src/test_ompl_dubins_to_circle.cpp
+)
+add_dependencies(test_ompl_dubins_to_circle ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_ompl_dubins_to_circle ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})

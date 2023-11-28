@@ -49,9 +49,9 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
+#include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
-#include "terrain_planner/visualization.h"
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ompl_rrt_planner");

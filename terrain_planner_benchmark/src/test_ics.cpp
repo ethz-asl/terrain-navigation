@@ -38,7 +38,7 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner/visualization.h"
+#include "terrain_navigation_ros/visualization.h"
 
 #include <terrain_navigation/terrain_map.h>
 #include "terrain_navigation/data_logger.h"

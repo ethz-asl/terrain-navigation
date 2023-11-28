@@ -51,9 +51,9 @@
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
 #include "terrain_navigation/data_logger.h"
+#include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
-#include "terrain_planner/visualization.h"
 
 void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
   visualization_msgs::Marker marker;
