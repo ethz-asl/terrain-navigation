@@ -1,0 +1,17 @@
+repositories:
+  ryanf55/grid_map:
+    type: git
+    url: https://github.com/ryanf55/grid_map.git
+    version: bugfix-403-cmake
+  ethz-asl/grid_map_geo:
+    type: git
+    url: https://github.com/ethz-asl/grid_map_geo.git
+    version: ros2
+  ethz-asl/terrain-navigation:
+    type: git
+    url: https://github.com/ethz-asl/terrain-navigation.git
+    version: ros2
+  ethz-asl/mav_comm:
+    type: git
+    url: https://github.com/ethz-asl/mav_comm.git
+    version: ros2
