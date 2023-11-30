@@ -43,19 +43,20 @@ catkin config --extend "/opt/ros/noetic"
 catkin config --merge-devel
 ```
 
-For dependencies that do not have binaries available, pull them in using rosinstall.
+For dependencies that do not have binaries available, pull them into your ROS workspace using vcs.
 ```Bash
-wstool init src src/terrain-navigation/dependencies.rosinstall
-wstool update -t src -j4
+cd ~/ros2_ws/src
+wget https://raw.githubusercontent.com/ethz-asl/terrain-navigation/ros2/terrain-navigation.repos
+vcs import --recursive < terrain-navigation.repos
 ```
 
 For dependencies available through binaries, use rosdep.
 This package depends on [GDAL](https://gdal.org/index.html) to read georeferenced images and GeoTIFF files.
 ```Bash
-apt update
+sudo apt update
 rosdep update
-source /opt/ros/noetic/setup.bash
-rosdep install --from-paths src --ignore-src -y
+source /opt/ros/humble/setup.bash
+rosdep install --from-paths src --ignore-src
 ```
 
 Build the package
