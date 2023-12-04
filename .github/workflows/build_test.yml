@@ -2,7 +2,7 @@ name: Build Test
 on:
   push:
     branches:
-    - 'main'
+    - 'ros2'
   pull_request:
     branches:
     - '*'
@@ -14,8 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # - {rosdistro: 'melodic', container: 'px4io/px4-dev-ros-melodic:2021-12-11'}
-          - {rosdistro: 'noetic', container: 'px4io/px4-dev-ros-noetic:2021-12-11'}
+          - {rosdistro: 'humble', container: 'osrf/ros:humble-desktop'}
     container: ${{ matrix.config.container }}
     steps:
     - uses: actions/checkout@v1
@@ -31,20 +30,17 @@ jobs:
     - name: Build Test
       working-directory: 
       run: |
-        mkdir -p $HOME/catkin_ws/src;
-        cd $HOME/catkin_ws
-        catkin init
-        catkin config --extend "/opt/ros/${{matrix.config.rosdistro}}"
-        catkin config --merge-devel
-        cd $HOME/catkin_ws/src
+        mkdir -p $HOME/ros2_ws/src;
+        cd $HOME/ros2_ws/src
         ln -s $GITHUB_WORKSPACE
-        cd $HOME/catkin_ws
+        cd $HOME/ros2_ws
+        source /opt/ros/humble/setup.bash
         wstool init src src/terrain-navigation/dependencies.rosinstall
         wstool update -t src -j4
         rosdep update
         rosdep install --from-paths src --ignore-src -y --rosdistro ${{matrix.config.rosdistro}}
-        catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False
-        catkin build -j$(nproc) -l$(nproc) terrain_navigation_ros
+        colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-up-to terrain_navigation_ros
+      shell: bash
     - name: unit_tests
       working-directory:
       run: |
