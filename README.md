@@ -61,8 +61,7 @@ rosdep install --from-paths src --ignore-src
 
 Build the package
 ```Bash
-catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False
-catkin build -j$(nproc) -l$(nproc) terrain_navigation_ros
+colcon build --packages-up-to terrain_navigation_ros
 ```
 
 ## Running with PX4 SITL(Software-In-The-Loop)
