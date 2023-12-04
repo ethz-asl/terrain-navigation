@@ -131,6 +131,67 @@ bool validatePosition(std::shared_ptr<TerrainMap> map, const Eigen::Vector3d goa
 
 double mod2pi(double x) { return x - 2 * M_PI * floor(x * (0.5 / M_PI)); }
 
+Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw) {
+  double cy = std::cos(yaw * 0.5);
+  double sy = std::sin(yaw * 0.5);
+  double cp = std::cos(pitch * 0.5);
+  double sp = std::sin(pitch * 0.5);
+  double cr = std::cos(roll * 0.5);
+  double sr = std::sin(roll * 0.5);
+
+  Eigen::Vector4d q;
+  q(0) = cr * cp * cy + sr * sp * sy;
+  q(1) = sr * cp * cy - cr * sp * sy;
+  q(2) = cr * sp * cy + sr * cp * sy;
+  q(3) = cr * cp * sy - sr * sp * cy;
+
+  q.normalize();
+
+  return q;
+}
+
+
+PathSegment generateArcTrajectory(Eigen::Vector3d rate, const double horizon,
+                                                  Eigen::Vector3d current_pos, Eigen::Vector3d current_vel,
+                                                  const double dt = 0.1) {
+  PathSegment trajectory;
+  trajectory.states.clear();
+
+  double cruise_speed_{20.0};
+
+  double time = 0.0;
+  const double current_yaw = std::atan2(-1.0 * current_vel(1), current_vel(0));
+  const double climb_rate = rate(1);
+  trajectory.flightpath_angle = std::asin(climb_rate / cruise_speed_);
+  /// TODO: Fix sign conventions for curvature
+  trajectory.curvature = -rate(2) / cruise_speed_;
+  trajectory.dt = dt;
+  for (int i = 0; i < std::max(1.0, horizon / dt); i++) {
+    if (std::abs(rate(2)) < 0.0001) {
+      rate(2) > 0.0 ? rate(2) = 0.0001 : rate(2) = -0.0001;
+    }
+    double yaw = rate(2) * time + current_yaw;
+
+    Eigen::Vector3d pos =
+        cruise_speed_ / rate(2) *
+            Eigen::Vector3d(std::sin(yaw) - std::sin(current_yaw), std::cos(yaw) - std::cos(current_yaw), 0) +
+        Eigen::Vector3d(0, 0, climb_rate * time) + current_pos;
+    Eigen::Vector3d vel = Eigen::Vector3d(cruise_speed_ * std::cos(yaw), -cruise_speed_ * std::sin(yaw), -climb_rate);
+    const double roll = std::atan(rate(2) * cruise_speed_ / 9.81);
+    const double pitch = std::atan(climb_rate / cruise_speed_);
+    Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);  // TODO: why the hell do you need to reverse signs?
+
+    State state_vector;
+    state_vector.position = pos;
+    state_vector.velocity = vel;
+    state_vector.attitude = att;
+    trajectory.states.push_back(state_vector);
+
+    time = time + dt;
+  }
+  return trajectory;
+}
+
 PathSegment getLoiterPath(Eigen::Vector3d end_position, Eigen::Vector3d end_velocity, Eigen::Vector3d center_pos) {
   Eigen::Vector3d radial_vector = (end_position - center_pos);
   radial_vector(2) = 0.0;  // Only consider horizontal loiters
@@ -138,8 +199,7 @@ PathSegment getLoiterPath(Eigen::Vector3d end_position, Eigen::Vector3d end_velo
       20.0 * end_velocity.normalized().cross(radial_vector.normalized()) / radial_vector.norm();
   double horizon = 2 * M_PI / std::abs(emergency_rates(2));
   // Append a loiter at the end of the planned path
-  PathSegment loiter_trajectory =
-      maneuver_library_->generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
+  PathSegment loiter_trajectory = generateArcTrajectory(emergency_rates, horizon, end_position, end_velocity);
   return loiter_trajectory;
 }
 

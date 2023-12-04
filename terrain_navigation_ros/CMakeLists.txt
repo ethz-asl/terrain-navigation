@@ -30,7 +30,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  LIBRARIES terrain_navigation
+  INCLUDE_DIRS include
+  LIBRARIES terrain_navigation_ros
   CATKIN_DEPENDS roscpp rospy dynamic_reconfigure
 )
 

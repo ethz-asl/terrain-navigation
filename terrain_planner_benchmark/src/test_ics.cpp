@@ -45,6 +45,12 @@
 
 #include <grid_map_msgs/GridMap.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <vector>
+#include "opencv2/core.hpp"
 
 void addErrorLayer(const std::string layer_name, const std::string query_layer, const std::string reference_layer,
                    grid_map::GridMap& map) {
@@ -58,17 +64,73 @@ void addErrorLayer(const std::string layer_name, const std::string query_layer, 
 
 void calculateCircleICS(const std::string layer_name, std::shared_ptr<TerrainMap>& terrain_map, double radius) {
   /// Choose yaw state to calculate ICS state
-  grid_map::GridMap& map = terrain_map->getGridMap();
-
-  /// TODO: Get positon from gridmap
   terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
   terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
   addErrorLayer(layer_name, "ics_-", "ics_+", terrain_map->getGridMap());
 }
 
-bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const double yaw, const double radius) {
-  auto manuever_library = std::make_shared<ManeuverLibrary>();
+Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw) {
+  double cy = std::cos(yaw * 0.5);
+  double sy = std::sin(yaw * 0.5);
+  double cp = std::cos(pitch * 0.5);
+  double sp = std::sin(pitch * 0.5);
+  double cr = std::cos(roll * 0.5);
+  double sr = std::sin(roll * 0.5);
 
+  Eigen::Vector4d q;
+  q(0) = cr * cp * cy + sr * sp * sy;
+  q(1) = sr * cp * cy - cr * sp * sy;
+  q(2) = cr * sp * cy + sr * cp * sy;
+  q(3) = cr * cp * sy - sr * sp * cy;
+
+  q.normalize();
+
+  return q;
+}
+
+
+PathSegment generateArcTrajectory(Eigen::Vector3d rate, const double horizon,
+                                                  Eigen::Vector3d current_pos, Eigen::Vector3d current_vel,
+                                                  const double dt=0.1) {
+  PathSegment trajectory;
+  trajectory.states.clear();
+
+  double cruise_speed_{20.0};
+
+  double time = 0.0;
+  const double current_yaw = std::atan2(-1.0 * current_vel(1), current_vel(0));
+  const double climb_rate = rate(1);
+  trajectory.flightpath_angle = std::asin(climb_rate / cruise_speed_);
+  /// TODO: Fix sign conventions for curvature
+  trajectory.curvature = -rate(2) / cruise_speed_;
+  trajectory.dt = dt;
+  for (int i = 0; i < std::max(1.0, horizon / dt); i++) {
+    if (std::abs(rate(2)) < 0.0001) {
+      rate(2) > 0.0 ? rate(2) = 0.0001 : rate(2) = -0.0001;
+    }
+    double yaw = rate(2) * time + current_yaw;
+
+    Eigen::Vector3d pos =
+        cruise_speed_ / rate(2) *
+            Eigen::Vector3d(std::sin(yaw) - std::sin(current_yaw), std::cos(yaw) - std::cos(current_yaw), 0) +
+        Eigen::Vector3d(0, 0, climb_rate * time) + current_pos;
+    Eigen::Vector3d vel = Eigen::Vector3d(cruise_speed_ * std::cos(yaw), -cruise_speed_ * std::sin(yaw), -climb_rate);
+    const double roll = std::atan(rate(2) * cruise_speed_ / 9.81);
+    const double pitch = std::atan(climb_rate / cruise_speed_);
+    Eigen::Vector4d att = rpy2quaternion(roll, -pitch, -yaw);  // TODO: why the hell do you need to reverse signs?
+
+    State state_vector;
+    state_vector.position = pos;
+    state_vector.velocity = vel;
+    state_vector.attitude = att;
+    trajectory.states.push_back(state_vector);
+
+    time = time + dt;
+  }
+  return trajectory;
+}
+
+bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const double yaw, const double radius) {
   double upper_altitude = std::numeric_limits<double>::infinity();
   double lower_altitude = -std::numeric_limits<double>::infinity();
   double yaw_rate = (1 / radius) * 20.0;
@@ -77,7 +139,7 @@ bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const 
   double horizon = 2 * M_PI / std::abs(rate.z());
   Eigen::Vector3d pos = Eigen::Vector3d(pos_2d.x(), pos_2d.y(), 0.0);
 
-  PathSegment trajectory = manuever_library->generateArcTrajectory(rate, horizon, pos, vel);
+  PathSegment trajectory = generateArcTrajectory(rate, horizon, pos, vel);
   for (auto& position : trajectory.position()) {
     if (!map.isInside(Eigen::Vector2d(position.x(), position.y()))) {
       // Handle outside states as part of collision surface
@@ -100,8 +162,6 @@ bool checkCollision(grid_map::GridMap& map, const Eigen::Vector2d pos_2d, const 
 
 void calculateYawICS(const std::string layer_name, grid_map::GridMap& map, const double yaw, const double radius) {
   /// Choose yaw state to calculate ICS state
-
-  auto manuever_library = std::make_shared<ManeuverLibrary>();
 
   map.add(layer_name);
   map.add("yaw_error_right");
