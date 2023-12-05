@@ -150,10 +150,8 @@ Eigen::Vector4d rpy2quaternion(double roll, double pitch, double yaw) {
   return q;
 }
 
-
-PathSegment generateArcTrajectory(Eigen::Vector3d rate, const double horizon,
-                                                  Eigen::Vector3d current_pos, Eigen::Vector3d current_vel,
-                                                  const double dt = 0.1) {
+PathSegment generateArcTrajectory(Eigen::Vector3d rate, const double horizon, Eigen::Vector3d current_pos,
+                                  Eigen::Vector3d current_vel, const double dt = 0.1) {
   PathSegment trajectory;
   trajectory.states.clear();
 

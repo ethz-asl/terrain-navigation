@@ -96,7 +96,7 @@ void publishCirclularPath(const ros::Publisher pub, const Eigen::Vector3d center
         center_position(1) + radius * std::sin(i * 2 * M_PI / double(num_discretization)), center_position(2);
     circle_path.push_back(position);
   }
-  publishPath(pub, circle_path, Eigen::Vector3d(0.0, 1.0, 0.0));
+  // publishPathSegments(pub, circle_path, Eigen::Vector3d(0.0, 1.0, 0.0));
 }
 
 void writeGridmapToImage(const grid_map::GridMap& map, const std::string layer, const std::string& file_path) {
