@@ -22,15 +22,13 @@ jobs:
         path: src/ethz-asl/terrain-navigation
     - name: Check out source dependencies with vcs
       run: |
-        cd src
-        echo "SRC"
-        ls src
         echo "SRC/EZASL"
-        ls src/ethz-asl
+        ls ethz-asl
         echo "SRC/EZASL/TN"
-        ls src/ethz-asl/terrain-navigation
-        vcs import --recursive --debug --shallow --skip-existing < src/ethz-asl/terrain-navigation/terrain-navigation.repos
+        ls ethz-asl/terrain-navigation
+        vcs import --recursive --debug --shallow --skip-existing < ethz-asl/terrain-navigation/terrain-navigation.repos
       shell: bash
+      working-directory: src
     - name: Install binary dependencies with rosdep
       run: |
         apt update
@@ -44,7 +42,7 @@ jobs:
         colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-up-to terrain_navigation_ros
       shell: bash
     - name: Run tests
-      working-directory:
+      
       run: |
         source /opt/ros/humble/setup.bash
         colcon test --paths src/ethz-asl/terrain-navigation --event-handlers=console_cohesion+
