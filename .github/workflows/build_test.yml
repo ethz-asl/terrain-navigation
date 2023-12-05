@@ -19,8 +19,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        token: ${{ secrets.ACCESS_TOKEN }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
         path: src/ethz-asl/terrain-navigation
     - name: Check out source dependencies with vcs
       run: |
