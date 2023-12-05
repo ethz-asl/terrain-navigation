@@ -23,6 +23,12 @@ jobs:
     - name: Check out source dependencies with vcs
       run: |
         cd src
+        echo "SRC"
+        ls src
+        echo "SRC/EZASL"
+        ls src/ethz-asl
+        echo "SRC/EZASL/TN"
+        ls src/ethz-asl/terrain-navigation
         vcs import --recursive --debug --shallow --skip-existing < src/ethz-asl/terrain-navigation/terrain-navigation.repos
       shell: bash
     - name: Install binary dependencies with rosdep
