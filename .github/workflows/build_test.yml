@@ -22,10 +22,6 @@ jobs:
         path: src/ethz-asl/terrain-navigation
     - name: Check out source dependencies with vcs
       run: |
-        echo "SRC/EZASL"
-        ls ethz-asl
-        echo "SRC/EZASL/TN"
-        ls ethz-asl/terrain-navigation
         vcs import --recursive --debug --shallow --skip-existing < ethz-asl/terrain-navigation/terrain-navigation.repos
       shell: bash
       working-directory: src
