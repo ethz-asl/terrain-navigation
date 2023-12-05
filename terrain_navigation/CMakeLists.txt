@@ -23,7 +23,6 @@ find_package(class_loader REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rosbag2_storage REQUIRED)
-find_package(tinyxml2 REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
 find_package(action_msgs REQUIRED)
