@@ -15,7 +15,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 # list(APPEND ${PROJECT_NAME}_CONFIG_EXTRAS
 #   path/to/file.cmake"
 #   other/pathto/file.cmake"
