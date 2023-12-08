@@ -107,13 +107,13 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDIN
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
 
-# add_executable(standalone_test
-#   src/standalone_test.cpp
-# )
+add_executable(standalone_test
+  src/standalone_test.cpp
+)
 
-# target_link_libraries(standalone_test PUBLIC
-#   ${PROJECT_NAME}
-# )
+target_link_libraries(standalone_test PUBLIC
+  ${PROJECT_NAME}
+)
 
 # Install
 install(
@@ -139,11 +139,17 @@ ament_export_dependencies(
   rclcpp
 )
 
-# install(
-#   TARGETS
-#   standalone_test
-#   DESTINATION lib/${PROJECT_NAME}
-# )
+install(
+  TARGETS
+  standalone_test
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY
+  launch
+  rviz
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 if(BUILD_TESTING)
   # find_package(ament_lint_auto REQUIRED)

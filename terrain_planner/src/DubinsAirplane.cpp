@@ -12,16 +12,16 @@
 #include "terrain_planner/DubinsAirplane.hpp"
 
 #include <assert.h>
+#include <ompl/base/spaces/RealVectorStateSpace.h>
+#include <ompl/base/spaces/SO2StateSpace.h>
+#include <ompl/util/RandomNumbers.h>
+
+#include <boost/math/constants/constants.hpp>
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <sstream>
-
-#include <ompl/base/spaces/RealVectorStateSpace.h>
-#include <ompl/base/spaces/SO2StateSpace.h>
-#include <ompl/util/RandomNumbers.h>
-#include <boost/math/constants/constants.hpp>
 
 namespace ob = ompl::base;
 

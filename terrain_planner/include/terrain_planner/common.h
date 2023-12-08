@@ -35,22 +35,19 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include "terrain_navigation/path.h"
-
 #include <Eigen/Dense>
 #include <fstream>
-
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
+#include <grid_map_core/GridMap.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include <rclcpp/clock.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
-#include <grid_map_core/GridMap.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp/clock.hpp>
-
+#include "terrain_navigation/path.h"
 
 const std::map<std::string, std::vector<std::vector<float>>> colorMap{
     {"viridis", {{0.267004, 0.004874, 0.329415}, {0.268510, 0.009605, 0.335427}, {0.269944, 0.014625, 0.341379},
@@ -408,30 +405,31 @@ geometry_msgs::msg::Vector3 toVector3(const Eigen::Vector3d &p);
 
 geometry_msgs::msg::Pose vector3d2PoseMsg(const Eigen::Vector3d position, const Eigen::Vector4d orientation);
 
-geometry_msgs::msg::PoseStamped vector3d2PoseStampedMsg(const Eigen::Vector3d position, const Eigen::Vector4d orientation);
+geometry_msgs::msg::PoseStamped vector3d2PoseStampedMsg(const Eigen::Vector3d position,
+                                                        const Eigen::Vector4d orientation);
 
 visualization_msgs::msg::Marker utility2MarkerMsg(const double utility, const Eigen::Vector3d position, int id);
 
 visualization_msgs::msg::Marker vector2ArrowsMsg(const Eigen::Vector3d &position, const Eigen::Vector3d &normal, int id,
-                                            Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0),
-                                            const std::string marker_namespace = "normals");
+                                                 Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0),
+                                                 const std::string marker_namespace = "normals");
 
 visualization_msgs::msg::Marker trajectory2MarkerMsg(Path &trajectory, const int id);
 
 visualization_msgs::msg::Marker trajectory2MarkerMsg(std::vector<Eigen::Vector3d> &trajectory, const int id,
-                                                std::string color_map = "plasma");
+                                                     std::string color_map = "plasma");
 
 visualization_msgs::msg::Marker trajectory2MarkerMsg(std::vector<Eigen::Vector3d> &trajectory, const int id,
-                                                std::vector<Eigen::Vector3d> &trajectory_color);
+                                                     std::vector<Eigen::Vector3d> &trajectory_color);
 
 visualization_msgs::msg::Marker trajectory2MarkerMsg(std::vector<Eigen::Vector3d> &trajectory, const int id,
-                                                Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0));
+                                                     Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0));
 
 visualization_msgs::msg::Marker trajectory2MarkerMsg(PathSegment &trajectory, const int id,
-                                                Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0));
+                                                     Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0));
 
 visualization_msgs::msg::Marker point2MarkerMsg(Eigen::Vector3d &position, const int id,
-                                           Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0));
+                                                Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0));
 
 double GetTimeInSeconds(std::string date_time);
 

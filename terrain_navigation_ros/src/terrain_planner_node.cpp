@@ -58,5 +58,4 @@ int main(int argc, char **argv) {
   rclcpp::spin(terrain_planner_node);
   rclcpp::shutdown();
   return 0;
-
 }

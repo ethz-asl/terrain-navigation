@@ -1,0 +1,21 @@
+/mavros/**:
+  ros__parameters:
+    plugin_denylist:
+      # common
+      - actuator_control
+      - ftp
+      - hil
+      # extras
+      - altitude
+      - cellular_status
+      - debug_value
+      - fake_gps
+      - guided_target
+      - image_pub
+      - px4flow
+      - vibration
+      - vision_speed_estimate
+      - wheel_odometry
+
+    # plugin_allowlist:
+    #   - 'sys_*'

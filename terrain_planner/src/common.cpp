@@ -402,8 +402,7 @@ geometry_msgs::msg::Vector3 toVector3(const Eigen::Vector3d &p) {
   return vector;
 }
 
-geometry_msgs::msg::Pose vector3d2PoseMsg(const Eigen::Vector3d position,
-    const Eigen::Vector4d orientation) {
+geometry_msgs::msg::Pose vector3d2PoseMsg(const Eigen::Vector3d position, const Eigen::Vector4d orientation) {
   geometry_msgs::msg::Pose encode_msg;
 
   encode_msg.orientation.w = orientation(0);
@@ -416,8 +415,8 @@ geometry_msgs::msg::Pose vector3d2PoseMsg(const Eigen::Vector3d position,
   return encode_msg;
 }
 
-geometry_msgs::msg::PoseStamped vector3d2PoseStampedMsg(
-    const Eigen::Vector3d position, const Eigen::Vector4d orientation) {
+geometry_msgs::msg::PoseStamped vector3d2PoseStampedMsg(const Eigen::Vector3d position,
+                                                        const Eigen::Vector4d orientation) {
   geometry_msgs::msg::PoseStamped encode_msg;
 
   encode_msg.header.stamp = rclcpp::Clock().now();
@@ -432,8 +431,7 @@ geometry_msgs::msg::PoseStamped vector3d2PoseStampedMsg(
   return encode_msg;
 }
 
-visualization_msgs::msg::Marker utility2MarkerMsg(const double utility,
-    const Eigen::Vector3d position, int id) {
+visualization_msgs::msg::Marker utility2MarkerMsg(const double utility, const Eigen::Vector3d position, int id) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = rclcpp::Clock().now();
@@ -464,9 +462,8 @@ visualization_msgs::msg::Marker utility2MarkerMsg(const double utility,
   return marker;
 }
 
-visualization_msgs::msg::Marker vector2ArrowsMsg(
-    const Eigen::Vector3d &position, const Eigen::Vector3d &normal, int id,
-    Eigen::Vector3d color, const std::string marker_namespace) {
+visualization_msgs::msg::Marker vector2ArrowsMsg(const Eigen::Vector3d &position, const Eigen::Vector3d &normal, int id,
+                                                 Eigen::Vector3d color, const std::string marker_namespace) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = rclcpp::Clock().now();
@@ -497,8 +494,7 @@ visualization_msgs::msg::Marker vector2ArrowsMsg(
   return marker;
 }
 
-visualization_msgs::msg::Marker trajectory2MarkerMsg(Path &trajectory,
-    const int id) {
+visualization_msgs::msg::Marker trajectory2MarkerMsg(Path &trajectory, const int id) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = rclcpp::Clock().now();
@@ -535,9 +531,8 @@ visualization_msgs::msg::Marker trajectory2MarkerMsg(Path &trajectory,
   return marker;
 }
 
-visualization_msgs::msg::Marker trajectory2MarkerMsg(
-    std::vector<Eigen::Vector3d> &trajectory, const int id,
-    std::string color_map) {
+visualization_msgs::msg::Marker trajectory2MarkerMsg(std::vector<Eigen::Vector3d> &trajectory, const int id,
+                                                     std::string color_map) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = rclcpp::Clock().now();
@@ -596,9 +591,8 @@ visualization_msgs::msg::Marker trajectory2MarkerMsg(
   return marker;
 }
 
-visualization_msgs::msg::Marker trajectory2MarkerMsg(
-    std::vector<Eigen::Vector3d> &trajectory, const int id,
-    std::vector<Eigen::Vector3d> &trajectory_color) {
+visualization_msgs::msg::Marker trajectory2MarkerMsg(std::vector<Eigen::Vector3d> &trajectory, const int id,
+                                                     std::vector<Eigen::Vector3d> &trajectory_color) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = rclcpp::Clock().now();
@@ -644,9 +638,8 @@ visualization_msgs::msg::Marker trajectory2MarkerMsg(
   return marker;
 }
 
-visualization_msgs::msg::Marker trajectory2MarkerMsg(
-    std::vector<Eigen::Vector3d> &trajectory, const int id,
-    Eigen::Vector3d color) {
+visualization_msgs::msg::Marker trajectory2MarkerMsg(std::vector<Eigen::Vector3d> &trajectory, const int id,
+                                                     Eigen::Vector3d color) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = rclcpp::Clock().now();
@@ -678,9 +671,7 @@ visualization_msgs::msg::Marker trajectory2MarkerMsg(
   return marker;
 }
 
-visualization_msgs::msg::Marker trajectory2MarkerMsg(
-    PathSegment &trajectory, const int id,
-    Eigen::Vector3d color) {
+visualization_msgs::msg::Marker trajectory2MarkerMsg(PathSegment &trajectory, const int id, Eigen::Vector3d color) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = rclcpp::Clock().now();
@@ -712,8 +703,7 @@ visualization_msgs::msg::Marker trajectory2MarkerMsg(
   return marker;
 }
 
-visualization_msgs::msg::Marker point2MarkerMsg(Eigen::Vector3d &position,
-    const int id, Eigen::Vector3d color) {
+visualization_msgs::msg::Marker point2MarkerMsg(Eigen::Vector3d &position, const int id, Eigen::Vector3d color) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = rclcpp::Clock().now();
@@ -778,8 +768,7 @@ double StringToGeoReference(std::string &exif_tag) {
   return output;
 }
 
-bool parseAttitudeFromText(std::string text_path, std::string image_file,
-    Eigen::Vector4d &attitude) {
+bool parseAttitudeFromText(std::string text_path, std::string image_file, Eigen::Vector4d &attitude) {
   std::ifstream file(text_path);
   std::string str;
 
@@ -803,16 +792,14 @@ double getRandom(double min, double max) {
   return std::abs(max - min) * static_cast<double>(rand()) / static_cast<double>(RAND_MAX) + std::min(max, min);
 }
 
-Eigen::Vector4d quatMultiplication(const Eigen::Vector4d &q,
-    const Eigen::Vector4d &p) {
+Eigen::Vector4d quatMultiplication(const Eigen::Vector4d &q, const Eigen::Vector4d &p) {
   Eigen::Vector4d quat;
   quat << p(0) * q(0) - p(1) * q(1) - p(2) * q(2) - p(3) * q(3), p(0) * q(1) + p(1) * q(0) - p(2) * q(3) + p(3) * q(2),
       p(0) * q(2) + p(1) * q(3) + p(2) * q(0) - p(3) * q(1), p(0) * q(3) - p(1) * q(2) + p(2) * q(1) + p(3) * q(0);
   return quat;
 }
 
-bool validatePosition(const grid_map::GridMap &map, const Eigen::Vector3d goal,
-    Eigen::Vector3d &valid_goal) {
+bool validatePosition(const grid_map::GridMap &map, const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
   double upper_surface = map.atPosition("ics_+", goal.head(2));
   double lower_surface = map.atPosition("ics_-", goal.head(2));
   const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;

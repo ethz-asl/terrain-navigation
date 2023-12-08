@@ -36,12 +36,11 @@
 #ifndef TERRAIN_MAP_H
 #define TERRAIN_MAP_H
 
-#include <iostream>
-#include <memory>
-
-#include <grid_map_geo/grid_map_geo.hpp>
 #include <grid_map_core/GridMap.hpp>
 #include <grid_map_core/iterators/GridMapIterator.hpp>
+#include <grid_map_geo/grid_map_geo.hpp>
+#include <iostream>
+#include <memory>
 
 #if __APPLE__
 #include <cpl_string.h>

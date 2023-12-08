@@ -1,7 +1,16 @@
 <launch>
-    <arg name="visualization" default="true"/>
+  <arg name="location" default="davosdorf"/>
+  <arg name="rviz" default="true"/>
 
-    <group if="$(arg visualization)">
-        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config.rviz" output="screen"/>
-    </group>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="world_map" args="--frame-id world --child-frame-id map"/>
+
+  <node pkg="grid_map_geo" exec="test_tif_loader" name="test_tif_loader" output="screen">
+    <param name="tif_path" value="$(find-pkg-share terrain_navigation_ros)/resources/davosdorf.tif"/>
+    <param name="tif_color_path" value="$(find-pkg-share terrain_navigation_ros)/resources/davosdorf_color.tif"/>
+    <remap from="elevation_map" to="grid_map" />
+  </node>
+
+  <group if="$(var rviz)">
+    <node pkg="rviz2" exec="rviz2" name="rviz2" args="-d $(find-pkg-share mav_planning_rviz)/rviz/config.rviz" output="screen"/>
+  </group>
 </launch>

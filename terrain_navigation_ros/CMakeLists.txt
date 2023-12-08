@@ -64,7 +64,9 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(ODE REQUIRED ode)
 
 add_library(${PROJECT_NAME}
+  src/geo_conversions.cpp
   src/terrain_planner.cpp
+  src/visualization.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -136,7 +138,9 @@ install(
 )
 
 install(DIRECTORY
+  config
   launch
+  resources
   DESTINATION share/${PROJECT_NAME}/
 )
 

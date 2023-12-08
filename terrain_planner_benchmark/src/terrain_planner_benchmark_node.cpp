@@ -38,8 +38,6 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner_benchmark/terrain_planner_benchmark.h"
-
 #include <geometry_msgs/Point.h>
 #include <ros/ros.h>
 #include <terrain_navigation/terrain_map.h>
@@ -47,11 +45,13 @@
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/MarkerArray.h>
+
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
+#include "terrain_planner_benchmark/terrain_planner_benchmark.h"
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ompl_rrt_planner");

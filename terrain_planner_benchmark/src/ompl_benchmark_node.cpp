@@ -43,7 +43,6 @@
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/tools/benchmark/Benchmark.h>
-
 #include <ros/ros.h>
 
 #include "terrain_planner/terrain_ompl_rrt.h"

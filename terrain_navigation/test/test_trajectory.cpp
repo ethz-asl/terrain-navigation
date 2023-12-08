@@ -1,7 +1,8 @@
-#include "terrain_navigation/path.h"
-
 #include <gtest/gtest.h>
+
 #include <iostream>
+
+#include "terrain_navigation/path.h"
 
 //! @todo(srmainwaring)check includes
 // #include "terrain_navigation/data_logger.h"

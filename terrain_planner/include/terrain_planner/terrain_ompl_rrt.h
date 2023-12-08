@@ -35,19 +35,17 @@
 #ifndef TERRAIN_PLANNER_TERRAIN_OMPL_RRT_H
 #define TERRAIN_PLANNER_TERRAIN_OMPL_RRT_H
 
+#include <ompl/base/goals/GoalStates.h>
 #include <stdio.h>
+#include <terrain_navigation/terrain_map.h>
+
+#include <Eigen/Dense>
 #include <cstdlib>
 #include <sstream>
 #include <string>
 
-#include <Eigen/Dense>
-
-#include <terrain_navigation/terrain_map.h>
 #include "terrain_navigation/path.h"
-
 #include "terrain_planner/ompl_setup.h"
-
-#include <ompl/base/goals/GoalStates.h>
 
 class TerrainOmplRrt {
  public:

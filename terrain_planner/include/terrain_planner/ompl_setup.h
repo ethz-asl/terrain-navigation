@@ -1,11 +1,7 @@
 #ifndef TERRAIN_PLANNER_OMPL_SETUP_H_
 #define TERRAIN_PLANNER_OMPL_SETUP_H_
 
-#include "terrain_planner/DubinsAirplane.hpp"
-#include "terrain_planner/terrain_ompl.h"
-
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
-
 #include <ompl/base/spaces/SE3StateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/fmt/FMT.h>
@@ -13,7 +9,10 @@
 #include <ompl/geometric/planners/rrt/InformedRRTstar.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
+
 #include "ompl/base/SpaceInformation.h"
+#include "terrain_planner/DubinsAirplane.hpp"
+#include "terrain_planner/terrain_ompl.h"
 
 enum PlannerType { RRTSTAR, INFORMED_RRTSTAR, RRTCONNECT, BITSTAR, FMTSTAR };
 

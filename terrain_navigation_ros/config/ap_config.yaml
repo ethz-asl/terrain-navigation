@@ -1,0 +1,273 @@
+# Common configuration for ArduPilot
+#
+# node:
+/mavros/**:
+  ros__parameters:
+    startup_px4_usb_quirk: false
+
+# --- system plugins ---
+
+# sys_status & sys_time connection options
+/mavros/**/conn:
+  ros__parameters:
+    heartbeat_rate: 1.0    # send heartbeat rate in Hertz
+    heartbeat_mav_type: "ONBOARD_CONTROLLER"
+    timeout: 10.0          # heartbeat timeout in seconds
+    timesync_rate: 10.0    # TIMESYNC rate in Hertz (feature disabled if 0.0)
+    system_time_rate: 1.0  # send system time to FCU rate in Hertz (disabled if 0.0)
+
+# sys_status
+/mavros/**/sys:
+  ros__parameters:
+    min_voltage: [10.0]   # diagnostics min voltage, use a vector i.e. [16.2, 16.0] for multiple batteries, up-to 10 are supported
+                        # to achieve the same on a ROS launch file do: <rosparam param="sys/min_voltage">[16.2, 16.0]</rosparam>
+    disable_diag: false # disable all sys_status diagnostics, except heartbeat
+
+# sys_time
+/mavros/**/time:
+  ros__parameters:
+    time_ref_source: "fcu"  # time_reference source
+    timesync_mode: MAVLINK
+    timesync_avg_alpha: 0.6 # timesync averaging factor
+
+# --- mavros plugins (alphabetical order) ---
+
+# 3dr_radio
+/mavros/**/tdr_radio:
+  ros__parameters:
+    low_rssi: 40  # raw rssi lower level for diagnostics
+
+# actuator_control
+# None
+
+# command
+/mavros/**/cmd:
+  ros__parameters:
+    use_comp_id_system_control: false # quirk for some old FCUs
+
+# dummy
+# None
+
+# ftp
+# None
+
+# global_position
+/mavros/**/global_position:
+  ros__parameters:
+    frame_id: "map"             # origin frame
+    child_frame_id: "base_link" # body-fixed frame
+    rot_covariance: 99999.0   # covariance for attitude?
+    gps_uere: 1.0             # User Equivalent Range Error (UERE) of GPS sensor (m)
+    use_relative_alt: true    # use relative altitude for local coordinates
+    tf.send: false               # send TF?
+    tf.frame_id: "map"  # TF frame_id
+    tf.global_frame_id: "earth"  # TF earth frame_id
+    tf.child_frame_id: "base_link" # TF child_frame_id
+
+# imu_pub
+/mavros/**/imu:
+  ros__parameters:
+    frame_id: "base_link"
+    # need find actual values
+    linear_acceleration_stdev: 0.0003
+    angular_velocity_stdev: 0.0003490659 # 0.02 degrees
+    orientation_stdev: 1.0
+    magnetic_stdev: 0.0
+
+# local_position
+/mavros/**/local_position:
+  ros__parameters:
+    frame_id: "map"
+    tf.send: false
+    tf.frame_id: "map"
+    tf.child_frame_id: "base_link"
+    tf.send_fcu: false
+
+# param
+# None, used for FCU params
+
+# rc_io
+# None
+
+# setpoint_accel
+/mavros/**/setpoint_accel:
+  ros__parameters:
+    send_force: false
+
+# setpoint_attitude
+/mavros/**/setpoint_attitude:
+  ros__parameters:
+    reverse_thrust: false     # allow reversed thrust
+    use_quaternion: false     # enable PoseStamped topic subscriber
+    tf.listen: false           # enable tf listener (disable topic subscribers)
+    tf.frame_id: "map"
+    tf.child_frame_id: "target_attitude"
+    tf.rate_limit: 50.0
+
+# setpoint_raw
+/mavros/**/setpoint_raw:
+  ros__parameters:
+    thrust_scaling: 1.0       # specify thrust scaling (normalized, 0 to 1) for thrust (like PX4)
+
+# setpoint_position
+/mavros/**/setpoint_position:
+  ros__parameters:
+    tf.listen: false           # enable tf listener (disable topic subscribers)
+    tf.frame_id: "map"
+    tf.child_frame_id: "target_position"
+    tf.rate_limit: 50.0
+    mav_frame: LOCAL_NED
+  
+# guided_target
+/mavros/**/guided_target:
+  ros__parameters:
+    tf.listen: false           # enable tf listener (disable topic subscribers)
+    tf.frame_id: "map"
+    tf.child_frame_id: "target_position"
+    tf.rate_limit: 50.0
+
+# setpoint_velocity
+/mavros/**/setpoint_velocity:
+  ros__parameters:
+    mav_frame: LOCAL_NED
+
+# vfr_hud
+# None
+
+# waypoint
+/mavros/**/mission:
+  ros__parameters:
+    pull_after_gcs: true    # update mission if gcs updates
+    use_mission_item_int: true # use the MISSION_ITEM_INT message instead of MISSION_ITEM
+                              # for uploading waypoints to FCU
+  
+
+# --- mavros extras plugins (same order) ---
+
+# /mavros:
+  # distance_sensor node
+  # distance_sensor:
+  #   ros__parameters:
+  #     base_frame_id: base_footprint
+  #     # This config will suppress the warnings in the mavros node about
+  #     #  missing sensor definitions for distance_sensor.
+  #     # 
+  #     # The distance_sensor config requires a workaround for the parameter definition.
+  #     # See comments in: ROS2: port mavros launch #1564
+  #     # https://github.com/mavlink/mavros/issues/1564#issuecomment-1055155609
+  #     config: |-
+  #       sensor_10:
+  #         id: 10
+  #         subscriber: false
+  #         frame_id: lidar_link
+  #         field_of_view: 0.0
+  #         send_tf: false
+  #         sensor_position: {x: 0.0, y: 0.0, z: 0.0}
+  #         covariance: 0.0
+  #         horizontal_fov_ratio: 0.0
+  #         vertical_fov_ratio: 0.0
+  #       sensor_11:
+  #         id: 11
+  #         subscriber: false
+  #         frame_id: lidar_link
+  #         field_of_view: 0.0
+  #         send_tf: false
+  #         sensor_position: {x: 0.0, y: 0.0, z: 0.0}
+  #         covariance: 0.0
+  #         horizontal_fov_ratio: 0.0
+  #         vertical_fov_ratio: 0.0
+  #       sensor_12:
+  #         id: 12
+  #         subscriber: false
+  #         frame_id: lidar_link
+  #         field_of_view: 0.0
+  #         send_tf: false
+  #         sensor_position: {x: 0.0, y: 0.0, z: 0.0}
+  #         covariance: 0.0
+  #         horizontal_fov_ratio: 0.0
+  #         vertical_fov_ratio: 0.0
+  #       sensor_13:
+  #         id: 13
+  #         subscriber: false
+  #         frame_id: lidar_link
+  #         field_of_view: 0.0
+  #         send_tf: false
+  #         sensor_position: {x: 0.0, y: 0.0, z: 0.0}
+  #         covariance: 0.0
+  #         horizontal_fov_ratio: 0.0
+  #         vertical_fov_ratio: 0.0
+  #       sensor_14:
+  #         id: 14
+  #         subscriber: false
+  #         frame_id: lidar_link
+  #         field_of_view: 0.0
+  #         send_tf: false
+  #         sensor_position: {x: 0.0, y: 0.0, z: 0.0}
+  #         covariance: 0.0
+  #         horizontal_fov_ratio: 0.0
+  #         vertical_fov_ratio: 0.0
+  #       sensor_15:
+  #         id: 15
+  #         subscriber: false
+  #         frame_id: lidar_link
+  #         field_of_view: 0.0
+  #         send_tf: false
+  #         sensor_position: {x: 0.0, y: 0.0, z: 0.0}
+  #         covariance: 0.0
+  #         horizontal_fov_ratio: 0.0
+  #         vertical_fov_ratio: 0.0
+  #       sensor_16:
+  #         id: 16
+  #         subscriber: false
+  #         frame_id: lidar_link
+  #         field_of_view: 0.0
+  #         send_tf: false
+  #         sensor_position: {x: 0.0, y: 0.0, z: 0.0}
+  #         covariance: 0.0
+  #         horizontal_fov_ratio: 0.0
+  #         vertical_fov_ratio: 0.0
+  #       sensor_17:
+  #         id: 17
+  #         subscriber: false
+  #         frame_id: lidar_link
+  #         field_of_view: 0.0
+  #         send_tf: false
+  #         sensor_position: {x: 0.0, y: 0.0, z: 0.0}
+  #         covariance: 0.0
+  #         horizontal_fov_ratio: 0.0
+  #         vertical_fov_ratio: 0.0
+
+  #     # Example: all parameters defined in code
+  #     # config: |-
+  #     #   sensor_10:
+  #     #     id: 10
+  #     #     subscriber: false
+  #     #     orientation: PITCH_270
+  #     #     # if subscriber != true
+  #     #     frame_id: lidar_link
+  #     #     field_of_view: 0.0
+  #     #     send_tf: false
+  #     #     sensor_position:
+  #     #       x: 0.0
+  #     #       y: 0.0
+  #     #       z: 0.0
+  #     #     # else subscriber == true
+  #     #     custom_orientation:
+  #     #       roll: 0.0
+  #     #       pitch: 0.0
+  #     #       yaw: 0.0
+  #     #     covariance: 0.0
+  #     #     horizontal_fov_ratio: 0.0
+  #     #     vertical_fov_ratio: 0.0
+
+  # obstacle node
+  # 
+  # The mav_frame does not appear to be used to transform the data
+  # on either the mavros side or in ArduPilot SITL. The correct frame
+  # for data received from Gazebo is BODY_FLU, but this is not available
+  # as an option.
+  # obstacle:
+  #   ros__parameters:
+  #     mav_frame: BODY_FRD
+
+

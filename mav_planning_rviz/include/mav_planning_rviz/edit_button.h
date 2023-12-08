@@ -2,9 +2,9 @@
 #define MAV_PLANNING_RVIZ_EDIT_BUTTON_H_
 
 #ifndef Q_MOC_RUN
-#include <mav_msgs/eigen_mav_msgs.hpp>
 #include <QPushButton>
 #include <QWidget>
+#include <mav_msgs/eigen_mav_msgs.hpp>
 #endif
 
 namespace mav_planning_rviz {

@@ -38,13 +38,13 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include "terrain_planner/visualization.h"
-
-#include <terrain_navigation/terrain_map.h>
-#include "terrain_navigation/data_logger.h"
-
 #include <grid_map_msgs/GridMap.h>
+#include <terrain_navigation/terrain_map.h>
+
 #include <grid_map_ros/GridMapRosConverter.hpp>
+
+#include "terrain_navigation/data_logger.h"
+#include "terrain_planner/visualization.h"
 
 void addErrorLayer(const std::string layer_name, const std::string query_layer, const std::string reference_layer,
                    grid_map::GridMap& map) {

@@ -1,9 +1,7 @@
 #include "terrain_planner/visualization.h"
 
-void publishCandidateManeuvers(
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
-    const std::vector<Path>& candidate_maneuvers,
-    bool visualize_invalid_trajectories) {
+void publishCandidateManeuvers(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
+                               const std::vector<Path>& candidate_maneuvers, bool visualize_invalid_trajectories) {
   visualization_msgs::msg::MarkerArray msg;
 
   std::vector<visualization_msgs::msg::Marker> marker;
@@ -25,11 +23,9 @@ void publishCandidateManeuvers(
   pub->publish(msg);
 }
 
-void publishPositionSetpoints(
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
-    const Eigen::Vector3d& position,
-    const Eigen::Vector3d& velocity,
-    const Eigen::Vector3d scale) {
+void publishPositionSetpoints(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                              const Eigen::Vector3d& position, const Eigen::Vector3d& velocity,
+                              const Eigen::Vector3d scale) {
   visualization_msgs::msg::Marker marker;
   marker.header.stamp = rclcpp::Clock().now();
   marker.type = visualization_msgs::msg::Marker::ARROW;
@@ -55,10 +51,8 @@ void publishPositionSetpoints(
   pub->publish(marker);
 }
 
-void publishPath(
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
-    std::vector<Eigen::Vector3d> path,
-    Eigen::Vector3d color) {
+void publishPath(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, std::vector<Eigen::Vector3d> path,
+                 Eigen::Vector3d color) {
   visualization_msgs::msg::Marker marker;
   marker.header.stamp = rclcpp::Clock().now();
   marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
@@ -89,9 +83,7 @@ void publishPath(
   pub->publish(marker);
 }
 
-void publishTrajectory(
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub,
-    std::vector<Eigen::Vector3d> trajectory) {
+void publishTrajectory(rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub, std::vector<Eigen::Vector3d> trajectory) {
   nav_msgs::msg::Path msg;
   std::vector<geometry_msgs::msg::PoseStamped> posestampedhistory_vector;
   Eigen::Vector4d orientation(1.0, 0.0, 0.0, 0.0);
@@ -104,10 +96,9 @@ void publishTrajectory(
   pub->publish(msg);
 }
 
-void publishTree(
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
-    std::shared_ptr<ompl::base::PlannerData> planner_data,
-    std::shared_ptr<ompl::OmplSetup> problem_setup) {
+void publishTree(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
+                 std::shared_ptr<ompl::base::PlannerData> planner_data,
+                 std::shared_ptr<ompl::OmplSetup> problem_setup) {
   visualization_msgs::msg::MarkerArray marker_array;
   std::vector<visualization_msgs::msg::Marker> marker;
 

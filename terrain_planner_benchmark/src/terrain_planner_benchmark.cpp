@@ -1,5 +1,6 @@
 
 #include "terrain_planner_benchmark/terrain_planner_benchmark.h"
+
 #include "terrain_planner/terrain_ompl_rrt.h"
 
 TerrainPlannerBenchmark::TerrainPlannerBenchmark() {

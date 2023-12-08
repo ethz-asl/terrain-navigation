@@ -41,16 +41,14 @@
 #ifndef TERRAIN_PLANNER_VIEWPOINT_H
 #define TERRAIN_PLANNER_VIEWPOINT_H
 
-#include <iostream>
-#include <vector>
-
 #include <Eigen/Dense>
-
+#include <iostream>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <vector>
 
 class ViewPoint {
  public:

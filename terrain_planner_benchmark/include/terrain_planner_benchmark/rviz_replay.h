@@ -37,14 +37,15 @@
  *
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
-#include <ros/callback_queue.h>
-#include <ros/ros.h>
-
 #include <grid_map_msgs/GridMap.h>
 #include <planner_msgs/NavigationStatus.h>
 #include <planner_msgs/TerrainInfo.h>
+#include <ros/callback_queue.h>
+#include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
+
 #include <grid_map_ros/GridMapRosConverter.hpp>
+
 #include "terrain_planner/common.h"
 
 class ReplayRunner {

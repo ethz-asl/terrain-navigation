@@ -11,9 +11,9 @@
 #include "terrain_planner/DubinsPath.hpp"
 
 #include <assert.h>
-#include <cmath>
 
 #include <boost/math/constants/constants.hpp>
+#include <cmath>
 
 namespace fw_planning {
 
@@ -27,8 +27,7 @@ const DubinsPath::DubinsPathSegmentType DubinsPath::dubinsPathType[6][3] = {
     {DUBINS_RIGHT, DUBINS_LEFT, DUBINS_RIGHT},    {DUBINS_LEFT, DUBINS_RIGHT, DUBINS_LEFT}};
 
 DubinsPath::DubinsPath(Index type, double t, double p, double q, double gam, unsigned int ks, unsigned int ke, double r)
-    :
-      length_{{0, t, 0, p, q, 0}},
+    : length_{{0, t, 0, p, q, 0}},
       length_2D_(t + p + q),
       radiusRatio_{{r, r, r, r, r, r}},
       radiusRatioInverse_{{1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r, 1.0 / r}},
