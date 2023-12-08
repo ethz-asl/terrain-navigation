@@ -11,7 +11,7 @@ repositories:
     type: git
     url: https://github.com/ethz-asl/terrain-navigation.git
     version: ros2
-  ryanf55/mav_comm:
+  ethz-asl/mav_comm:
     type: git
-    url: https://github.com/ryanf55/mav_comm.git
-    version: fix-cmp0148-unknown-policy
+    url: https://github.com/ethz-asl/mav_comm.git
+    version: ros2
