@@ -50,8 +50,7 @@ class GeoConversions {
    * @param y
    * @param h
    */
-  static void forward(const double lat, const double lon, const double alt,
-      double &y, double &x, double &h);
+  static void forward(const double lat, const double lon, const double alt, double &y, double &x, double &h);
 
   /**
    * @brief  LV03/CH1903 to Convert WGS84 (LLA)
@@ -63,8 +62,7 @@ class GeoConversions {
    * @param lon longitude
    * @param alt altitude
    */
-  static void reverse(const double y, const double x, const double h,
-      double &lat, double &lon, double &alt);
+  static void reverse(const double y, const double x, const double h, double &lat, double &lon, double &alt);
 };
 
 #endif

@@ -43,11 +43,9 @@ geometry_msgs::msg::Point toPoint(const Eigen::Vector3d &p) {
   return position;
 }
 
-void publishVehiclePose(
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
-  const Eigen::Vector3d &position,
-  const Eigen::Vector4d &attitude,
-  std::string mesh_resource_path) {
+void publishVehiclePose(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                        const Eigen::Vector3d &position, const Eigen::Vector4d &attitude,
+                        std::string mesh_resource_path) {
   Eigen::Vector4d mesh_attitude =
       quatMultiplication(attitude, Eigen::Vector4d(std::cos(M_PI / 2), 0.0, 0.0, std::sin(M_PI / 2)));
   geometry_msgs::msg::Pose vehicle_pose = vector3d2PoseMsg(position, mesh_attitude);
@@ -71,9 +69,7 @@ void publishVehiclePose(
   pub->publish(marker);
 }
 
-visualization_msgs::msg::Marker Viewpoint2MarkerMsg(
-  int id, ViewPoint &viewpoint,
-  Eigen::Vector3d color) {
+visualization_msgs::msg::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint, Eigen::Vector3d color) {
   double scale{15};  // Size of the viewpoint markers
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
@@ -112,20 +108,16 @@ visualization_msgs::msg::Marker Viewpoint2MarkerMsg(
   return marker;
 }
 
-void publishCameraView(
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
-  const Eigen::Vector3d &position,
-  const Eigen::Vector4d &attitude) {
+void publishCameraView(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                       const Eigen::Vector3d &position, const Eigen::Vector4d &attitude) {
   visualization_msgs::msg::Marker marker;
   ViewPoint viewpoint(-1, position, attitude);
   marker = Viewpoint2MarkerMsg(viewpoint.getIndex(), viewpoint);
   pub->publish(marker);
 }
 
-void publishViewpoints(
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
-  std::vector<ViewPoint> &viewpoint_vector,
-  Eigen::Vector3d color) {
+void publishViewpoints(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
+                       std::vector<ViewPoint> &viewpoint_vector, Eigen::Vector3d color) {
   visualization_msgs::msg::MarkerArray msg;
 
   std::vector<visualization_msgs::msg::Marker> marker;

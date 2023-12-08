@@ -41,35 +41,31 @@
 
 #include "terrain_navigation_ros/terrain_planner.h"
 
+#include <tf2/LinearMath/Quaternion.h>
+
 #include <chrono>
 #include <functional>
-#include <memory>
-
-#include "terrain_navigation_ros/geo_conversions.h"
-#include "terrain_navigation_ros/visualization.h"
-
 #include <grid_map_msgs/msg/grid_map.hpp>
+#include <grid_map_ros/GridMapRosConverter.hpp>
 #include <mavros_msgs/msg/command_code.hpp>
-#include <mavros_msgs/srv/command_long.hpp>
 #include <mavros_msgs/msg/global_position_target.hpp>
 #include <mavros_msgs/msg/position_target.hpp>
 #include <mavros_msgs/msg/trajectory.hpp>
+#include <mavros_msgs/srv/command_long.hpp>
+#include <memory>
 #include <planner_msgs/msg/navigation_status.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_eigen/tf2_eigen.hpp>
-#include <grid_map_ros/GridMapRosConverter.hpp>
+#include "terrain_navigation_ros/geo_conversions.h"
+#include "terrain_navigation_ros/visualization.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
 using namespace std::chrono_literals;
 
-
-TerrainPlanner::TerrainPlanner()
-  : Node("terrain_planner") {
-
+TerrainPlanner::TerrainPlanner() : Node("terrain_planner") {
   std::string avalanche_map_path;
 
   // original parameters: resource locations and goal radius
@@ -79,7 +75,7 @@ TerrainPlanner::TerrainPlanner()
   mesh_resource_path_ = this->declare_parameter("meshresource_path", resource_path_ + "/believer.dae");
   avalanche_map_path = this->declare_parameter("avalanche_map_path", resource_path_ + "/avalanche.tif");
   goal_radius_ = this->declare_parameter("minimum_turn_radius", 66.67);
-  
+
   RCLCPP_INFO_STREAM(this->get_logger(), "resource_path: " << resource_path_);
   RCLCPP_INFO_STREAM(this->get_logger(), "map_path_: " << map_path_);
   RCLCPP_INFO_STREAM(this->get_logger(), "map_color_path_: " << map_color_path_);
@@ -88,19 +84,17 @@ TerrainPlanner::TerrainPlanner()
   RCLCPP_INFO_STREAM(this->get_logger(), "goal_radius_: " << goal_radius_);
 
   // additional parameters: vehicle guidance
-  K_z_ =  this->declare_parameter("alt_control_p", 0.5);
-  max_climb_rate_control_ =  this->declare_parameter("alt_control_max_climb_rate", 3.0);
-  cruise_speed_ =  this->declare_parameter("cruise_speed", 15.0);
-  
+  K_z_ = this->declare_parameter("alt_control_p", 0.5);
+  max_climb_rate_control_ = this->declare_parameter("alt_control_max_climb_rate", 3.0);
+  cruise_speed_ = this->declare_parameter("cruise_speed", 15.0);
+
   RCLCPP_INFO_STREAM(this->get_logger(), "alt_control_p: " << K_z_);
   RCLCPP_INFO_STREAM(this->get_logger(), "alt_control_max_climb_rate: " << max_climb_rate_control_);
   RCLCPP_INFO_STREAM(this->get_logger(), "cruise_speed: " << cruise_speed_);
 
   // quality of service settings
   rclcpp::QoS latching_qos(1);
-  latching_qos
-  .reliable()
-  .transient_local();
+  latching_qos.reliable().transient_local();
 
   auto mavros_position_qos = rclcpp::SensorDataQoS();
   // mavros_position_qos.best_effort();
@@ -120,13 +114,12 @@ TerrainPlanner::TerrainPlanner()
   candidate_start_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("candidate_start_marker", 1);
 
   mavstate_sub_ = this->create_subscription<mavros_msgs::msg::State>(
-      "mavros/state", 1,
-      std::bind(&TerrainPlanner::mavstateCallback, this, _1));
+      "mavros/state", 1, std::bind(&TerrainPlanner::mavstateCallback, this, _1));
   mavmission_sub_ = this->create_subscription<mavros_msgs::msg::WaypointList>(
-    "mavros/mission/waypoints", 1,
-    std::bind(&TerrainPlanner::mavMissionCallback, this, _1));
+      "mavros/mission/waypoints", 1, std::bind(&TerrainPlanner::mavMissionCallback, this, _1));
 
-  global_position_setpoint_pub_ = this->create_publisher<mavros_msgs::msg::GlobalPositionTarget>("mavros/setpoint_raw/global", 1);
+  global_position_setpoint_pub_ =
+      this->create_publisher<mavros_msgs::msg::GlobalPositionTarget>("mavros/setpoint_raw/global", 1);
   vehicle_pose_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("vehicle_pose_marker", 1);
   camera_pose_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("camera_pose_marker", 1);
   planner_status_pub_ = this->create_publisher<planner_msgs::msg::NavigationStatus>("planner_status", 1);
@@ -136,51 +129,39 @@ TerrainPlanner::TerrainPlanner()
   tree_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("tree", 1);
 
   mavlocalpose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-      "mavros/local_position/pose", mavros_position_qos,
-      std::bind(&TerrainPlanner::mavLocalPoseCallback, this, _1));
+      "mavros/local_position/pose", mavros_position_qos, std::bind(&TerrainPlanner::mavLocalPoseCallback, this, _1));
   mavglobalpose_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
       "mavros/global_position/global", mavros_position_qos,
       std::bind(&TerrainPlanner::mavGlobalPoseCallback, this, _1));
   mavtwist_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
-      "mavros/local_position/velocity_local", mavros_position_qos, 
+      "mavros/local_position/velocity_local", mavros_position_qos,
       std::bind(&TerrainPlanner::mavtwistCallback, this, _1));
   global_origin_sub_ = this->create_subscription<geographic_msgs::msg::GeoPointStamped>(
       "mavros/global_position/gp_origin", mavros_position_qos,
       std::bind(&TerrainPlanner::mavGlobalOriginCallback, this, _1));
   image_captured_sub_ = this->create_subscription<mavros_msgs::msg::CameraImageCaptured>(
-      "mavros/camera/image_captured", 1,
-      std::bind(&TerrainPlanner::mavImageCapturedCallback, this, _1));
+      "mavros/camera/image_captured", 1, std::bind(&TerrainPlanner::mavImageCapturedCallback, this, _1));
 
   setlocation_serviceserver_ = this->create_service<planner_msgs::srv::SetString>(
-      "/terrain_planner/set_location",
-      std::bind(&TerrainPlanner::setLocationCallback, this, _1, _2));
+      "/terrain_planner/set_location", std::bind(&TerrainPlanner::setLocationCallback, this, _1, _2));
   setmaxaltitude_serviceserver_ = this->create_service<planner_msgs::srv::SetString>(
-      "/terrain_planner/set_max_altitude",
-      std::bind(&TerrainPlanner::setMaxAltitudeCallback, this, _1, _2));
+      "/terrain_planner/set_max_altitude", std::bind(&TerrainPlanner::setMaxAltitudeCallback, this, _1, _2));
   setgoal_serviceserver_ = this->create_service<planner_msgs::srv::SetVector3>(
-      "/terrain_planner/set_goal",
-      std::bind(&TerrainPlanner::setGoalCallback, this, _1, _2));
+      "/terrain_planner/set_goal", std::bind(&TerrainPlanner::setGoalCallback, this, _1, _2));
   setstart_serviceserver_ = this->create_service<planner_msgs::srv::SetVector3>(
-      "/terrain_planner/set_start",
-      std::bind(&TerrainPlanner::setStartCallback, this, _1, _2));
+      "/terrain_planner/set_start", std::bind(&TerrainPlanner::setStartCallback, this, _1, _2));
   setcurrentsegment_serviceserver_ = this->create_service<planner_msgs::srv::SetService>(
-      "/terrain_planner/set_current_segment",
-      std::bind(&TerrainPlanner::setCurrentSegmentCallback, this, _1, _2));
+      "/terrain_planner/set_current_segment", std::bind(&TerrainPlanner::setCurrentSegmentCallback, this, _1, _2));
   setstartloiter_serviceserver_ = this->create_service<planner_msgs::srv::SetService>(
-      "/terrain_planner/set_start_loiter",
-      std::bind(&TerrainPlanner::setStartLoiterCallback, this, _1, _2));
+      "/terrain_planner/set_start_loiter", std::bind(&TerrainPlanner::setStartLoiterCallback, this, _1, _2));
   setplannerstate_service_server_ = this->create_service<planner_msgs::srv::SetPlannerState>(
-      "/terrain_planner/set_planner_state",
-      std::bind(&TerrainPlanner::setPlannerStateCallback, this, _1, _2));
-  setplanning_serviceserver_ =  this->create_service<planner_msgs::srv::SetVector3>(
-      "/terrain_planner/trigger_planning",
-      std::bind(&TerrainPlanner::setPlanningCallback, this, _1, _2));
-  updatepath_serviceserver_ =  this->create_service<planner_msgs::srv::SetVector3>(
-      "/terrain_planner/set_path",
-      std::bind(&TerrainPlanner::setPathCallback, this, _1, _2));
+      "/terrain_planner/set_planner_state", std::bind(&TerrainPlanner::setPlannerStateCallback, this, _1, _2));
+  setplanning_serviceserver_ = this->create_service<planner_msgs::srv::SetVector3>(
+      "/terrain_planner/trigger_planning", std::bind(&TerrainPlanner::setPlanningCallback, this, _1, _2));
+  updatepath_serviceserver_ = this->create_service<planner_msgs::srv::SetVector3>(
+      "/terrain_planner/set_path", std::bind(&TerrainPlanner::setPathCallback, this, _1, _2));
 
-  msginterval_serviceclient_ = this->create_client<mavros_msgs::srv::CommandLong>(
-      "mavros/cmd/command");
+  msginterval_serviceclient_ = this->create_client<mavros_msgs::srv::CommandLong>("mavros/cmd/command");
 
   // create terrain map
   terrain_map_ = std::make_shared<TerrainMap>();
@@ -212,8 +193,7 @@ void TerrainPlanner::init() {
   // plannerloop_spinner_->start();
 
   auto plannerloop_dt_ = 2s;
-  plannerloop_timer_ = this->create_wall_timer(
-    plannerloop_dt_, std::bind(&TerrainPlanner::plannerloopCallback, this));
+  plannerloop_timer_ = this->create_wall_timer(plannerloop_dt_, std::bind(&TerrainPlanner::plannerloopCallback, this));
   // plannerloop_executor_.add_node(plannerloop_node_);
   // plannerloop_executor_.spin();
 
@@ -226,8 +206,7 @@ void TerrainPlanner::init() {
   // statusloop_spinner_->start();
 
   auto statusloop_dt_ = 500ms;
-  statusloop_timer_ = this->create_wall_timer(
-    statusloop_dt_, std::bind(&TerrainPlanner::statusloopCallback, this));
+  statusloop_timer_ = this->create_wall_timer(statusloop_dt_, std::bind(&TerrainPlanner::statusloopCallback, this));
   // statusloop_executor_.add_node(statusloop_node_);
   // statusloop_executor_.spin();
 
@@ -240,8 +219,7 @@ void TerrainPlanner::init() {
   // cmdloop_spinner_->start();
 
   auto cmdloop_dt_ = 100ms;
-  cmdloop_timer_ = this->create_wall_timer(
-    cmdloop_dt_, std::bind(&TerrainPlanner::cmdloopCallback, this));
+  cmdloop_timer_ = this->create_wall_timer(cmdloop_dt_, std::bind(&TerrainPlanner::cmdloopCallback, this));
   // cmdloop_executor_.add_node(cmdloop_node_);
   // cmdloop_executor_.spin();
 }
@@ -329,7 +307,6 @@ void TerrainPlanner::cmdloopCallback() {
       // RCLCPP_INFO_STREAM(this->get_logger(), "last_triggered_time: " << last_triggered_time_.seconds());
 
       if (time_since_trigger_s > 2.0 && planner_mode_ == PLANNER_MODE::ACTIVE_MAPPING) {
-
         RCLCPP_INFO_STREAM(this->get_logger(), "time_since_trigger:  " << time_since_trigger_s);
 
         bool dummy_camera = false;
@@ -351,32 +328,31 @@ void TerrainPlanner::cmdloopCallback() {
           image_capture_req->param7 = 0;  // sequence number
 
           while (!msginterval_serviceclient_->wait_for_service(1s)) {
-            RCLCPP_WARN_STREAM(this->get_logger(), "Service ["
-                << msginterval_serviceclient_->get_service_name()
-                << "] not available.");
+            RCLCPP_WARN_STREAM(this->get_logger(),
+                               "Service [" << msginterval_serviceclient_->get_service_name() << "] not available.");
             return;
           }
 
           bool received_response = false;
-          using ServiceResponseFuture =
-            rclcpp::Client<mavros_msgs::srv::CommandLong>::SharedFuture;
+          using ServiceResponseFuture = rclcpp::Client<mavros_msgs::srv::CommandLong>::SharedFuture;
           auto response_received_callback = [&received_response](ServiceResponseFuture future) {
-              auto result = future.get();
-              received_response = true;
+            auto result = future.get();
+            received_response = true;
           };
           auto future = msginterval_serviceclient_->async_send_request(image_capture_req, response_received_callback);
 
           //! @todo wait for response_received_callback to set done
           //! @todo add timeout
           while (!received_response) {
-              ;
+            ;
           }
 
           // return;
 
           // auto future = msginterval_serviceclient_->async_send_request(image_capture_req);
 
-          // if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) != rclcpp::FutureReturnCode::SUCCESS)
+          // if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) !=
+          // rclcpp::FutureReturnCode::SUCCESS)
           // {
           //   RCLCPP_ERROR_STREAM(this->get_logger(), "Call to service ["
           //       << msginterval_serviceclient_->get_service_name()
@@ -428,7 +404,7 @@ void TerrainPlanner::statusloopCallback() {
 void TerrainPlanner::plannerloopCallback() {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   if (local_origin_received_ && !map_initialized_) {
-    //! @todo(srmainwaring) consolidate duplicate code from here and TerrainPlanner::setLocationCallback 
+    //! @todo(srmainwaring) consolidate duplicate code from here and TerrainPlanner::setLocationCallback
     std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
     map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
     terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
@@ -459,32 +435,31 @@ void TerrainPlanner::plannerloopCallback() {
     request_global_origin_req->param1 = 49;
 
     while (!msginterval_serviceclient_->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(this->get_logger(), "Service ["
-            << msginterval_serviceclient_->get_service_name()
-            << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(this->get_logger(),
+                         "Service [" << msginterval_serviceclient_->get_service_name() << "] not available.");
+      return;
     }
 
     bool received_response = false;
-    using ServiceResponseFuture =
-      rclcpp::Client<mavros_msgs::srv::CommandLong>::SharedFuture;
+    using ServiceResponseFuture = rclcpp::Client<mavros_msgs::srv::CommandLong>::SharedFuture;
     auto response_received_callback = [&received_response](ServiceResponseFuture future) {
-        auto result = future.get();
-        received_response = true;
+      auto result = future.get();
+      received_response = true;
     };
     auto future = msginterval_serviceclient_->async_send_request(request_global_origin_req, response_received_callback);
-    
+
     //! @todo wait for response_received_callback to set done
     //! @todo add timeout
     while (!received_response) {
-        ;
+      ;
     }
-    
+
     return;
 
     // auto future = msginterval_serviceclient_->async_send_request(request_global_origin_req);
 
-    // if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) != rclcpp::FutureReturnCode::SUCCESS)
+    // if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) !=
+    // rclcpp::FutureReturnCode::SUCCESS)
     // {
     //   RCLCPP_ERROR_STREAM(this->get_logger(), "Call to service ["
     //       << msginterval_serviceclient_->get_service_name()
@@ -505,11 +480,10 @@ void TerrainPlanner::plannerloopCallback() {
       // RCLCPP_INFO_STREAM(this->get_logger(), "time_now:            " << time_now.seconds());
 
       if (time_spent_planning_s < planner_time_budget_) {
-
         RCLCPP_INFO_STREAM(this->get_logger(), "time_spent_planning: " << time_spent_planning_s);
         RCLCPP_INFO_STREAM(this->get_logger(), "planner_time_budget: " << planner_time_budget_);
 
-        //bool found_solution =
+        // bool found_solution =
         global_planner_->Solve(1.0, candidate_primitive_);
         publishTree(tree_pub_, global_planner_->getPlannerData(), global_planner_->getProblemSetup());
       } else {
@@ -590,10 +564,10 @@ void TerrainPlanner::plannerloopCallback() {
             }
             Eigen::Vector3d radial_vector = (end_position - rally_points[min_distance_index]);
             radial_vector(2) = 0.0;  // Only consider horizontal loiters
-            //Eigen::Vector3d emergency_rates =
-            //    20.0 * end_velocity.normalized().cross(radial_vector.normalized()) / radial_vector.norm();
-            //double horizon = 2 * M_PI / std::abs(emergency_rates(2));
-            // Append a loiter at the end of the planned path
+            // Eigen::Vector3d emergency_rates =
+            //     20.0 * end_velocity.normalized().cross(radial_vector.normalized()) / radial_vector.norm();
+            // double horizon = 2 * M_PI / std::abs(emergency_rates(2));
+            //  Append a loiter at the end of the planned path
             PathSegment loiter_trajectory;
             generateCircle(end_position, end_velocity, rally_points[min_distance_index], loiter_trajectory);
             updated_segment.appendSegment(loiter_trajectory);
@@ -650,7 +624,7 @@ void TerrainPlanner::plannerloopCallback() {
             radial_vector(2) = 0.0;  // Only consider horizontal loiters
             // Eigen::Vector3d emergency_rates =
             //     20.0 * end_velocity.normalized().cross(radial_vector.normalized()) / radial_vector.norm();
-            //double horizon = 2 * M_PI / std::abs(emergency_rates(2));
+            // double horizon = 2 * M_PI / std::abs(emergency_rates(2));
             // Append a loiter at the end of the planned path
             PathSegment loiter_trajectory;
             generateCircle(end_position, end_velocity, home_position_, loiter_trajectory);
@@ -663,7 +637,6 @@ void TerrainPlanner::plannerloopCallback() {
       }
       publishPathSegments(path_segment_pub_, candidate_primitive_);
       break;
-
     }
     default:
       break;
@@ -753,8 +726,8 @@ PLANNER_STATE TerrainPlanner::finiteStateMachine(const PLANNER_STATE current_sta
           planner_mode_ = PLANNER_MODE::ACTIVE_MAPPING;
           next_state = query_state;
           break;
-        default:
-          break;
+          default:
+            break;
         }
       }
       break;
@@ -842,12 +815,14 @@ void TerrainPlanner::mavtwistCallback(const geometry_msgs::msg::TwistStamped &ms
   // mavRate_ = toEigen(msg.twist.angular);
 }
 
-void TerrainPlanner::MapPublishOnce(rclcpp::Publisher<grid_map_msgs::msg::GridMap>::SharedPtr pub, const grid_map::GridMap &map) {
+void TerrainPlanner::MapPublishOnce(rclcpp::Publisher<grid_map_msgs::msg::GridMap>::SharedPtr pub,
+                                    const grid_map::GridMap &map) {
   auto message = grid_map::GridMapRosConverter::toMessage(map);
   pub->publish(*message);
 }
 
-void TerrainPlanner::publishPositionHistory(rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub, const Eigen::Vector3d &position,
+void TerrainPlanner::publishPositionHistory(rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pub,
+                                            const Eigen::Vector3d &position,
                                             std::vector<geometry_msgs::msg::PoseStamped> &history_vector) {
   //! @todo(srmainwaring) provide an editor to allow this to be modified.
   //! @todo(srmainwaring) make member variable and set default in header.
@@ -866,9 +841,9 @@ void TerrainPlanner::publishPositionHistory(rclcpp::Publisher<nav_msgs::msg::Pat
   pub->publish(msg);
 }
 
-void TerrainPlanner::publishGlobalPositionSetpoints(rclcpp::Publisher<mavros_msgs::msg::GlobalPositionTarget>::SharedPtr pub, const double latitude,
-                                                    const double longitude, const double altitude,
-                                                    const Eigen::Vector3d &velocity, const double curvature) {
+void TerrainPlanner::publishGlobalPositionSetpoints(
+    rclcpp::Publisher<mavros_msgs::msg::GlobalPositionTarget>::SharedPtr pub, const double latitude,
+    const double longitude, const double altitude, const Eigen::Vector3d &velocity, const double curvature) {
   using namespace mavros_msgs;
   // Publishes position setpoints sequentially as trajectory setpoints
   mavros_msgs::msg::GlobalPositionTarget msg;
@@ -891,8 +866,9 @@ void TerrainPlanner::publishGlobalPositionSetpoints(rclcpp::Publisher<mavros_msg
   pub->publish(msg);
 }
 
-void TerrainPlanner::publishPositionSetpoints(rclcpp::Publisher<mavros_msgs::msg::PositionTarget>::SharedPtr pub, const Eigen::Vector3d &position,
-                                              const Eigen::Vector3d &velocity, const double curvature) {
+void TerrainPlanner::publishPositionSetpoints(rclcpp::Publisher<mavros_msgs::msg::PositionTarget>::SharedPtr pub,
+                                              const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
+                                              const double curvature) {
   using namespace mavros_msgs;
   // Publishes position setpoints sequentially as trajectory setpoints
   mavros_msgs::msg::PositionTarget msg;
@@ -915,14 +891,15 @@ void TerrainPlanner::publishPositionSetpoints(rclcpp::Publisher<mavros_msgs::msg
   pub->publish(msg);
 }
 
-void TerrainPlanner::publishVelocityMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, const Eigen::Vector3d &position,
-                                           const Eigen::Vector3d &velocity) {
+void TerrainPlanner::publishVelocityMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                                           const Eigen::Vector3d &position, const Eigen::Vector3d &velocity) {
   visualization_msgs::msg::Marker marker = vector2ArrowsMsg(position, velocity, 0, Eigen::Vector3d(1.0, 0.0, 1.0));
   pub->publish(marker);
 }
 
-void TerrainPlanner::publishReferenceMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, const Eigen::Vector3d &position,
-                                            const Eigen::Vector3d &velocity, const double /*curvature*/) {
+void TerrainPlanner::publishReferenceMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                                            const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
+                                            const double /*curvature*/) {
   Eigen::Vector3d scaled_velocity = 20.0 * velocity;
   visualization_msgs::msg::Marker marker =
       vector2ArrowsMsg(position, scaled_velocity, 0, Eigen::Vector3d(0.0, 0.0, 1.0), "reference");
@@ -930,7 +907,8 @@ void TerrainPlanner::publishReferenceMarker(rclcpp::Publisher<visualization_msgs
   pub->publish(marker);
 }
 
-void TerrainPlanner::publishPathSegments(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub, Path &trajectory) {
+void TerrainPlanner::publishPathSegments(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
+                                         Path &trajectory) {
   visualization_msgs::msg::MarkerArray msg;
 
   std::vector<visualization_msgs::msg::Marker> marker;
@@ -957,16 +935,18 @@ void TerrainPlanner::publishPathSegments(rclcpp::Publisher<visualization_msgs::m
   pub->publish(msg);
 }
 
-void TerrainPlanner::publishGoal(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub, const Eigen::Vector3d &position, const double radius,
-                                 Eigen::Vector3d color, std::string name_space) {
+void TerrainPlanner::publishGoal(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                                 const Eigen::Vector3d &position, const double radius, Eigen::Vector3d color,
+                                 std::string name_space) {
   visualization_msgs::msg::Marker marker;
   marker = getGoalMarker(1, position, radius, color);
   marker.ns = name_space;
   pub->publish(marker);
 }
 
-void TerrainPlanner::publishRallyPoints(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub, const std::vector<Eigen::Vector3d> &positions,
-                                        const double radius, Eigen::Vector3d color, std::string name_space) {
+void TerrainPlanner::publishRallyPoints(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
+                                        const std::vector<Eigen::Vector3d> &positions, const double radius,
+                                        Eigen::Vector3d color, std::string name_space) {
   visualization_msgs::msg::MarkerArray marker_array;
   std::vector<visualization_msgs::msg::Marker> markers;
   int marker_id = 1;
@@ -982,7 +962,7 @@ void TerrainPlanner::publishRallyPoints(rclcpp::Publisher<visualization_msgs::ms
 }
 
 visualization_msgs::msg::Marker TerrainPlanner::getGoalMarker(const int id, const Eigen::Vector3d &position,
-                                                         const double radius, const Eigen::Vector3d color) {
+                                                              const double radius, const Eigen::Vector3d color) {
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = this->get_clock()->now();
@@ -1014,12 +994,10 @@ visualization_msgs::msg::Marker TerrainPlanner::getGoalMarker(const int id, cons
   return marker;
 }
 
-void TerrainPlanner::mavstateCallback(const mavros_msgs::msg::State &msg) {
-  current_state_ = msg;
-}
+void TerrainPlanner::mavstateCallback(const mavros_msgs::msg::State &msg) { current_state_ = msg; }
 
 // Notes on the conversions used in `mavGlobalOriginCallback`
-// 
+//
 // FCU emits mavlink GPS_GLOBAL_ORIGIN (#49 ) which is a geodetic coordinate
 // with the altitude defined relative to the geoid (AMSL).
 //
@@ -1042,11 +1020,10 @@ void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::msg::GeoPoin
   double geocentric_lon = static_cast<double>(msg.position.longitude);
   double geocentric_alt = static_cast<double>(msg.position.altitude);
 
-  // convert to geodetic coordinates with WGS-84 ellipsoid as datum 
+  // convert to geodetic coordinates with WGS-84 ellipsoid as datum
   GeographicLib::Geocentric earth(GeographicLib::Constants::WGS84_a(), GeographicLib::Constants::WGS84_f());
   double geodetic_lat, geodetic_lon, geodetic_alt;
-  earth.Reverse(geocentric_lat, geocentric_lon, geocentric_alt,
-      geodetic_lat, geodetic_lon, geodetic_alt);
+  earth.Reverse(geocentric_lat, geocentric_lon, geocentric_alt, geodetic_lat, geodetic_lon, geodetic_alt);
 
   // create local cartesian coordinates (ENU)
   enu_.emplace(geodetic_lat, geodetic_lon, geodetic_alt, GeographicLib::Geocentric::WGS84());
@@ -1098,7 +1075,7 @@ void TerrainPlanner::mavMissionCallback(const mavros_msgs::msg::WaypointList &ms
   }
 }
 
-void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::msg::CameraImageCaptured &/*msg*/) {
+void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::msg::CameraImageCaptured & /*msg*/) {
   // Publish recorded viewpoints
   /// TODO: Transform image tag into local position
   int id = viewpoints_.size();
@@ -1107,10 +1084,9 @@ void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::msg::CameraImag
   // publishViewpoints(viewpoint_pub_, viewpoints_);
 }
 
-bool TerrainPlanner::setLocationCallback(
-    const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
-    std::shared_ptr<planner_msgs::srv::SetString::Response> res) {
-  //! @todo(srmainwaring) consolidate duplicate code from here and TerrainPlanner::plannerloopCallback 
+bool TerrainPlanner::setLocationCallback(const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
+                                         std::shared_ptr<planner_msgs::srv::SetString::Response> res) {
+  //! @todo(srmainwaring) consolidate duplicate code from here and TerrainPlanner::plannerloopCallback
   std::string set_location = req->string;
   bool align_location = req->align;
   std::cout << "[TerrainPlanner] Set Location: " << set_location << std::endl;
@@ -1153,9 +1129,8 @@ bool TerrainPlanner::setLocationCallback(
   return true;
 }
 
-bool TerrainPlanner::setMaxAltitudeCallback(
-    const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
-    std::shared_ptr<planner_msgs::srv::SetString::Response> res) {
+bool TerrainPlanner::setMaxAltitudeCallback(const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
+                                            std::shared_ptr<planner_msgs::srv::SetString::Response> res) {
   bool check_max_altitude = req->align;
   std::cout << "[TerrainPlanner] Max altitude constraint configured: " << check_max_altitude << std::endl;
   global_planner_->setMaxAltitudeCollisionChecks(check_max_altitude);
@@ -1163,9 +1138,8 @@ bool TerrainPlanner::setMaxAltitudeCallback(
   return true;
 }
 
-bool TerrainPlanner::setGoalCallback(
-    const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
-    std::shared_ptr<planner_msgs::srv::SetVector3::Response> res) {
+bool TerrainPlanner::setGoalCallback(const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
+                                     std::shared_ptr<planner_msgs::srv::SetVector3::Response> res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   Eigen::Vector3d candidate_goal = Eigen::Vector3d(req->vector.x, req->vector.y, req->vector.z);
   Eigen::Vector3d new_goal;
@@ -1185,9 +1159,8 @@ bool TerrainPlanner::setGoalCallback(
   }
 }
 
-bool TerrainPlanner::setStartCallback(
-    const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
-    std::shared_ptr<planner_msgs::srv::SetVector3::Response> res) {
+bool TerrainPlanner::setStartCallback(const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
+                                      std::shared_ptr<planner_msgs::srv::SetVector3::Response> res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   Eigen::Vector3d candidate_start = Eigen::Vector3d(req->vector.x, req->vector.y, req->vector.z);
   Eigen::Vector3d new_start;
@@ -1205,9 +1178,8 @@ bool TerrainPlanner::setStartCallback(
   }
 }
 
-bool TerrainPlanner::setCurrentSegmentCallback(
-    const std::shared_ptr<planner_msgs::srv::SetService::Request> /*req*/,
-    std::shared_ptr<planner_msgs::srv::SetService::Response> res) {
+bool TerrainPlanner::setCurrentSegmentCallback(const std::shared_ptr<planner_msgs::srv::SetService::Request> /*req*/,
+                                               std::shared_ptr<planner_msgs::srv::SetService::Response> res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   /// TODO: Get center of the last segment of the reference path
   if (!reference_primitive_.segments.empty()) {
@@ -1242,9 +1214,8 @@ bool TerrainPlanner::setCurrentSegmentCallback(
   return true;
 }
 
-bool TerrainPlanner::setStartLoiterCallback(
-    const std::shared_ptr<planner_msgs::srv::SetService::Request> /*req*/,
-    std::shared_ptr<planner_msgs::srv::SetService::Response> res) {
+bool TerrainPlanner::setStartLoiterCallback(const std::shared_ptr<planner_msgs::srv::SetService::Request> /*req*/,
+                                            std::shared_ptr<planner_msgs::srv::SetService::Response> res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   std::cout << "[TerrainPlanner] Current Loiter start: " << mission_loiter_center_.transpose() << std::endl;
   Eigen::Vector3d new_start;
@@ -1266,9 +1237,8 @@ bool TerrainPlanner::setStartLoiterCallback(
   }
 }
 
-bool TerrainPlanner::setPlanningCallback(
-    const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
-    std::shared_ptr<planner_msgs::srv::SetVector3::Response> res) {
+bool TerrainPlanner::setPlanningCallback(const std::shared_ptr<planner_msgs::srv::SetVector3::Request> req,
+                                         std::shared_ptr<planner_msgs::srv::SetVector3::Response> res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   planner_time_budget_ = req->vector.z;
   problem_updated_ = true;
@@ -1285,9 +1255,8 @@ bool TerrainPlanner::setPlanningCallback(
   return true;
 }
 
-bool TerrainPlanner::setPathCallback(
-    const std::shared_ptr<planner_msgs::srv::SetVector3::Request> /*req*/,
-    std::shared_ptr<planner_msgs::srv::SetVector3::Response> res) {
+bool TerrainPlanner::setPathCallback(const std::shared_ptr<planner_msgs::srv::SetVector3::Request> /*req*/,
+                                     std::shared_ptr<planner_msgs::srv::SetVector3::Response> res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
 
   if (!candidate_primitive_.segments.empty()) {
@@ -1299,9 +1268,8 @@ bool TerrainPlanner::setPathCallback(
   return true;
 }
 
-bool TerrainPlanner::setPlannerStateCallback(
-    const std::shared_ptr<planner_msgs::srv::SetPlannerState::Request> req,
-    std::shared_ptr<planner_msgs::srv::SetPlannerState::Response> res) {
+bool TerrainPlanner::setPlannerStateCallback(const std::shared_ptr<planner_msgs::srv::SetPlannerState::Request> req,
+                                             std::shared_ptr<planner_msgs::srv::SetPlannerState::Response> res) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   int planner_state = static_cast<int>(req->state);
   switch (planner_state) {

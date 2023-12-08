@@ -37,7 +37,7 @@
 #include <cmath>
 
 GeoConversions::GeoConversions() = default;
-  
+
 GeoConversions::~GeoConversions() = default;
 
 void GeoConversions::forward(const double lat, const double lon, const double alt, double &y, double &x, double &h) {
@@ -57,10 +57,10 @@ void GeoConversions::forward(const double lat, const double lon, const double al
   // 119.79 * φ'3 x [m] = N – 1000000.00
   // hCH [m] =hWGS – 49.55 + 2.73 * λ' + 6.94 * φ'
   const double E = 2600072.37 + 211455.93 * lon_aux - 10938.51 * lon_aux * lat_aux -
-                    0.36 * lon_aux * std::pow(lat_aux, 2) - 44.54 * std::pow(lon_aux, 3);
+                   0.36 * lon_aux * std::pow(lat_aux, 2) - 44.54 * std::pow(lon_aux, 3);
   y = E - 2000000.00;
   const double N = 1200147.07 + 308807.95 * lat_aux + 3745.25 * std::pow(lon_aux, 2) + 76.63 * std::pow(lat_aux, 2) -
-                    194.56 * std::pow(lon_aux, 2) * lat_aux + 119.79 * std::pow(lat_aux, 3);
+                   194.56 * std::pow(lon_aux, 2) * lat_aux + 119.79 * std::pow(lat_aux, 3);
   x = N - 1000000.00;
 
   h = alt - 49.55 + 2.73 * lon_aux + 6.84 * lat_aux;
@@ -77,11 +77,10 @@ void GeoConversions::reverse(const double y, const double x, const double h, dou
   //  λ' = 2.6779094 + 4.728982 * y' + 0.791484* y' * x' + 0.1306 * y' * x'2 - 0.0436 * y'3
   //  φ' = 16.9023892 + 3.238272 * x' - 0.270978 * y'2 - 0.002528 * x'2 - 0.0447 * y'2 * x' - 0.0140 * x'3
   // hWGS [m] = hCH + 49.55 - 12.60 * y' - 22.64 * x'
-  const double lon_aux = 2.6779094 + 4.728982 * y_aux + 0.791484 * y_aux * x_aux +
-                          0.1306 * y_aux * std::pow(x_aux, 2) - 0.0436 * std::pow(y_aux, 3);
-  const double lat_aux = 16.9023892 + 3.238272 * x_aux - 0.270978 * std::pow(y_aux, 2) -
-                          0.002528 * std::pow(x_aux, 2) - 0.0447 * std::pow(y_aux, 2) * x_aux -
-                          0.0140 * std::pow(x_aux, 3);
+  const double lon_aux = 2.6779094 + 4.728982 * y_aux + 0.791484 * y_aux * x_aux + 0.1306 * y_aux * std::pow(x_aux, 2) -
+                         0.0436 * std::pow(y_aux, 3);
+  const double lat_aux = 16.9023892 + 3.238272 * x_aux - 0.270978 * std::pow(y_aux, 2) - 0.002528 * std::pow(x_aux, 2) -
+                         0.0447 * std::pow(y_aux, 2) * x_aux - 0.0140 * std::pow(x_aux, 3);
   alt = h + 49.55 - 12.60 * y_aux - 22.64 * x_aux;
 
   lon = lon_aux * 100.0 / 36.0;
