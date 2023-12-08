@@ -42,9 +42,8 @@
 #ifndef VISUALIZATION_H
 #define VISUALIZATION_H
 
-#include <rclcpp/clock.hpp>
-
 #include <geometry_msgs/msg/point.hpp>
+#include <rclcpp/clock.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
 geometry_msgs::msg::Point toPoint(const Eigen::Vector3d &p) {
@@ -56,7 +55,7 @@ geometry_msgs::msg::Point toPoint(const Eigen::Vector3d &p) {
 }
 
 visualization_msgs::msg::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint,
-                                               Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0)) {
+                                                    Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0)) {
   double scale{15};  // Size of the viewpoint markers
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";

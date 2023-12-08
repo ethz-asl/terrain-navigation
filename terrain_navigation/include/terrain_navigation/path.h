@@ -70,7 +70,7 @@ class Path {
   void prependSegment(const PathSegment &trajectory) { segments.insert(segments.begin(), trajectory); };
   void appendSegment(const PathSegment &trajectory) { segments.push_back(trajectory); };
   void appendSegment(const Path &trajectory_segments) {
-    for (const auto& trajectory : trajectory_segments.segments) {
+    for (const auto &trajectory : trajectory_segments.segments) {
       appendSegment(trajectory);
     }
   };
