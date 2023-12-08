@@ -45,15 +45,15 @@
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/MarkerArray.h>
+
+#include <any>
+#include <chrono>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
 #include "terrain_navigation/data_logger.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner/visualization.h"
-
-#include <any>
-#include <chrono>
 
 void writeToFile(const std::string path, std::vector<Eigen::Vector3d> solution_path) {
   // Write data to files
