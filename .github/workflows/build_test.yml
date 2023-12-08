@@ -1,56 +1,46 @@
+---
 name: Build Test
 on:
   push:
     branches:
-    - 'main'
+      - 'ros2'
   pull_request:
     branches:
-    - '*'
+      - '*'
 
 jobs:
   build:
-    runs-on: [self-hosted, linux]
+    runs-on: [ubuntu-22.04]
     strategy:
       fail-fast: false
       matrix:
         config:
-          # - {rosdistro: 'melodic', container: 'px4io/px4-dev-ros-melodic:2021-12-11'}
-          - {rosdistro: 'noetic', container: 'px4io/px4-dev-ros-noetic:2021-12-11'}
+          - {rosdistro: 'humble', container: 'osrf/ros:humble-desktop'}
     container: ${{ matrix.config.container }}
     steps:
-    - uses: actions/checkout@v1
-      with:
-        token: ${{ secrets.ACCESS_TOKEN }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Install Dependencies
-      working-directory: 
-      run: |
-        apt update
-        apt install -y python3-wstool libgdal-dev ros-${{matrix.config.rosdistro}}-tf2-geometry-msgs
-      shell: bash
-    - name: Build Test
-      working-directory: 
-      run: |
-        mkdir -p $HOME/catkin_ws/src;
-        cd $HOME/catkin_ws
-        catkin init
-        catkin config --extend "/opt/ros/${{matrix.config.rosdistro}}"
-        catkin config --merge-devel
-        cd $HOME/catkin_ws/src
-        ln -s $GITHUB_WORKSPACE
-        cd $HOME/catkin_ws
-        wstool init src src/terrain-navigation/dependencies.rosinstall
-        wstool update -t src -j4
-        rosdep update
-        rosdep install --from-paths src --ignore-src -y --rosdistro ${{matrix.config.rosdistro}}
-        catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False
-        catkin build -j$(nproc) -l$(nproc) terrain_navigation_ros
-    - name: unit_tests
-      working-directory:
-      run: |
-        cd $HOME/catkin_ws/src
-        catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True
-        catkin build terrain_planner --no-deps -i --catkin-make-args tests
-        source $HOME/catkin_ws/devel/setup.bash
-        status=0 && for f in $HOME/catkin_ws/devel/lib/*/*-test; do $f || exit 1; done
-      shell: bash
+      - uses: actions/checkout@v4
+        with:
+          path: src/ethz-asl/terrain-navigation
+      - name: Check out source dependencies with vcs
+        run: |
+          vcs import --recursive --debug --shallow --skip-existing < ethz-asl/terrain-navigation/terrain-navigation.repos
+        shell: bash
+        working-directory: src
+      - name: Install binary dependencies with rosdep
+        run: |
+          apt update
+          rosdep update
+          source /opt/ros/humble/setup.bash
+          rosdep install --from-paths src --ignore-src -y --rosdistro ${{matrix.config.rosdistro}}
+        shell: bash
+      - name: Build with colcon
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-up-to terrain_navigation_ros
+        shell: bash
+      - name: Run tests
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon test --paths src/ethz-asl/terrain-navigation --event-handlers=console_cohesion+
+          colcon test-result --all --verbose
+        shell: bash

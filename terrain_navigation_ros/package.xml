@@ -40,7 +40,6 @@
   <build_depend>tf2_eigen</build_depend>
   <build_depend>yaml_cpp_vendor</build_depend>
 
-  <exec_depend>dynamic_reconfigure</exec_depend>
   <exec_depend>grid_map_visualization</exec_depend>
   <exec_depend>grid_map_rviz_plugin</exec_depend>
   <exec_depend>mav_planning_rviz</exec_depend>

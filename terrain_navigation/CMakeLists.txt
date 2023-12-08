@@ -20,11 +20,9 @@ find_package(grid_map_core REQUIRED)
 find_package(grid_map_geo REQUIRED)
 
 find_package(class_loader REQUIRED)
-find_package(console_bridge REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rosbag2_storage REQUIRED)
-find_package(tinyxml2 REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
 find_package(action_msgs REQUIRED)

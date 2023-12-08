@@ -15,7 +15,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 # list(APPEND ${PROJECT_NAME}_CONFIG_EXTRAS
 #   path/to/file.cmake"
 #   other/pathto/file.cmake"
@@ -49,6 +48,15 @@ find_package(visualization_msgs REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS serialization system filesystem)
 find_package(Eigen3 REQUIRED)
+
+if(CMAKE_SYSTEM_NAME STREQUAL Linux)
+  # Workaround for the supplied find script not being on CMake path in Ubuntu.
+  # https://bugs.launchpad.net/ubuntu/+source/geographiclib/+bug/1805173
+  if(IS_DIRECTORY /usr/share/cmake/geographiclib)
+    list(APPEND CMAKE_MODULE_PATH /usr/share/cmake/geographiclib)
+  endif()
+endif()
+
 find_package(GeographicLib REQUIRED)
 # include(CheckGeographicLibDatasets)
 
