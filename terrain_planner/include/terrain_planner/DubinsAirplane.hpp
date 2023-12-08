@@ -13,16 +13,16 @@
 #ifndef FW_PLANNING_PLANNING__SPACES__DUBINS_AIRPLANE_HPP_
 #define FW_PLANNING_PLANNING__SPACES__DUBINS_AIRPLANE_HPP_
 
+#include <ompl/base/State.h>
+#include <ompl/base/StateSpace.h>
+#include <ompl/base/spaces/RealVectorBounds.h>
+
+#include <Eigen/Dense>
 #include <chrono>
 #include <ratio>
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <ompl/base/State.h>
-#include <ompl/base/StateSpace.h>
-#include <ompl/base/spaces/RealVectorBounds.h>
-#include <Eigen/Dense>
 
 #include "terrain_planner/DubinsPath.hpp"
 

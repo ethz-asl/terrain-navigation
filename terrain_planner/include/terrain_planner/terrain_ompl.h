@@ -4,9 +4,9 @@
 #include <ompl/base/StateValidityChecker.h>
 #include <ompl/base/spaces/SE3StateSpace.h>
 
-#include "terrain_planner/DubinsAirplane.hpp"
-
 #include <grid_map_core/GridMap.hpp>
+
+#include "terrain_planner/DubinsAirplane.hpp"
 
 namespace ompl {
 
