@@ -2,16 +2,15 @@
 #ifndef MAV_PLANNING_RVIZ_GOAL_MARKER_H_
 #define MAV_PLANNING_RVIZ_GOAL_MARKER_H_
 
-#include <mutex>
+#include <visualization_msgs/msg/interactive_marker_feedback.h>
 
 #include <Eigen/Dense>
-#include <rclcpp/rclcpp.hpp>
-
-#include <grid_map_msgs/msg/grid_map.hpp>
-#include <interactive_markers/interactive_marker_server.hpp>
-#include <visualization_msgs/msg/interactive_marker_feedback.h>
 #include <grid_map_core/GridMap.hpp>
+#include <grid_map_msgs/msg/grid_map.hpp>
 #include <grid_map_ros/GridMapRosConverter.hpp>
+#include <interactive_markers/interactive_marker_server.hpp>
+#include <mutex>
+#include <rclcpp/rclcpp.hpp>
 
 class GoalMarker {
  public:

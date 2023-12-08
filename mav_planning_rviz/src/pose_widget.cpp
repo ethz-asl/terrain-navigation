@@ -1,10 +1,10 @@
+#include "mav_planning_rviz/pose_widget.h"
+
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QHeaderView>
 #include <QTableView>
 #include <QTableWidget>
-
-#include "mav_planning_rviz/pose_widget.h"
 
 namespace mav_planning_rviz {
 

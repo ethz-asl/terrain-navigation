@@ -2,16 +2,14 @@
 #define MAV_PLANNING_RVIZ_PLANNING_PANEL_H_
 
 #ifndef Q_MOC_RUN
-  //! @todo(srmainwaring) prevent race condition with async service calls
+//! @todo(srmainwaring) prevent race condition with async service calls
+#include <QGroupBox>
 #include <mutex>
-
 #include <nav_msgs/msg/odometry.hpp>
 #include <planner_msgs/msg/navigation_status.hpp>
 #include <rclcpp/rclcpp.hpp>
-
 #include <rviz_common/panel.hpp>
 
-#include <QGroupBox>
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/goal_marker.h"
 #include "mav_planning_rviz/planning_interactive_markers.h"
@@ -105,7 +103,6 @@ class PlanningPanel : public rviz_common::Panel {
 
   //! @todo(srmainwaring) prevent race condition with async service calls
   std::mutex node_mutex_;  // protects node_
-
 
   // QT stuff:
   QLineEdit* namespace_editor_;

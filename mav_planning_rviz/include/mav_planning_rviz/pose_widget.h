@@ -2,11 +2,11 @@
 #define MAV_PLANNING_RVIZ_POSE_WIDGET_H_
 
 #ifndef Q_MOC_RUN
-#include <mav_msgs/eigen_mav_msgs.hpp>
 #include <QItemDelegate>
 #include <QLineEdit>
 #include <QStringList>
 #include <QTableWidget>
+#include <mav_msgs/eigen_mav_msgs.hpp>
 #endif
 
 class QLineEdit;

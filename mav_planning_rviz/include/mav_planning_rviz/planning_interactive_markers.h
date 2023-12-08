@@ -2,12 +2,10 @@
 #define MAV_PLANNING_RVIZ_PLANNING_INTERACTIVE_MARKERS_H_
 
 #include <functional>
-
 #include <interactive_markers/interactive_marker_server.hpp>
-#include <rclcpp/rclcpp.hpp>
-
 #include <mav_msgs/conversions.hpp>
 #include <mav_msgs/eigen_mav_msgs.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 namespace mav_planning_rviz {
 
@@ -22,9 +20,7 @@ class PlanningInteractiveMarkers {
   void setFrameId(const std::string& frame_id);
   // Bind callback for whenever pose updates.
 
-  void setPoseUpdatedCallback(const PoseUpdatedFunctionType& function) {
-      pose_updated_function_ = function;
-  }
+  void setPoseUpdatedCallback(const PoseUpdatedFunctionType& function) { pose_updated_function_ = function; }
 
   void initialize();
 
