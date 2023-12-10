@@ -257,11 +257,8 @@ class TerrainPlanner : public rclcpp::Node {
   std::mutex goal_mutex_;  // protects g_i
 
   std::vector<Eigen::Vector3d> vehicle_position_history_;
-  std::vector<ViewPoint> added_viewpoint_list;
-  std::vector<ViewPoint> planned_viewpoint_list;
   std::vector<geometry_msgs::msg::PoseStamped> posehistory_vector_;
   std::vector<geometry_msgs::msg::PoseStamped> referencehistory_vector_;
-  std::vector<ViewPoint> viewpoints_;
   Eigen::Vector3d vehicle_position_{Eigen::Vector3d::Zero()};
   Eigen::Vector3d vehicle_velocity_{Eigen::Vector3d::Zero()};
   Eigen::Vector4d vehicle_attitude_{Eigen::Vector4d(1.0, 0.0, 0.0, 0.0)};
