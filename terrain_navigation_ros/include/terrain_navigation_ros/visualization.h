@@ -34,8 +34,6 @@
 #ifndef TERRAIN_NAVIGATION_ROS_VISUALIZATION_H
 #define TERRAIN_NAVIGATION_ROS_VISUALIZATION_H
 
-#include <terrain_navigation/viewpoint.h>
-
 #include <Eigen/Dense>
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/pose.hpp>
@@ -52,15 +50,5 @@ geometry_msgs::msg::Point toPoint(const Eigen::Vector3d &p);
 void publishVehiclePose(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
                         const Eigen::Vector3d &position, const Eigen::Vector4d &attitude,
                         std::string mesh_resource_path);
-
-visualization_msgs::msg::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint,
-                                                    Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0));
-
-void publishCameraView(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
-                       const Eigen::Vector3d &position, const Eigen::Vector4d &attitude);
-
-void publishViewpoints(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
-                       std::vector<ViewPoint> &viewpoint_vector,
-                       Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0));
 
 #endif
