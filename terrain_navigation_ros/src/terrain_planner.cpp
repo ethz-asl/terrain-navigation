@@ -291,53 +291,6 @@ void TerrainPlanner::cmdloopCallback() {
       publishPositionHistory(referencehistory_pub_, reference_position, referencehistory_vector_);
       tracking_error_ = reference_position - vehicle_position_;
       planner_enabled_ = true;
-
-      if ((this->get_clock()->now() - last_triggered_time_).nanoseconds() * 1.0E9 > 2.0 && planner_mode_ == PLANNER_MODE::ACTIVE_MAPPING) {
-        bool dummy_camera = false;
-        if (dummy_camera) {
-          const int id = viewpoints_.size() + added_viewpoint_list.size();
-          ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
-          added_viewpoint_list.push_back(viewpoint);
-        } else {
-          /// TODO: Trigger camera when viewpoint reached
-          /// This can be done using the mavlink message MAV_CMD_IMAGE_START_CAPTURE
-          auto image_capture_req = std::make_shared<mavros_msgs::srv::CommandLong::Request>();
-          image_capture_req->command = mavros_msgs::msg::CommandCode::DO_DIGICAM_CONTROL;
-          image_capture_req->param1 = 0;  // id
-          image_capture_req->param2 = 0;  // interval
-          image_capture_req->param3 = 0;  // total images
-          image_capture_req->param4 = 0;  // sequence number
-          image_capture_req->param5 = 1;  // sequence number
-          image_capture_req->param6 = 0;  // sequence number
-          image_capture_req->param7 = 0;  // sequence number
-
-          while (!msginterval_serviceclient_->wait_for_service(1s)) {
-            RCLCPP_WARN_STREAM(this->get_logger(), "Service ["
-                << msginterval_serviceclient_->get_service_name()
-                << "] not available.");
-            return;
-          }
-
-          auto result = msginterval_serviceclient_->async_send_request(image_capture_req);
-
-          if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result) != rclcpp::FutureReturnCode::SUCCESS)
-          {
-            RCLCPP_ERROR_STREAM(this->get_logger(), "Call to service ["
-                << msginterval_serviceclient_->get_service_name()
-                << "] failed.");
-            return;
-          }
-        }
-        /// TODO: Get reference attitude from path reference states
-        const double pitch = std::atan(reference_tangent(2) / reference_tangent.head(2).norm());
-        const double yaw = std::atan2(-reference_tangent(1), reference_tangent(0));
-        const double roll = std::atan(-reference_curvature * std::pow(cruise_speed_, 2) / 9.81);
-        Eigen::Vector4d reference_attitude = rpy2quaternion(roll, -pitch, -yaw);
-        const int id = viewpoints_.size() + planned_viewpoint_list.size();
-        ViewPoint viewpoint(id, reference_position, reference_attitude);
-        planned_viewpoint_list.push_back(viewpoint);
-        last_triggered_time_ = this->get_clock()->now();
-      }
     } else {
       tracking_error_ = Eigen::Vector3d::Zero();
       planner_enabled_ = false;
@@ -357,7 +310,6 @@ void TerrainPlanner::cmdloopCallback() {
   publishVehiclePose(vehicle_pose_pub_, vehicle_position_, vehicle_attitude_, mesh_resource_path_);
   publishVelocityMarker(vehicle_velocity_pub_, vehicle_position_, vehicle_velocity_);
   publishPositionHistory(posehistory_pub_, vehicle_position_, posehistory_vector_);
-  publishCameraView(vehicle_pose_pub_, vehicle_position_, vehicle_attitude_);
 }
 
 void TerrainPlanner::statusloopCallback() {
@@ -590,9 +542,6 @@ void TerrainPlanner::plannerloopCallback() {
   // double planner_time = planner_profiler_->toc();
   publishTrajectory(reference_primitive_.position());
   // publishGoal(goal_pub_, goal_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
-
-  publishViewpoints(viewpoint_pub_, viewpoints_, Eigen::Vector3d(0.0, 1.0, 0.0));
-  publishViewpoints(planned_viewpoint_pub_, planned_viewpoint_list, Eigen::Vector3d(1.0, 1.0, 0.0));
 }
 
 PLANNER_STATE TerrainPlanner::finiteStateMachine(const PLANNER_STATE current_state, const PLANNER_STATE query_state) {
@@ -1012,15 +961,6 @@ void TerrainPlanner::mavMissionCallback(const mavros_msgs::msg::WaypointList &ms
       break;
     }
   }
-}
-
-void TerrainPlanner::mavImageCapturedCallback(const mavros_msgs::msg::CameraImageCaptured &/*msg*/) {
-  // Publish recorded viewpoints
-  /// TODO: Transform image tag into local position
-  int id = viewpoints_.size();
-  ViewPoint viewpoint(id, vehicle_position_, vehicle_attitude_);
-  viewpoints_.push_back(viewpoint);
-  // publishViewpoints(viewpoint_pub_, viewpoints_);
 }
 
 bool TerrainPlanner::setLocationCallback(
