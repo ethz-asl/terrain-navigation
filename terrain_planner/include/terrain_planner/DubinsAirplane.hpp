@@ -91,24 +91,6 @@ namespace spaces {
  */
 class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
  private:
-  /** THRESHOLD_DISTANCE_GOAL_SQUARED
-   * Threshold for the maximum allowed squared distance to goal.
-   * Used for the computation of the dubins path in the wind where the
-   * optimal path is determined iteratively.
-   *
-   * @note: A too low number might lead to slow computation of the dubins path.
-   */
-  const double THRESHOLD_DISTANCE_GOAL_SQUARED = sqrt(3);
-
-  /** MAX_ITER
-   * Maximum number of allowed iterations in the dubins path
-   * computation with wind.
-   *
-   * @note: A too low number speeds up the computation in general but leads
-   * to more failed attemps of dubins path computation.
-   */
-  const int MAX_ITER = 12;
-
   bool enable_classification_{true};
 
  public:
@@ -218,7 +200,7 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    * @param[in] gam: The maximum climb angle of the airplane.
    * @param[in] useEuclDist: If true the euclidian distance is used, else the dubins airplane distance.
    */
-  DubinsAirplaneStateSpace(double turningRadius = 66.66667, double gam = 0.15, bool useEuclDist = false);
+  DubinsAirplaneStateSpace(double turningRadius = 66.66667, double gam = 0.15);
 
   /** \brief Destructor */
   virtual ~DubinsAirplaneStateSpace();
@@ -250,11 +232,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    * Returns the length of the (non-optimal) Dubins airplane path connecting \a state1 and \a state2.
    */
   virtual double distance(const ob::State* state1, const ob::State* state2) const override;
-
-  /** \brief euclidean_distance
-   * Returns distance with is an approximation to the dubins airplane path between \a state1 and \a state2.
-   */
-  double euclidean_distance(const ob::State* state1, const ob::State* state2) const;
 
   /** \brief dubins
    * Compute the (non-optimal) Dubins airplane path from SE(2)xR3 state state1 to SE(2)xR3 state state2
@@ -366,43 +343,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    * \note The optimal dubins airplane paths do not work at the moment.
    */
   void setUseOptStSp(bool useOptStSp);
-
-  /** \brief setUseEuclideanDistance
-   * Set the value of useEuclideanDistance_ which defines whether the euclidean distance
-   * is computed or the dubins airplane distance.
-   */
-  void setUseEuclideanDistance(bool useEuclDist);
-
-  /** \brief getUseEuclideanDistance
-   * Return if the euclidean distance is computed instead of the
-   * dubins airplane distance (useEuclideanDistance_).
-   */
-  bool getUseEuclideanDistance() const;
-
-  /** \brief setUseWind
-   * Set if the wind should be used to compute the path from one state to another.
-   */
-  void setUseWind(bool useWind);
-
-  /** \brief getUseWind
-   * Get the value of useWind.
-   */
-  bool getUseWind() const;
-
-  /** \brief dubinsWindPrintXthError_
-   * Set the value of dubinsWindPrintXthError_.
-   */
-  void setDubinsWindPrintXthError(int print_xth_error);
-
-  /** \brief setMeteoGrid
-   * Set the meteo grid.
-   */
-  // void setMeteoGrid(const std::shared_ptr<base::MeteoGridClass>& meteoGrid);
-
-  /** \brief getMeteoGrid
-   * Return the meteo grid.
-   */
-  // std::shared_ptr<base::MeteoGridClass> getMeteoGrid() const;
 
   /** \brief isMetricSpace
    * Return if the state space is metric.
@@ -565,19 +505,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    * @param[in] k: Number of circles in the helix.
    */
   double computeOptRratio(double fabsHdist, double L, double fabsTanGamma, int k) const;
-
-  /** \brief interpolateWithWind
-   * Calculates the \a state in between \a from and \a to after a fraction of \a t of the length of the known
-   * (non-optimal) Dubins airplane path \a path with wind.
-   *
-   * @param[in] from: Start state of the path.
-   * @param[in] path: Known dubins airplane path.
-   * @param[in] segmentStarts: Known starts of the segments of the dubins airplane path.
-   * @param[in] t: Fraction of the length of the path.
-   * @param[out] state: Interpolated state.
-   */
-  virtual void interpolateWithWind(const ob::State* from, const DubinsPath& path, const SegmentStarts& segmentStarts,
-                                   double t, ob::State* state) const;
 
   /** \brief calculateSegmentStarts
    * Calculates the segment starts of the input
@@ -748,11 +675,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    * Use optimal State Space. Optimal State Space is not working properly yet */
   bool optimalStSp_;
 
-  /** \brief dubinsWindPrintXthError_
-   * Print a error message if the dubins path with wind failed to compute a multiple of dubinsWindPrintXthError_
-   * times.*/
-  int dubinsWindPrintXthError_;
-
   /** \brief meteoGrid_
    * Shared pointer of the meteo grid. */
   // std::shared_ptr<base::MeteoGridClass> meteoGrid_;
@@ -760,12 +682,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
   /** \brief dp_
    * (Non-optimal) Dubins airplane path used for distance computations, for savings in computational cost   */
   mutable DubinsPath dp_;
-
-  /** \brief useEuclideanDistance
-   * Use a modified euclidean distance for distance queries during planning.
-   * This can be used is instead of using a distance function defined as the length of the
-   * (non-optimal) Dubins airplane path. */
-  mutable bool useEuclideanDistance_;
 
   /** \brief csc_ctr_
    * Number of cases a path of the type csc is computed as the optimal path between two states.
@@ -787,35 +703,9 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    * Just used for testing/debugging. */
   mutable int short_ctr_;
 
-  /** \brief dp_failed_ctr_
-   * Number of times the computation of a dubins path with wind failed.
-   * Just used for testing/debugging. */
-  mutable int dp_failed_ctr_;
-
-  /** \brief dp_failed_xy_wind_ctr_
-   * Number of times the computation of a dubins path with wind failed because of too strong
-   * wind in xy direction.
-   * Just used for testing/debugging. */
-  mutable int dp_failed_xy_wind_ctr_;
-
-  /** \brief dp_failed_z_wind_ctr_
-   * Number of times the computation of a dubins path with wind failed because of too strong
-   * wind in z direction.
-   * Just used for testing/debugging. */
-  mutable int dp_failed_z_wind_ctr_;
-
-  /** \brief dp_success_ctr_
-   * Number of times the computation of a dubins path with wind was successful.
-   * Just used for testing/debugging. */
-  mutable int dp_success_ctr_;
-
   /** \brief stateInterpolation_
    * Variable to store an intermediate result (state) in the interpolate function.*/
   mutable StateType* stateInterpolation_;
-
-  /** \brief CWD_meteoData_
-   * Variable to store an intermediate result (meteo data) in the compute wind drift function.*/
-  // mutable fw_planning_comm::MeteoData CWD_meteoData_;
 
   /** \brief duration_distance_
    * Duration spent computing the distance between two states.
@@ -829,10 +719,6 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
   /** \brief duration_interpolate_motionValidator_
    * Duration spent doing the interpolation for the motion validator. */
   mutable double duration_interpolate_motionValidator_;
-
-  /** \brief duration_get_wind_drift_
-   * Duration spent doing the calculation for the wind drift. */
-  mutable double duration_get_wind_drift_;
 
   // variables use to store intermediate result in the interpolation function
   mutable double interpol_seg_;
