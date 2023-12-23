@@ -22,6 +22,7 @@
   <build_depend>grid_map_pcl</build_depend>
   <build_depend>grid_map_geo</build_depend>
   <build_depend>terrain_navigation</build_depend>
+  <build_depend>terrain_navigation_ros</build_depend>
   <build_depend>ompl</build_depend>
   <build_depend>terrain_planner</build_depend>
   <run_depend>eigen_catkin</run_depend>

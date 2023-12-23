@@ -6,6 +6,7 @@ add_definitions(-std=c++17 -Wall)
 find_package(GDAL)
 find_package(OpenCV REQUIRED)
 find_package(ompl REQUIRED)
+find_package(Boost REQUIRED COMPONENTS serialization system filesystem)
 
 find_package(catkin REQUIRED COMPONENTS
     eigen_catkin
@@ -17,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
     grid_map_geo
     terrain_navigation
     terrain_planner
+    terrain_navigation_ros
 )
 
 catkin_package(
