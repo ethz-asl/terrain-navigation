@@ -124,7 +124,7 @@ void DubinsAirplaneStateSpace::StateType::printState(const std::string& msg) con
 /*- DubinsAirplaneStateSpace: Protected Functions-----------------------------------------------*/
 /*-----------------------------------------------------------------------------------------------*/
 
-DubinsAirplaneStateSpace::DubinsAirplaneStateSpace(double turningRadius, double gam, bool useEuclDist)
+DubinsAirplaneStateSpace::DubinsAirplaneStateSpace(double turningRadius, double gam)
     : ob::CompoundStateSpace(),
       rho_(turningRadius),
       curvature_(1.0 / turningRadius),
@@ -134,21 +134,14 @@ DubinsAirplaneStateSpace::DubinsAirplaneStateSpace(double turningRadius, double 
       sin_gammaMax_(sin(gam)),
       one_div_sin_gammaMax_(1.0 / sin(gam)),
       optimalStSp_(false),
-      dubinsWindPrintXthError_(1000000),
       dp_(),
-      useEuclideanDistance_(useEuclDist),
       csc_ctr_(0),
       ccc_ctr_(0),
       long_ctr_(0),
       short_ctr_(0),
-      dp_failed_ctr_(0),
-      dp_failed_xy_wind_ctr_(0),
-      dp_failed_z_wind_ctr_(0),
-      dp_success_ctr_(0),
       duration_distance_(0.0),
       duration_interpolate_(0.0),
       duration_interpolate_motionValidator_(0.0),
-      duration_get_wind_drift_(0.0),
       interpol_seg_(0.0),
       interpol_tanGamma_(0.0),
       interpol_phiStart_(0.0),
@@ -185,50 +178,19 @@ double DubinsAirplaneStateSpace::getEuclideanExtent() const {
 }
 
 unsigned int DubinsAirplaneStateSpace::validSegmentCount(const ob::State* state1, const ob::State* state2) const {
-  if (!useEuclideanDistance_) {
-    double dist = distance(state1, state2);
-    if (std::isnan(dist))
-      return 0u;
-    else
-      return longestValidSegmentCountFactor_ * (unsigned int)ceil(dist / longestValidSegment_);
-  } else {
-    // still compute the dubins airplane distance.
-    useEuclideanDistance_ = false;
-    unsigned int nd =
-        longestValidSegmentCountFactor_ * (unsigned int)ceil(distance(state1, state2) / longestValidSegment_);
-    useEuclideanDistance_ = true;
-    return nd;
-  }
+  double dist = distance(state1, state2);
+  if (std::isnan(dist))
+    return 0u;
+  else
+    return longestValidSegmentCountFactor_ * (unsigned int)ceil(dist / longestValidSegment_);
 }
 
 double DubinsAirplaneStateSpace::distance(const ob::State* state1, const ob::State* state2) const {
-  if (useEuclideanDistance_) {
-    return euclidean_distance(state1, state2);
-  } else {
-    dubins(state1, state2, dp_);
+  dubins(state1, state2, dp_);
 
-    const double dist = rho_ * dp_.length_3D();
+  const double dist = rho_ * dp_.length_3D();
 
-    return dist;
-  }
-}
-
-double DubinsAirplaneStateSpace::euclidean_distance(const ob::State* state1, const ob::State* state2) const {
-  const DubinsAirplaneStateSpace::StateType* dubinsAirplane2State1 = state1->as<DubinsAirplaneStateSpace::StateType>();
-  const DubinsAirplaneStateSpace::StateType* dubinsAirplane2State2 = state2->as<DubinsAirplaneStateSpace::StateType>();
-
-  double eucl_dist = ((dubinsAirplane2State1->getX() - dubinsAirplane2State2->getX()) *
-                      (dubinsAirplane2State1->getX() - dubinsAirplane2State2->getX())) +
-                     ((dubinsAirplane2State1->getY() - dubinsAirplane2State2->getY()) *
-                      (dubinsAirplane2State1->getY() - dubinsAirplane2State2->getY())) +
-                     ((dubinsAirplane2State1->getZ() - dubinsAirplane2State2->getZ()) *
-                      (dubinsAirplane2State1->getZ() - dubinsAirplane2State2->getZ()));
-
-  eucl_dist = sqrtf(eucl_dist);
-
-  const double dub_dist = fabs(dubinsAirplane2State1->getZ() - dubinsAirplane2State2->getZ()) * one_div_sin_gammaMax_;
-
-  return std::max(eucl_dist, dub_dist);
+  return dist;
 }
 
 void DubinsAirplaneStateSpace::interpolate(const ob::State* from, const ob::State* to, const double t,
@@ -317,14 +279,6 @@ double DubinsAirplaneStateSpace::getCurvature() const { return curvature_; }
 
 void DubinsAirplaneStateSpace::setUseOptStSp(bool useOptStSp) { optimalStSp_ = useOptStSp; }
 
-void DubinsAirplaneStateSpace::setUseEuclideanDistance(bool useEuclDist) { useEuclideanDistance_ = useEuclDist; }
-
-void DubinsAirplaneStateSpace::setDubinsWindPrintXthError(int print_xth_error) {
-  dubinsWindPrintXthError_ = print_xth_error;
-}
-
-bool DubinsAirplaneStateSpace::getUseEuclideanDistance() const { return useEuclideanDistance_; }
-
 bool DubinsAirplaneStateSpace::isMetricSpace() const { return false; }
 
 bool DubinsAirplaneStateSpace::hasSymmetricDistance() const { return false; }
@@ -353,7 +307,6 @@ void DubinsAirplaneStateSpace::printStateSpaceProperties() const {
   std::cout << "DubinsAirplaneStateSpace [" << getName() << "]" << std::endl;
   std::cout << "  !!! This state space is asymmetric !!!" << std::endl;
   std::cout << "  Airplane speed relative to ground:  9 m/s" << std::endl;
-  std::cout << "  Euclidean Distance: " << useEuclideanDistance_ << std::endl;
   std::cout << "  Minimum turning radius: " << rho_ << " m" << std::endl;
   std::cout << "  Maximum climbing angle: " << gammaMax_ << " radian" << std::endl;
   std::cout << "  Using optimal Dubins airplane paths (not working properly): " << optimalStSp_ << std::endl;
@@ -376,24 +329,6 @@ void DubinsAirplaneStateSpace::printCtrs() const {
   std::cout << "Number samples resulting in a short  path: " << short_ctr_
             << " (in %: " << double(short_ctr_) / double(long_ctr_ + short_ctr_) << " )" << std::endl
             << std::endl;
-
-  if ((dp_failed_ctr_ != 0) || (dp_success_ctr_ != 0)) {
-    std::cout << "Number of times failed to compute a path in wind:  " << dp_failed_ctr_
-              << " (in %: " << double(dp_failed_ctr_) / double(dp_failed_ctr_ + dp_success_ctr_) << " )" << std::endl;
-    if (dp_failed_ctr_) {
-      std::cout << "    Not converged:                   "
-                << dp_failed_ctr_ - dp_failed_xy_wind_ctr_ - dp_failed_z_wind_ctr_ << " (in %: "
-                << double(dp_failed_ctr_ - dp_failed_xy_wind_ctr_ - dp_failed_z_wind_ctr_) / double(dp_failed_ctr_)
-                << " )" << std::endl;
-      std::cout << "    Too strong wind in xy-direction: " << dp_failed_xy_wind_ctr_
-                << " (in %: " << double(dp_failed_xy_wind_ctr_) / double(dp_failed_ctr_) << " )" << std::endl;
-      std::cout << "    Too strong wind in z-direction:  " << dp_failed_z_wind_ctr_
-                << " (in %: " << double(dp_failed_z_wind_ctr_) / double(dp_failed_ctr_) << " )" << std::endl;
-    }
-    std::cout << "Number of times successfully computed a path in wind:  " << dp_success_ctr_
-              << " (in %: " << double(dp_success_ctr_) / double(dp_failed_ctr_ + dp_success_ctr_) << " )" << std::endl
-              << std::endl;
-  }
 }
 
 void DubinsAirplaneStateSpace::printDurations() {
@@ -405,8 +340,6 @@ void DubinsAirplaneStateSpace::printDurations() {
       << "  total time in secs in interpolate function called in checkMotion function of the DubinsMotionValidator "
          "class (for DubinsAirplaneStateSpace, this  time is contained in the time of checkMotion): "
       << duration_interpolate_motionValidator_ << " s" << std::endl;
-  std::cout << "  total time in secs in calculate wind drift function: " << duration_get_wind_drift_ << " s"
-            << std::endl;
   std::cout << std::endl << std::endl;
 }
 
@@ -415,17 +348,12 @@ void DubinsAirplaneStateSpace::resetCtrs() {
   ccc_ctr_ = 0;
   long_ctr_ = 0;
   short_ctr_ = 0;
-  dp_failed_ctr_ = 0;
-  dp_failed_xy_wind_ctr_ = 0;
-  dp_failed_z_wind_ctr_ = 0;
-  dp_success_ctr_ = 0;
 }
 
 void DubinsAirplaneStateSpace::resetDurations() {
   duration_distance_ = 0.0;
   duration_interpolate_ = 0.0;
   duration_interpolate_motionValidator_ = 0.0;
-  duration_get_wind_drift_ = 0.0;
 }
 
 void DubinsAirplaneStateSpace::printDurationsAndCtrs() {
@@ -1139,12 +1067,6 @@ void DubinsAirplaneStateSpace::interpolate(const DubinsPath& path, const Segment
   std::cout << "This should never happen, otherwise something wrong in the DubinsAirplaneStateSpace::interpolate"
                "(const ob::State *from, const DubinsPath &path, double t, ob::State *state) const function.";
   return;
-}
-
-void DubinsAirplaneStateSpace::interpolateWithWind(const ob::State* from, const DubinsPath& path,
-                                                   const SegmentStarts& segmentStarts, double t,
-                                                   ob::State* state) const {
-  interpolate(path, segmentStarts, t, state);
 }
 
 void DubinsAirplaneStateSpace::calculateSegmentStarts(const ob::State* from, const DubinsPath& path,
