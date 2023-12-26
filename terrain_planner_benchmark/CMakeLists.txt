@@ -106,3 +106,9 @@ add_executable(test_ompl_dubins_to_circle
 )
 add_dependencies(test_ompl_dubins_to_circle ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_ompl_dubins_to_circle ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+
+add_executable(test_rrt_hybrid_vtol
+  src/test_rrt_hybrid_vtol.cpp
+)
+add_dependencies(test_rrt_hybrid_vtol ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_rrt_hybrid_vtol ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})

@@ -73,7 +73,7 @@ class TerrainOmplRrt {
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal) {
     this->setupProblem(
         start_pos, goal,
-        problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius());
+        problem_setup_->getStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->getMinTurningRadius());
   };
 
   /**
@@ -175,21 +175,21 @@ class TerrainOmplRrt {
   bool getSolutionPath(std::vector<Eigen::Vector3d>& path);
   double getSolutionTime() { return solve_duration_; };
   static Eigen::Vector3d dubinsairplanePosition(ompl::base::State* state_ptr) {
-    Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
-                             state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
-                             state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
+    Eigen::Vector3d position(state_ptr->as<fw_planning::spaces::HybridAirplaneStateSpace::StateType>()->getX(),
+                             state_ptr->as<fw_planning::spaces::HybridAirplaneStateSpace::StateType>()->getY(),
+                             state_ptr->as<fw_planning::spaces::HybridAirplaneStateSpace::StateType>()->getZ());
     return position;
   }
   static double dubinsairplaneYaw(ompl::base::State* state_ptr) {
-    double yaw = state_ptr->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getYaw();
+    double yaw = state_ptr->as<fw_planning::spaces::HybridAirplaneStateSpace::StateType>()->getYaw();
     return yaw;
   }
-  static inline void segmentStart2omplState(fw_planning::spaces::DubinsAirplaneStateSpace::SegmentStarts::Start start,
+  static inline void segmentStart2omplState(fw_planning::spaces::HybridAirplaneStateSpace::SegmentStarts::Start start,
                                             ompl::base::State* state) {
-    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(start.x);
-    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(start.y);
-    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start.z);
-    state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start.yaw);
+    state->as<fw_planning::spaces::HybridAirplaneStateSpace::StateType>()->setX(start.x);
+    state->as<fw_planning::spaces::HybridAirplaneStateSpace::StateType>()->setY(start.y);
+    state->as<fw_planning::spaces::HybridAirplaneStateSpace::StateType>()->setZ(start.z);
+    state->as<fw_planning::spaces::HybridAirplaneStateSpace::StateType>()->setYaw(start.yaw);
   }
   void setAltitudeLimits(const double max_altitude, const double min_altitude) {
     max_altitude_ = max_altitude;

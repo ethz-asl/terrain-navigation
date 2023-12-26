@@ -37,7 +37,7 @@
 // Constructor
 TerrainOmplRrt::TerrainOmplRrt() {
   problem_setup_ =
-      std::make_shared<ompl::OmplSetup>(ompl::base::StateSpacePtr(new fw_planning::spaces::DubinsAirplaneStateSpace()));
+      std::make_shared<ompl::OmplSetup>(ompl::base::StateSpacePtr(new fw_planning::spaces::HybridAirplaneStateSpace()));
 }
 TerrainOmplRrt::TerrainOmplRrt(const ompl::base::StateSpacePtr& space) {
   problem_setup_ = std::make_shared<ompl::OmplSetup>(space);
@@ -67,7 +67,7 @@ void TerrainOmplRrt::configureProblem() {
   bounds.setHigh(2, upper_bound_.z());
 
   // Define start and goal positions.
-  problem_setup_->getGeometricComponentStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->setBounds(
+  problem_setup_->getGeometricComponentStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->setBounds(
       bounds);
 
   problem_setup_->setStateValidityCheckingResolution(0.001);
@@ -79,10 +79,10 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
                                   double start_loiter_radius) {
   configureProblem();
   double radius =
-      problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
+      problem_setup_->getStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->getMinTurningRadius();
   double delta_theta = 0.1;
   for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
-    ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
+    ompl::base::ScopedState<fw_planning::spaces::HybridAirplaneStateSpace> start_ompl(
         problem_setup_->getSpaceInformation());
 
     start_ompl->setX(start_pos(0) + std::abs(start_loiter_radius) * std::cos(theta));
@@ -91,12 +91,13 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
     double start_yaw = bool(start_loiter_radius > 0) ? theta - M_PI_2 : theta + M_PI_2;
     wrap_pi(start_yaw);
     start_ompl->setYaw(start_yaw);
+    start_ompl->setHybrid(0.0);
     problem_setup_->addStartState(start_ompl);
   }
 
   goal_states_ = std::make_shared<ompl::base::GoalStates>(problem_setup_->getSpaceInformation());
   for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
-    ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
+    ompl::base::ScopedState<fw_planning::spaces::HybridAirplaneStateSpace> goal_ompl(
         problem_setup_->getSpaceInformation());
     goal_ompl->setX(goal(0) + radius * std::cos(theta));
     goal_ompl->setY(goal(1) + radius * std::sin(theta));
@@ -108,6 +109,7 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
     goal_yaw = theta - M_PI_2;
     wrap_pi(goal_yaw);
     goal_ompl->setYaw(goal_yaw);
+    goal_ompl->setHybrid(0.0);
     goal_states_->addState(goal_ompl);  // Add additional state for bidirectional tangents
   }
   problem_setup_->setGoal(goal_states_);
@@ -125,12 +127,12 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   double radius;
   if (goal_radius < 0) {
     radius =
-        problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
+        problem_setup_->getStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->getMinTurningRadius();
   } else {
     radius = goal_radius;
   }
   double delta_theta = 0.1;
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
+  ompl::base::ScopedState<fw_planning::spaces::HybridAirplaneStateSpace> start_ompl(
       problem_setup_->getSpaceInformation());
 
   start_ompl->setX(start_pos(0));
@@ -143,7 +145,7 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
 
   goal_states_ = std::make_shared<ompl::base::GoalStates>(problem_setup_->getSpaceInformation());
   for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
-    ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
+    ompl::base::ScopedState<fw_planning::spaces::HybridAirplaneStateSpace> goal_ompl(
         problem_setup_->getSpaceInformation());
     goal_ompl->setX(goal(0) + radius * std::cos(theta));
     goal_ompl->setY(goal(1) + radius * std::sin(theta));
@@ -171,9 +173,9 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   configureProblem();
 
   double radius =
-      problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
+      problem_setup_->getStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->getMinTurningRadius();
   double delta_theta = 0.1;
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
+  ompl::base::ScopedState<fw_planning::spaces::HybridAirplaneStateSpace> start_ompl(
       problem_setup_->getSpaceInformation());
 
   start_ompl->setX(start_pos(0));
@@ -187,7 +189,7 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   goal_states_ = std::make_shared<ompl::base::GoalStates>(problem_setup_->getSpaceInformation());
   for (auto& goal : goal_positions) {
     for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
-      ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
+      ompl::base::ScopedState<fw_planning::spaces::HybridAirplaneStateSpace> goal_ompl(
           problem_setup_->getSpaceInformation());
       goal_ompl->setX(goal(0) + radius * std::cos(theta));
       goal_ompl->setY(goal(1) + radius * std::sin(theta));
@@ -211,9 +213,9 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
                                   const Eigen::Vector3d& goal, const Eigen::Vector3d& goal_vel) {
   configureProblem();
 
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
+  ompl::base::ScopedState<fw_planning::spaces::HybridAirplaneStateSpace> start_ompl(
       problem_setup_->getSpaceInformation());
-  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
+  ompl::base::ScopedState<fw_planning::spaces::HybridAirplaneStateSpace> goal_ompl(
       problem_setup_->getSpaceInformation());
 
   start_ompl->setX(start_pos(0));
@@ -227,6 +229,7 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   goal_ompl->setZ(goal(2));
   double goal_yaw = std::atan2(goal_vel(1), goal_vel(0));
   goal_ompl->setYaw(goal_yaw);
+  goal_ompl->setHybrid(0.0);
 
   problem_setup_->setStartAndGoalStates(start_ompl, goal_ompl);
   problem_setup_->setup();
@@ -325,11 +328,11 @@ double TerrainOmplRrt::getSegmentCurvature(std::shared_ptr<ompl::OmplSetup> prob
                                            fw_planning::spaces::DubinsPath& dubins_path, const size_t start_idx) const {
   double segment_curvature{0.0};
   double maximum_curvature = 1 / problem_setup->getGeometricComponentStateSpace()
-                                     ->as<fw_planning::spaces::DubinsAirplaneStateSpace>()
+                                     ->as<fw_planning::spaces::HybridAirplaneStateSpace>()
                                      ->getMinTurningRadius();
   switch (
       dubins_path
-          .getType()[problem_setup->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->convert_idx(
+          .getType()[problem_setup->getStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->convert_idx(
               start_idx)]) {
     case fw_planning::spaces::DubinsPath::DUBINS_LEFT:
       segment_curvature = maximum_curvature;
@@ -353,9 +356,9 @@ void TerrainOmplRrt::solutionPathToPath(ompl::geometric::PathGeometric path, Pat
     auto from = state_vector[idx];    // Start of the segment
     auto to = state_vector[idx + 1];  // End of the segment
     fw_planning::spaces::DubinsPath dubins_path;
-    problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->dubins(from, to, dubins_path);
-    fw_planning::spaces::DubinsAirplaneStateSpace::SegmentStarts segmentStarts;
-    problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->calculateSegments(
+    problem_setup_->getStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->dubins(from, to, dubins_path);
+    fw_planning::spaces::HybridAirplaneStateSpace::SegmentStarts segmentStarts;
+    problem_setup_->getStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->calculateSegments(
         from, to, dubins_path, segmentStarts);
 
     ompl::base::State* segment_start_state = problem_setup_->getStateSpace()->allocState();
@@ -387,8 +390,8 @@ void TerrainOmplRrt::solutionPathToPath(ompl::geometric::PathGeometric path, Pat
         double track_progress{0.0};
         for (double t = progress; t <= progress + segment_progress; t = t + dt) {
           State segment_state;
-          problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->interpolate(
-              dubins_path, segmentStarts, t, state);
+          problem_setup_->getStateSpace()->as<fw_planning::spaces::HybridAirplaneStateSpace>()->interpolate(
+              dubins_path, to, segmentStarts, t, state);
           Eigen::Vector3d position = dubinsairplanePosition(state);
           yaw = dubinsairplaneYaw(state);
           Eigen::Vector3d velocity = Eigen::Vector3d(std::cos(yaw), std::sin(yaw), 0.0);

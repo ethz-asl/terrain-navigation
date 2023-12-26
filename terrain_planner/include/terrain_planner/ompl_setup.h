@@ -2,6 +2,7 @@
 #define TERRAIN_PLANNER_OMPL_SETUP_H_
 
 #include "terrain_planner/DubinsAirplane.hpp"
+#include "terrain_planner/HybridAirplane.hpp"
 #include "terrain_planner/terrain_ompl.h"
 
 #include <ompl/base/objectives/PathLengthOptimizationObjective.h>
