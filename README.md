@@ -15,33 +15,27 @@ The implementation includes a global planner based on a RRT* in the Dubins Airpl
 
 ### Setting up the Build Environment using Docker
 
-If your operating system doesn't support ROS 1 noetic, docker is a great alternative. 
+If your operating system doesn't support ROS 2 humble, docker is a great alternative. 
 
 First, create the image, with the build context at the root of this repo
 
 ```Bash
-docker build --file docker/Dockerfile --tag terrain-navigation-ros1 .
+docker build --file docker/Dockerfile --tag terrain-navigation-ros2 .
 ```
 
 You can see the image exists:
 ```Bash
 docker images
 >>> REPOSITORY                TAG       IMAGE ID       CREATED        SIZE
->>> terrain-navigation-ros1   latest    5565f845ab4f   2 weeks ago    774MB
+>>> terrain-navigation-ros2   latest    5565f845ab4f   2 weeks ago    774MB
 ```
 
 Next, run the image, mounting in the source into a workspace. All the dependencies are now installed.
 ```Bash
-docker run --network=host -it -v $(pwd):/root/catkin_ws/src/terrain-navigation -w /root/catkin_ws terrain-navigation-ros1 bash
+docker run --network=host -it -v $(pwd):/root/ros2_ws/src/ethz-asl/terrain-navigation -w /root/ros2_ws terrain-navigation-ros2 bash
 ```
 
 ### Running the Build
-
-Configure the catkin workspace
-```Bash
-catkin config --extend "/opt/ros/noetic"
-catkin config --merge-devel
-```
 
 For dependencies that do not have binaries available, pull them into your ROS workspace using vcs.
 ```Bash
@@ -96,7 +90,7 @@ accordingly.
 
 The default launch file can be run as the following command.
 ```Bash
-roslaunch terrain_navigation_ros test_terrain_planner.launch
+ros2 launch terrain_navigation_ros test_terrain_planner.launch.py
 ```
 
 You can use [QGroundcontrol](http://qgroundcontrol.com/) to configure and fly the vehicle. Get the vehicle flying, and plan a mission to fly!

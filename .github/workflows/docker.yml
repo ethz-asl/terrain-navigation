@@ -1,0 +1,21 @@
+---
+name: Build docker/Dockerfile
+on:
+  push:
+    branches:
+      - 'ros2'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: [ubuntu-22.04]
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Dockerfile
+        run: |
+          docker build --file docker/Dockerfile --tag terrain-navigation-ros2 .
+        shell: bash
