@@ -8,9 +8,10 @@
 #include <QGroupBox>
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/goal_marker.h"
-#include "mav_planning_rviz/planning_interactive_markers.h"
 #include "mav_planning_rviz/pose_widget.h"
 #include "planner_msgs/NavigationStatus.h"
+#include <mav_msgs/conversions.h>
+#include <mav_msgs/eigen_mav_msgs.h>
 #endif
 
 enum PLANNER_STATE { HOLD = 1, NAVIGATE = 2, ROLLOUT = 3, ABORT = 4, RETURN = 5 };
@@ -123,8 +124,6 @@ class PlanningPanel : public rviz::Panel {
   // Keep track of all the pose <-> button widgets as they're related:
   std::map<std::string, PoseWidget*> pose_widget_map_;
   std::map<std::string, EditButton*> edit_button_map_;
-  // ROS state:
-  PlanningInteractiveMarkers interactive_markers_;
 
   // QT state:
   QString namespace_;
