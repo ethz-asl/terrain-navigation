@@ -38,12 +38,15 @@ PlanningPanel::PlanningPanel(QWidget* parent)
       node_(std::make_shared<rclcpp::Node>("mav_planning_rviz")),
       interactive_markers_(node_) {
   createLayout();
-  goal_marker_ = std::make_shared<GoalMarker>(node_);
-  planner_state_sub_ = node_->create_subscription<planner_msgs::msg::NavigationStatus>(
-      "/planner_status", 1, std::bind(&PlanningPanel::plannerstateCallback, this, _1));
 }
 
 void PlanningPanel::onInitialize() {
+  auto rviz_ros_node = this->getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+  goal_marker_ = std::make_shared<GoalMarker>(rviz_ros_node);
+
+  planner_state_sub_ = rviz_ros_node->create_subscription<planner_msgs::msg::NavigationStatus>(
+      "/planner_status", 1, std::bind(&PlanningPanel::plannerstateCallback, this, _1));
+
   interactive_markers_.initialize();
   interactive_markers_.setPoseUpdatedCallback(std::bind(&PlanningPanel::updateInteractiveMarkerPose, this, _1));
 
