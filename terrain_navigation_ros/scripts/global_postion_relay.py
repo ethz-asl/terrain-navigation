@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 ROS 2 node to convert from mavros_msgs/GlobalPositionTarget Message
 to ardupilot_msgs/GlobalPosition
