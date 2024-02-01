@@ -406,7 +406,7 @@ void TerrainPlanner::plannerloopCallback() {
   if (local_origin_received_ && !map_initialized_) {
     //! @todo(srmainwaring) consolidate duplicate code from here and TerrainPlanner::setLocationCallback
     std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
-    map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
+    map_initialized_ = terrain_map_->Load(map_path_, map_color_path_);
     terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
     terrain_map_->AddLayerDistanceTransform(max_elevation_, "max_elevation");
     terrain_map_->AddLayerHorizontalDistanceTransform(goal_radius_, "ics_+", "distance_surface");
@@ -1088,14 +1088,16 @@ bool TerrainPlanner::setLocationCallback(const std::shared_ptr<planner_msgs::srv
                                          std::shared_ptr<planner_msgs::srv::SetString::Response> res) {
   //! @todo(srmainwaring) consolidate duplicate code from here and TerrainPlanner::plannerloopCallback
   std::string set_location = req->string;
-  bool align_location = req->align;
+  //! @todo(srmainwaring) interface supporting align_location has been removed,
+  //!                     decide how to treat (and see below L1112)
+  // bool align_location = req->align;
   std::cout << "[TerrainPlanner] Set Location: " << set_location << std::endl;
-  std::cout << "[TerrainPlanner] Set Alignment: " << align_location << std::endl;
+  // std::cout << "[TerrainPlanner] Set Alignment: " << align_location << std::endl;
 
   /// TODO: Add location from the new set location service
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
-  bool result = terrain_map_->Load(map_path_, align_location, map_color_path_);
+  bool result = terrain_map_->Load(map_path_, map_color_path_);
 
   //! @todo(srmainwaring) check result valid before further operations?
   std::cout << "[TerrainPlanner]   Computing distance transforms" << std::endl;
@@ -1107,17 +1109,17 @@ bool TerrainPlanner::setLocationCallback(const std::shared_ptr<planner_msgs::srv
   std::cout << "[TerrainPlanner]   Computing safety layers" << std::endl;
   terrain_map_->addLayerSafety("safety", "ics_+", "ics_-");
 
-  if (!align_location) {
-    // Depending on Gdal versions, lon lat order are reversed
-    Eigen::Vector3d lv03_local_origin;
-    GeoConversions::forward(local_origin_latitude_, local_origin_longitude_, local_origin_altitude_,
-                            lv03_local_origin.x(), lv03_local_origin.y(), lv03_local_origin.z());
-    if (terrain_map_->getGridMap().isInside(Eigen::Vector2d(0.0, 0.0))) {
-      double terrain_altitude = terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(0.0, 0.0));
-      lv03_local_origin(2) = lv03_local_origin(2) - terrain_altitude;
-    }
-    terrain_map_->setGlobalOrigin(ESPG::CH1903_LV03, lv03_local_origin);
-  }
+  // if (!align_location) {
+  //   // Depending on Gdal versions, lon lat order are reversed
+  //   Eigen::Vector3d lv03_local_origin;
+  //   GeoConversions::forward(local_origin_latitude_, local_origin_longitude_, local_origin_altitude_,
+  //                           lv03_local_origin.x(), lv03_local_origin.y(), lv03_local_origin.z());
+  //   if (terrain_map_->getGridMap().isInside(Eigen::Vector2d(0.0, 0.0))) {
+  //     double terrain_altitude = terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(0.0, 0.0));
+  //     lv03_local_origin(2) = lv03_local_origin(2) - terrain_altitude;
+  //   }
+  //   terrain_map_->setGlobalOrigin(ESPG::CH1903_LV03, lv03_local_origin);
+  // }
   if (result) {
     global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
     global_planner_->setupProblem(start_pos_, goal_pos_, start_loiter_radius_);

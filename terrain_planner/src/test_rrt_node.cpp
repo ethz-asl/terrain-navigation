@@ -120,7 +120,7 @@ class OmplRrtPlanner : public rclcpp::Node {
 
     // Load terrain map from defined tif paths
     terrain_map = std::make_shared<TerrainMap>();
-    terrain_map->initializeFromGeotiff(map_path, false);
+    terrain_map->initializeFromGeotiff(map_path);
     // Load color layer if the color path is nonempty
     if (!color_file_path.empty()) {
       terrain_map->addColorFromGeotiff(color_file_path);
