@@ -266,7 +266,7 @@ void TerrainPlanner::plannerloopCallback(const ros::TimerEvent &event) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
   if (local_origin_received_ && !map_initialized_) {
     std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
-    map_initialized_ = terrain_map_->Load(map_path_, true, map_color_path_);
+    map_initialized_ = terrain_map_->Load(map_path_, map_color_path_);
     terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
     terrain_map_->AddLayerDistanceTransform(max_elevation_, "max_elevation");
     terrain_map_->AddLayerHorizontalDistanceTransform(goal_radius_, "ics_+", "distance_surface");
@@ -890,7 +890,7 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   /// TODO: Add location from the new set location service
   map_path_ = resource_path_ + "/" + set_location + ".tif";
   map_color_path_ = resource_path_ + "/" + set_location + "_color.tif";
-  bool result = terrain_map_->Load(map_path_, align_location, map_color_path_);
+  bool result = terrain_map_->Load(map_path_, map_color_path_);
   std::cout << "[TerrainPlanner]   Computing distance transforms" << std::endl;
   terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
   terrain_map_->AddLayerDistanceTransform(max_elevation_, "max_elevation");
