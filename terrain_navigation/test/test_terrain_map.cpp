@@ -1,7 +1,8 @@
-#include "terrain_navigation/terrain_map.h"
-
 #include <gtest/gtest.h>
+
 #include <iostream>
+
+#include "terrain_navigation/terrain_map.h"
 
 TEST(TerrainMapTest, geoTransform) {
   // Depending on Gdal versions, lon lat order are reversed

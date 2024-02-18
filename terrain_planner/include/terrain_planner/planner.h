@@ -1,10 +1,10 @@
 #ifndef TERRAIN_PLANNER_PLANNER_H
 #define TERRAIN_PLANNER_PLANNER_H
 
-#include <Eigen/Dense>
-
 #include <terrain_navigation/path.h>
 #include <terrain_navigation/terrain_map.h>
+
+#include <Eigen/Dense>
 
 /**
  * @brief Planner base class

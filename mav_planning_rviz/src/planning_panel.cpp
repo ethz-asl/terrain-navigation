@@ -1,8 +1,6 @@
 #include "mav_planning_rviz/planning_panel.h"
 
 #include <stdio.h>
-#include <functional>
-#include <thread>
 
 #include <QCheckBox>
 #include <QGridLayout>
@@ -12,19 +10,19 @@
 #include <QPainter>
 #include <QTimer>
 #include <QVBoxLayout>
-
+#include <functional>
 #include <geometry_msgs/msg/twist.hpp>
+#include <thread>
 // #include <mav_planning_msgs/PlannerService.h>
 // #include <ros/names.h>
-#include <rviz_common/visualization_manager.hpp>
-#include <std_srvs/srv/empty.hpp>
 #include <mavros_msgs/srv/set_mode.hpp>
-
 #include <planner_msgs/msg/navigation_status.hpp>
 #include <planner_msgs/srv/set_planner_state.hpp>
 #include <planner_msgs/srv/set_service.hpp>
 #include <planner_msgs/srv/set_string.hpp>
 #include <planner_msgs/srv/set_vector3.hpp>
+#include <rviz_common/visualization_manager.hpp>
+#include <std_srvs/srv/empty.hpp>
 
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/goal_marker.h"
@@ -36,23 +34,23 @@ using namespace std::chrono_literals;
 namespace mav_planning_rviz {
 
 PlanningPanel::PlanningPanel(QWidget* parent)
-  : rviz_common::Panel(parent),
-  node_(std::make_shared<rclcpp::Node>("mav_planning_rviz")),
-  interactive_markers_(node_) {
+    : rviz_common::Panel(parent),
+      node_(std::make_shared<rclcpp::Node>("mav_planning_rviz")),
+      interactive_markers_(node_) {
   createLayout();
-  goal_marker_ = std::make_shared<GoalMarker>(node_);
-  planner_state_sub_ = node_->create_subscription<planner_msgs::msg::NavigationStatus>(
-      "/planner_status", 1,
-      std::bind(&PlanningPanel::plannerstateCallback, this, _1));
 }
 
 void PlanningPanel::onInitialize() {
-  interactive_markers_.initialize();
-  interactive_markers_.setPoseUpdatedCallback(
-      std::bind(&PlanningPanel::updateInteractiveMarkerPose, this, _1));
+  auto rviz_ros_node = this->getDisplayContext()->getRosNodeAbstraction().lock()->get_raw_node();
+  goal_marker_ = std::make_shared<GoalMarker>(rviz_ros_node);
 
-  //! @todo(srmainwaring) port to ROS 2
-  // interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
+  planner_state_sub_ = rviz_ros_node->create_subscription<planner_msgs::msg::NavigationStatus>(
+      "/planner_status", 1, std::bind(&PlanningPanel::plannerstateCallback, this, _1));
+
+  interactive_markers_.initialize();
+  interactive_markers_.setPoseUpdatedCallback(std::bind(&PlanningPanel::updateInteractiveMarkerPose, this, _1));
+
+  interactive_markers_.setFrameId(getDisplayContext()->getFixedFrame().toStdString());
   // Initialize all the markers.
   for (const auto& kv : pose_widget_map_) {
     mav_msgs::EigenTrajectoryPoint pose;
@@ -181,7 +179,8 @@ void PlanningPanel::terrainAlignmentStateChanged(int state) {
 
 // Set the topic name we are publishing to.
 void PlanningPanel::setNamespace(const QString& new_namespace) {
-  RCLCPP_DEBUG_STREAM(node_->get_logger(), "Setting namespace from: " << namespace_.toStdString() << " to " << new_namespace.toStdString());
+  RCLCPP_DEBUG_STREAM(node_->get_logger(),
+                      "Setting namespace from: " << namespace_.toStdString() << " to " << new_namespace.toStdString());
   // Only take action if the name has changed.
   if (new_namespace != namespace_) {
     namespace_ = new_namespace;
@@ -191,10 +190,10 @@ void PlanningPanel::setNamespace(const QString& new_namespace) {
     //! @todo(srmainwaring) port to ROS 2
     // if (ros::names::validate(namespace_.toStdString(), error))
     {
-      waypoint_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
-          namespace_.toStdString() + "/waypoint", 1);
-      controller_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
-          namespace_.toStdString() + "/command/pose", 1);
+      waypoint_pub_ =
+          node_->create_publisher<geometry_msgs::msg::PoseStamped>(namespace_.toStdString() + "/waypoint", 1);
+      controller_pub_ =
+          node_->create_publisher<geometry_msgs::msg::PoseStamped>(namespace_.toStdString() + "/command/pose", 1);
       odometry_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
           namespace_.toStdString() + "/" + odometry_topic_.toStdString(), 1,
           std::bind(&PlanningPanel::odometryCallback, this, _1));
@@ -221,9 +220,8 @@ void PlanningPanel::setPlannerName() {
   std::thread t([this, service_name, new_planner_name, align_terrain] {
     auto client = node_->create_client<planner_msgs::srv::SetString>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetString::Request>();
@@ -232,11 +230,10 @@ void PlanningPanel::setPlannerName() {
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -294,9 +291,8 @@ void PlanningPanel::startEditing(const std::string& id) {
   if (search == pose_widget_map_.end()) {
     return;
   }
-  // Update fixed frame (may have changed since last time):  
-  //! @todo(srmainwaring) port to ROS 2
-  // interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
+  // Update fixed frame (may have changed since last time):
+  interactive_markers_.setFrameId(getDisplayContext()->getFixedFrame().toStdString());
   mav_msgs::EigenTrajectoryPoint pose;
   search->second->getPose(&pose);
   interactive_markers_.enableSetPoseMarker(pose);
@@ -378,21 +374,21 @@ void PlanningPanel::callPlannerService() {
   std::thread t([this, service_name] {
     auto client = node_->create_client<mavros_msgs::srv::SetMode>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<mavros_msgs::srv::SetMode::Request>();
     req->custom_mode = "OFFBOARD";
+    //! @todo(srmainwaring) for AP custom mode is "GUIDED".
+    // req->custom_mode = "GUIDED";
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -412,20 +408,18 @@ void PlanningPanel::callPublishPath() {
   std::string service_name = namespace_.toStdString() + "/" + planner_name_.toStdString() + "/publish_path";
   auto client = node_->create_client<std_srvs::srv::Empty>(service_name);
   if (!client->wait_for_service(1s)) {
-      RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-          << service_name << "] not available.");
-      return;
+    RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+    return;
   }
 
   auto req = std::make_shared<std_srvs::srv::Empty::Request>();
 
   auto result = client->async_send_request(req);
 
-  if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-        << client->get_service_name()
-        << "] failed.");
+  //! @todo(srmainwaring) prevent race condition with async service calls
+  const std::lock_guard<std::mutex> lock(node_mutex_);
+  if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+    RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
     return;
   }
 
@@ -444,9 +438,8 @@ void PlanningPanel::publishWaypoint() {
   std::thread t([this, service_name] {
     auto client = node_->create_client<mavros_msgs::srv::SetMode>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<mavros_msgs::srv::SetMode::Request>();
@@ -454,11 +447,10 @@ void PlanningPanel::publishWaypoint() {
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -487,9 +479,8 @@ void PlanningPanel::setMaxAltitudeConstrant(bool set_constraint) {
   std::thread t([this, service_name, new_planner_name, align_terrain] {
     auto client = node_->create_client<planner_msgs::srv::SetString>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetString::Request>();
@@ -498,11 +489,10 @@ void PlanningPanel::setMaxAltitudeConstrant(bool set_constraint) {
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -528,9 +518,8 @@ void PlanningPanel::setGoalService() {
   std::thread t([this, service_name, goal_pos, goal_altitude] {
     auto client = node_->create_client<planner_msgs::srv::SetVector3>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetVector3::Request>();
@@ -540,11 +529,10 @@ void PlanningPanel::setGoalService() {
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -566,20 +554,18 @@ void PlanningPanel::setPathService() {
   std::thread t([this, service_name] {
     auto client = node_->create_client<planner_msgs::srv::SetVector3>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetVector3::Request>();
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -611,9 +597,8 @@ void PlanningPanel::setPlanningBudgetService() {
   std::thread t([this, service_name, planning_budget] {
     auto client = node_->create_client<planner_msgs::srv::SetVector3>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetVector3::Request>();
@@ -622,11 +607,10 @@ void PlanningPanel::setPlanningBudgetService() {
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -662,9 +646,8 @@ void PlanningPanel::callSetPlannerStateService(std::string service_name, const i
   std::thread t([this, service_name, mode] {
     auto client = node_->create_client<planner_msgs::srv::SetPlannerState>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetPlannerState::Request>();
@@ -672,11 +655,10 @@ void PlanningPanel::callSetPlannerStateService(std::string service_name, const i
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -702,9 +684,8 @@ void PlanningPanel::setStartService() {
   std::thread t([this, service_name, goal_pos, goal_altitude] {
     auto client = node_->create_client<planner_msgs::srv::SetVector3>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetVector3::Request>();
@@ -714,11 +695,10 @@ void PlanningPanel::setStartService() {
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -740,20 +720,18 @@ void PlanningPanel::setStartLoiterService() {
   std::thread t([this, service_name] {
     auto client = node_->create_client<planner_msgs::srv::SetService>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetService::Request>();
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -775,20 +753,18 @@ void PlanningPanel::setCurrentSegmentService() {
   std::thread t([this, service_name] {
     auto client = node_->create_client<planner_msgs::srv::SetService>(service_name);
     if (!client->wait_for_service(1s)) {
-        RCLCPP_WARN_STREAM(node_->get_logger(), "Service ["
-            << service_name << "] not available.");
-        return;
+      RCLCPP_WARN_STREAM(node_->get_logger(), "Service [" << service_name << "] not available.");
+      return;
     }
 
     auto req = std::make_shared<planner_msgs::srv::SetService::Request>();
 
     auto result = client->async_send_request(req);
 
-    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service ["
-          << client->get_service_name()
-          << "] failed.");
+    //! @todo(srmainwaring) prevent race condition with async service calls
+    const std::lock_guard<std::mutex> lock(node_mutex_);
+    if (rclcpp::spin_until_future_complete(node_, result) != rclcpp::FutureReturnCode::SUCCESS) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "Call to service [" << client->get_service_name() << "] failed.");
       return;
     }
 
@@ -809,13 +785,12 @@ void PlanningPanel::publishToController() {
   goal_pose_widget_->getPose(&goal_point);
 
   geometry_msgs::msg::PoseStamped pose;
-  //! @todo(srmainwaring) port to ROS 2
-  // pose.header.frame_id = vis_manager_->getFixedFrame().toStdString();
+  pose.header.frame_id = getDisplayContext()->getFixedFrame().toStdString();
   mav_msgs::msgPoseStampedFromEigenTrajectoryPoint(goal_point, &pose);
 
-  RCLCPP_DEBUG_STREAM(node_->get_logger(),
-      "Publishing controller goal on " << controller_pub_->get_topic_name()
-          << " subscribers: " << controller_pub_->get_subscription_count());
+  RCLCPP_DEBUG_STREAM(node_->get_logger(), "Publishing controller goal on "
+                                               << controller_pub_->get_topic_name()
+                                               << " subscribers: " << controller_pub_->get_subscription_count());
 
   controller_pub_->publish(pose);
 }

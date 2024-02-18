@@ -2,12 +2,10 @@
 #define MAV_PLANNING_RVIZ_PLANNING_INTERACTIVE_MARKERS_H_
 
 #include <functional>
-
 #include <interactive_markers/interactive_marker_server.hpp>
-#include <rclcpp/rclcpp.hpp>
-
 #include <mav_msgs/conversions.hpp>
 #include <mav_msgs/eigen_mav_msgs.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 namespace mav_planning_rviz {
 

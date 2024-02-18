@@ -1,8 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2021-2023 Jaeyoung Lim, Autonomous Systems Lab,
- *  ETH Zürich. All rights reserved.
-
+ *   Copyright (c) 2023 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,19 +30,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/**
- * @brief Helper functions for visualizations
- *
- *
- * @author Jaeyoung Lim <jalim@ethz.ch>
- */
 
-#ifndef VISUALIZATION_H
-#define VISUALIZATION_H
+#include "terrain_navigation_ros/visualization.h"
 
-#include <geometry_msgs/msg/point.hpp>
-#include <rclcpp/clock.hpp>
-#include <visualization_msgs/msg/marker.hpp>
+#include <terrain_planner/common.h>
 
 geometry_msgs::msg::Point toPoint(const Eigen::Vector3d &p) {
   geometry_msgs::msg::Point position;
@@ -54,8 +43,33 @@ geometry_msgs::msg::Point toPoint(const Eigen::Vector3d &p) {
   return position;
 }
 
-visualization_msgs::msg::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint,
-                                                    Eigen::Vector3d color = Eigen::Vector3d(0.0, 0.0, 1.0)) {
+void publishVehiclePose(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                        const Eigen::Vector3d &position, const Eigen::Vector4d &attitude,
+                        std::string mesh_resource_path) {
+  Eigen::Vector4d mesh_attitude =
+      quatMultiplication(attitude, Eigen::Vector4d(std::cos(M_PI / 2), 0.0, 0.0, std::sin(M_PI / 2)));
+  geometry_msgs::msg::Pose vehicle_pose = vector3d2PoseMsg(position, mesh_attitude);
+  visualization_msgs::msg::Marker marker;
+  marker.header.stamp = rclcpp::Clock().now();
+  marker.header.frame_id = "map";
+  marker.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
+  marker.ns = "my_namespace";
+  //! @todo(srmainwaring) understand why the mesh is not displayed.
+  //! @note https://answers.ros.org/question/282745/rviz-doesnt-load-dae-mesh-cannot-locate-it/
+  // marker.mesh_resource = "package://terrain_planner/" + mesh_resource_path;
+  marker.mesh_resource = "file://" + mesh_resource_path;
+  marker.scale.x = 10.0;
+  marker.scale.y = 10.0;
+  marker.scale.z = 10.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.color.r = 0.5;
+  marker.color.g = 0.5;
+  marker.color.b = 0.5;
+  marker.pose = vehicle_pose;
+  pub->publish(marker);
+}
+
+visualization_msgs::msg::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint, Eigen::Vector3d color) {
   double scale{15};  // Size of the viewpoint markers
   visualization_msgs::msg::Marker marker;
   marker.header.frame_id = "map";
@@ -94,4 +108,31 @@ visualization_msgs::msg::Marker Viewpoint2MarkerMsg(int id, ViewPoint &viewpoint
   return marker;
 }
 
-#endif  // VISUALIZATION_H
+void publishCameraView(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                       const Eigen::Vector3d &position, const Eigen::Vector4d &attitude) {
+  visualization_msgs::msg::Marker marker;
+  ViewPoint viewpoint(-1, position, attitude);
+  marker = Viewpoint2MarkerMsg(viewpoint.getIndex(), viewpoint);
+  pub->publish(marker);
+}
+
+void publishViewpoints(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub,
+                       std::vector<ViewPoint> &viewpoint_vector, Eigen::Vector3d color) {
+  visualization_msgs::msg::MarkerArray msg;
+
+  std::vector<visualization_msgs::msg::Marker> marker;
+  visualization_msgs::msg::Marker mark;
+  mark.action = visualization_msgs::msg::Marker::DELETEALL;
+  marker.push_back(mark);
+  msg.markers = marker;
+  pub->publish(msg);
+
+  std::vector<visualization_msgs::msg::Marker> viewpoint_marker_vector;
+  int i = 0;
+  for (auto viewpoint : viewpoint_vector) {
+    viewpoint_marker_vector.insert(viewpoint_marker_vector.begin(), Viewpoint2MarkerMsg(i, viewpoint, color));
+    i++;
+  }
+  msg.markers = viewpoint_marker_vector;
+  pub->publish(msg);
+}

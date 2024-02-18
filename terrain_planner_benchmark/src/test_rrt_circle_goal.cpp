@@ -40,14 +40,13 @@
 
 #include <geometry_msgs/Point.h>
 #include <ros/ros.h>
-#include <any>
-
 #include <terrain_navigation/terrain_map.h>
-
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/MarkerArray.h>
+
+#include <any>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
 #include "terrain_navigation/data_logger.h"

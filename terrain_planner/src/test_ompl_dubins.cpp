@@ -39,13 +39,13 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include <grid_map_ros/GridMapRosConverter.hpp>
-#include <rclcpp/rclcpp.hpp>
 #include <terrain_navigation/terrain_map.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <geometry_msgs/msg/point.hpp>
+#include <grid_map_ros/GridMapRosConverter.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
@@ -55,12 +55,8 @@
 
 using namespace std::chrono_literals;
 
-void getDubinsShortestPath(
-  const Eigen::Vector3d start_pos,
-  const double start_yaw,
-  const Eigen::Vector3d goal_pos,
-  const double goal_yaw,
-  std::vector<Eigen::Vector3d>& path) {
+void getDubinsShortestPath(const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
+                           const double goal_yaw, std::vector<Eigen::Vector3d>& path) {
   auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
 
   ompl::base::State* from = dubins_ss->allocState();
@@ -101,56 +97,49 @@ void getDubinsShortestPath(
   }
 }
 
-class OmplRrtPlanner : public rclcpp::Node
-{
-  public:
-    OmplRrtPlanner()
-    : Node("ompl_rrt_planner")
-    {
-      // Initialize ROS related publishers for visualization
-      start_pos_pub = this->create_publisher<visualization_msgs::msg::Marker>("start_position", 1);
-      goal_pos_pub = this->create_publisher<visualization_msgs::msg::Marker>("goal_position", 1);
-      path_pub = this->create_publisher<nav_msgs::msg::Path>("path", 1);
-      trajectory_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("tree", 1);
+class OmplRrtPlanner : public rclcpp::Node {
+ public:
+  OmplRrtPlanner() : Node("ompl_rrt_planner") {
+    // Initialize ROS related publishers for visualization
+    start_pos_pub = this->create_publisher<visualization_msgs::msg::Marker>("start_position", 1);
+    goal_pos_pub = this->create_publisher<visualization_msgs::msg::Marker>("goal_position", 1);
+    path_pub = this->create_publisher<nav_msgs::msg::Path>("path", 1);
+    trajectory_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("tree", 1);
 
-      std::vector<double> start_yaw{0.0, 2.51681, 2.71681, 3.71681, 3.91681};
-      std::vector<double> goal_yaw{3.53454, 6.17454, 6.23454, 0.25135, 0.31135};
-
-      timer = this->create_wall_timer(
-        1s, std::bind(&OmplRrtPlanner::timer_callback, this));
-    }
-
-    void timer_callback() {
-      Eigen::Vector3d start_pos(0.0, 0.0, 0.0);
-      Eigen::Vector3d goal_pos(152.15508, 0.0, 0.0);
-
-      std::vector<Eigen::Vector3d> path;
-
-      getDubinsShortestPath(start_pos, start_yaw[idx % start_yaw.size()],
-                            goal_pos, goal_yaw[idx % goal_yaw.size()],
-                            path);
-
-      publishTrajectory(path_pub, path);
-      Eigen::Vector3d start_velocity(std::cos(start_yaw[idx % start_yaw.size()]),
-                                      std::sin(start_yaw[idx % start_yaw.size()]),
-                                      0.0);
-      publishPositionSetpoints(start_pos_pub, start_pos, start_velocity);
-      Eigen::Vector3d goal_velocity(std::cos(goal_yaw[idx % goal_yaw.size()]),
-                                    std::sin(goal_yaw[idx % goal_yaw.size()]),
-                                    0.0);
-      publishPositionSetpoints(goal_pos_pub, goal_pos, goal_velocity);
-      idx++;
-    }
-
-  private:
     std::vector<double> start_yaw{0.0, 2.51681, 2.71681, 3.71681, 3.91681};
     std::vector<double> goal_yaw{3.53454, 6.17454, 6.23454, 0.25135, 0.31135};
-    int idx{0};
-    rclcpp::TimerBase::SharedPtr timer;
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr start_pos_pub;
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr goal_pos_pub;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr trajectory_pub;
+
+    timer = this->create_wall_timer(1s, std::bind(&OmplRrtPlanner::timer_callback, this));
+  }
+
+  void timer_callback() {
+    Eigen::Vector3d start_pos(0.0, 0.0, 0.0);
+    Eigen::Vector3d goal_pos(152.15508, 0.0, 0.0);
+
+    std::vector<Eigen::Vector3d> path;
+
+    getDubinsShortestPath(start_pos, start_yaw[idx % start_yaw.size()], goal_pos, goal_yaw[idx % goal_yaw.size()],
+                          path);
+
+    publishTrajectory(path_pub, path);
+    Eigen::Vector3d start_velocity(std::cos(start_yaw[idx % start_yaw.size()]),
+                                   std::sin(start_yaw[idx % start_yaw.size()]), 0.0);
+    publishPositionSetpoints(start_pos_pub, start_pos, start_velocity);
+    Eigen::Vector3d goal_velocity(std::cos(goal_yaw[idx % goal_yaw.size()]), std::sin(goal_yaw[idx % goal_yaw.size()]),
+                                  0.0);
+    publishPositionSetpoints(goal_pos_pub, goal_pos, goal_velocity);
+    idx++;
+  }
+
+ private:
+  std::vector<double> start_yaw{0.0, 2.51681, 2.71681, 3.71681, 3.91681};
+  std::vector<double> goal_yaw{3.53454, 6.17454, 6.23454, 0.25135, 0.31135};
+  int idx{0};
+  rclcpp::TimerBase::SharedPtr timer;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr start_pos_pub;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr goal_pos_pub;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr trajectory_pub;
 };
 
 int main(int argc, char** argv) {

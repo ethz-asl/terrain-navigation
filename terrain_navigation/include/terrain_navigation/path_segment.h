@@ -36,11 +36,10 @@
 #ifndef PATH_SEGMENT_H
 #define PATH_SEGMENT_H
 
+#include <Eigen/Dense>
 #include <iostream>
 #include <memory>
 #include <vector>
-
-#include <Eigen/Dense>
 
 struct State {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

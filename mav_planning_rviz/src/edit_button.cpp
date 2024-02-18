@@ -1,10 +1,10 @@
+#include "mav_planning_rviz/edit_button.h"
+
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QHeaderView>
 #include <QTableView>
 #include <QTableWidget>
-
-#include "mav_planning_rviz/edit_button.h"
 
 namespace mav_planning_rviz {
 
