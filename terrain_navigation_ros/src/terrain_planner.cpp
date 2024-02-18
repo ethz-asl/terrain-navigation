@@ -448,12 +448,6 @@ void TerrainPlanner::plannerloopCallback() {
     };
     auto future = msginterval_serviceclient_->async_send_request(request_global_origin_req, response_received_callback);
 
-    //! @todo wait for response_received_callback to set done
-    //! @todo add timeout
-    while (!received_response) {
-      ;
-    }
-
     return;
 
     // auto future = msginterval_serviceclient_->async_send_request(request_global_origin_req);
