@@ -39,6 +39,7 @@ def generate_launch_description():
 
     flight_stack_arg = DeclareLaunchArgument(
         FLIGHT_STACK_ARG_NAME,
+        default_value=FLIGHT_STACK_PX4,
         choices=[FLIGHT_STACK_PX4, FLIGHT_STACK_ARDUPILOT],
         description="Autopilot Type - See https://github.com/ROS-Aerial/aerial_robotic_landscape/blob/main/autopilots_suites.md",
     )
