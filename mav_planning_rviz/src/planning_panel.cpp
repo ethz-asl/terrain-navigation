@@ -23,6 +23,7 @@
 #include <planner_msgs/SetService.h>
 #include <planner_msgs/SetString.h>
 #include <planner_msgs/SetVector3.h>
+#include <geometry_msgs/PoseStamped.h>
 
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/goal_marker.h"
@@ -31,7 +32,7 @@
 
 namespace mav_planning_rviz {
 
-PlanningPanel::PlanningPanel(QWidget* parent) : rviz::Panel(parent), nh_(ros::NodeHandle()), interactive_markers_(nh_) {
+PlanningPanel::PlanningPanel(QWidget* parent) : rviz::Panel(parent), nh_(ros::NodeHandle()) {
   createLayout();
   goal_marker_ = std::make_shared<GoalMarker>(nh_);
   planner_state_sub_ = nh_.subscribe("/planner_status", 1, &PlanningPanel::plannerstateCallback, this,
@@ -39,17 +40,6 @@ PlanningPanel::PlanningPanel(QWidget* parent) : rviz::Panel(parent), nh_(ros::No
 }
 
 void PlanningPanel::onInitialize() {
-  interactive_markers_.initialize();
-  interactive_markers_.setPoseUpdatedCallback(
-      std::bind(&PlanningPanel::updateInteractiveMarkerPose, this, std::placeholders::_1));
-
-  interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
-  // Initialize all the markers.
-  for (const auto& kv : pose_widget_map_) {
-    mav_msgs::EigenTrajectoryPoint pose;
-    kv.second->getPose(&pose);
-    interactive_markers_.enableMarker(kv.first, pose);
-  }
 }
 
 void PlanningPanel::createLayout() {
@@ -260,18 +250,11 @@ void PlanningPanel::startEditing(const std::string& id) {
   if (search == pose_widget_map_.end()) {
     return;
   }
-  // Update fixed frame (may have changed since last time):
-  interactive_markers_.setFrameId(vis_manager_->getFixedFrame().toStdString());
-  mav_msgs::EigenTrajectoryPoint pose;
-  search->second->getPose(&pose);
-  interactive_markers_.enableSetPoseMarker(pose);
-  interactive_markers_.disableMarker(id);
 }
 
 void PlanningPanel::finishEditing(const std::string& id) {
   if (currently_editing_ == id) {
     currently_editing_.clear();
-    interactive_markers_.disableSetPoseMarker();
   }
   auto search = pose_widget_map_.find(id);
   if (search == pose_widget_map_.end()) {
@@ -280,7 +263,6 @@ void PlanningPanel::finishEditing(const std::string& id) {
   ros::spinOnce();
   mav_msgs::EigenTrajectoryPoint pose;
   search->second->getPose(&pose);
-  interactive_markers_.enableMarker(id, pose);
 }
 
 void PlanningPanel::registerPoseWidget(PoseWidget* widget) {
@@ -331,10 +313,6 @@ void PlanningPanel::updateInteractiveMarkerPose(const mav_msgs::EigenTrajectoryP
 }
 
 void PlanningPanel::widgetPoseUpdated(const std::string& id, mav_msgs::EigenTrajectoryPoint& pose) {
-  if (currently_editing_ == id) {
-    interactive_markers_.setPose(pose);
-  }
-  interactive_markers_.updateMarkerPose(id, pose);
 }
 
 void PlanningPanel::callPlannerService() {
@@ -604,7 +582,6 @@ void PlanningPanel::odometryCallback(const nav_msgs::Odometry& msg) {
     point.position_W = odometry.position_W;
     point.orientation_W_B = odometry.orientation_W_B;
     pose_widget_map_["start"]->setPose(point);
-    interactive_markers_.updateMarkerPose("start", point);
   }
 }
 
