@@ -48,7 +48,7 @@ struct State {
   Eigen::Vector4d attitude;
 };
 
-static void wrap_2pi(double &angle) {
+inline void wrap_2pi(double &angle) {
   while ((angle < 0.0) || (angle > 2 * M_PI)) {
     if (angle < 0.0) {
       angle += 2 * M_PI;
@@ -58,7 +58,7 @@ static void wrap_2pi(double &angle) {
   }
 }
 
-static void wrap_pi(double &angle) {
+inline void wrap_pi(double &angle) {
   while (std::abs(angle) > M_PI) {
     if (angle > 0)
       angle = angle - 2 * M_PI;
@@ -207,7 +207,7 @@ class PathSegment {
     if (states.size() == 1) {
       // Segment only contains a single state, meaning that it is nor a line or a arc
       theta = 1.0;
-    } else if (std::abs(curvature) < 0.0001) {
+    } else if (std::abs(curvature) < epsilon) {
       // Compute closest point on a line segment
       // Get Path Progress
       theta = getLineProgress(position, segment_start, segment_end);

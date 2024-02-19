@@ -84,10 +84,9 @@ class Path {
    * @param closest_point
    * @param tangent
    * @param curvature
-   * @param epsilon
    */
   void getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
-                       double &curvature, double epsilon = 0.001) {
+                       double &curvature) {
     closest_point = segments.front().states.front().position;
 
     // Iterate through all segments
@@ -121,7 +120,6 @@ class Path {
   }
 
   PathSegment &getCurrentSegment(const Eigen::Vector3d &position) {
-    double theta{-std::numeric_limits<double>::infinity()};
     Eigen::Vector3d closest_point;
     Eigen::Vector3d tangent;
     double curvature;
@@ -150,7 +148,7 @@ class Path {
     }
   }
 
-  int getCurrentSegmentIndex(const Eigen::Vector3d &position, double epsilon = 0.1) {
+  int getCurrentSegmentIndex(const Eigen::Vector3d &position) {
     Eigen::Vector3d closest_point;
     Eigen::Vector3d tangent;
     double curvature;
