@@ -16,11 +16,13 @@
 #include "mav_planning_rviz/pose_widget.h"
 #endif
 
-enum PLANNER_STATE { HOLD = 1, NAVIGATE = 2, ROLLOUT = 3, ABORT = 4, RETURN = 5 };
-
 class QLineEdit;
 class QCheckBox;
+class QComboBox;
 namespace mav_planning_rviz {
+
+enum PLANNER_STATE { HOLD = 1, NAVIGATE = 2, ROLLOUT = 3, ABORT = 4, RETURN = 5 };
+enum FLIGHT_STACK { FLIGHT_STACK_NONE = 0, PX4 = 1, ARDUPILOT = 2 };
 
 class PlanningPanel : public rviz_common::Panel {
   // This class uses Qt slots and is a subclass of QObject, so it needs
@@ -57,6 +59,7 @@ class PlanningPanel : public rviz_common::Panel {
   // Next come a couple of public Qt slots.
  public Q_SLOTS:
   void updatePlannerName();
+  void updateFlightStack();
   void updatePlanningBudget();
   void setPlannerName();
   void startEditing(const std::string& id);
@@ -107,6 +110,7 @@ class PlanningPanel : public rviz_common::Panel {
   // QT stuff:
   QLineEdit* namespace_editor_;
   QLineEdit* planner_name_editor_;
+  QComboBox* flight_stack_combobox_;
   QLineEdit* odometry_topic_editor_;
   QLineEdit* planning_budget_editor_;
   QCheckBox* terrain_align_checkbox_;
@@ -141,6 +145,10 @@ class PlanningPanel : public rviz_common::Panel {
 
   // Other state:
   std::string currently_editing_;
+
+  // Select flight stack (affects offboard/guided and RTL commands)
+  QStringList flight_stack_names_ = {"px4", "ardupilot"};
+  FLIGHT_STACK flight_stack_{PX4};
 };
 
 }  // end namespace mav_planning_rviz
