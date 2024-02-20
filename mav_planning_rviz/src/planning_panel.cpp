@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -32,6 +33,30 @@ using std::placeholders::_1;
 using namespace std::chrono_literals;
 
 namespace mav_planning_rviz {
+
+// utility to convert flight stack string to enum.
+FLIGHT_STACK to_flight_stack(const std::string& str) {
+  FLIGHT_STACK flight_stack = FLIGHT_STACK_NONE;
+  if (str == "px4") {
+    flight_stack = PX4;
+  } else if (str == "ardupilot") {
+    flight_stack = ARDUPILOT;
+  }
+  return flight_stack;
+}
+
+// utility to convert flight stack enum to string.
+std::string to_string(FLIGHT_STACK flight_stack) {
+  switch (flight_stack) {
+    case PX4:
+      return "px4";
+    case ARDUPILOT:
+      return "ardupilot";
+    case FLIGHT_STACK_NONE:
+    default:
+      return "none";
+  }
+}
 
 PlanningPanel::PlanningPanel(QWidget* parent)
     : rviz_common::Panel(parent),
@@ -161,8 +186,14 @@ QGroupBox* PlanningPanel::createTerrainLoaderGroup() {
   load_terrain_button_ = new QPushButton("Load Terrain");
   service_layout->addWidget(load_terrain_button_, 0, 3, 1, 1);
 
+  service_layout->addWidget(new QLabel("Flight Stack:"), 0, 4, 1, 1);
+  flight_stack_combobox_ = new QComboBox;
+  flight_stack_combobox_->addItems(flight_stack_names_);
+  service_layout->addWidget(flight_stack_combobox_, 0, 5, 1, 1);
+
   connect(planner_name_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlannerName()));
   connect(load_terrain_button_, SIGNAL(released()), this, SLOT(setPlannerName()));
+  connect(flight_stack_combobox_, SIGNAL(currentIndexChanged(int)), this, SLOT(updateFlightStack()));
 
   groupBox->setLayout(service_layout);
 
@@ -206,6 +237,16 @@ void PlanningPanel::updatePlannerName() {
   std::cout << "New Terrain name: " << new_planner_name.toStdString() << std::endl;
   if (new_planner_name != planner_name_) {
     planner_name_ = new_planner_name;
+    Q_EMIT configChanged();
+  }
+}
+
+void PlanningPanel::updateFlightStack() {
+  std::string flight_stack_name = flight_stack_combobox_->currentText().toStdString();
+  std::cout << "Using flight stack: " << flight_stack_name << std::endl;
+  FLIGHT_STACK new_flight_stack = to_flight_stack(flight_stack_name);
+  if (new_flight_stack != flight_stack_) {
+    flight_stack_ = new_flight_stack;
     Q_EMIT configChanged();
   }
 }
@@ -335,18 +376,23 @@ void PlanningPanel::save(rviz_common::Config config) const {
   config.mapSetValue("planner_name", planner_name_);
   config.mapSetValue("planning_budget", planning_budget_value_);
   config.mapSetValue("odometry_topic", odometry_topic_);
+  config.mapSetValue("flight_stack", QString::fromStdString(to_string(flight_stack_)));
 }
 
 // Load all configuration data for this panel from the given Config object.
 void PlanningPanel::load(const rviz_common::Config& config) {
   rviz_common::Panel::load(config);
-  QString topic;
-  QString ns;
   if (config.mapGetString("planner_name", &planner_name_)) {
     planner_name_editor_->setText(planner_name_);
   }
   if (config.mapGetString("planning_budget", &planning_budget_value_)) {
     planning_budget_editor_->setText(planning_budget_value_);
+  }
+
+  QString flight_stack_name;
+  if (config.mapGetString("flight_stack", &flight_stack_name)) {
+    int index = flight_stack_combobox_->findText(flight_stack_name);
+    flight_stack_combobox_->setCurrentIndex(index);
   }
 }
 
@@ -379,10 +425,19 @@ void PlanningPanel::callPlannerService() {
     }
 
     auto req = std::make_shared<mavros_msgs::srv::SetMode::Request>();
-    req->custom_mode = "OFFBOARD";
-    //! @todo(srmainwaring) for AP custom mode is "GUIDED".
-    // req->custom_mode = "GUIDED";
-
+    req->custom_mode = "GUIDED";
+    switch (flight_stack_) {
+      case PX4:
+        req->custom_mode = "OFFBOARD";
+        break;
+      case ARDUPILOT:
+        req->custom_mode = "GUIDED";
+        break;
+      case FLIGHT_STACK_NONE:
+      default:
+        req->custom_mode = "NONE";
+        break;
+    }
     auto result = client->async_send_request(req);
 
     //! @todo(srmainwaring) prevent race condition with async service calls
@@ -443,8 +498,18 @@ void PlanningPanel::publishWaypoint() {
     }
 
     auto req = std::make_shared<mavros_msgs::srv::SetMode::Request>();
-    req->custom_mode = "AUTO.RTL";
-
+    switch (flight_stack_) {
+      case PX4:
+        req->custom_mode = "AUTO.RTL";
+        break;
+      case ARDUPILOT:
+        req->custom_mode = "RTL";
+        break;
+      case FLIGHT_STACK_NONE:
+      default:
+        req->custom_mode = "NONE";
+        break;
+    }
     auto result = client->async_send_request(req);
 
     //! @todo(srmainwaring) prevent race condition with async service calls
