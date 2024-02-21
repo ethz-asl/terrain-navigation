@@ -1256,7 +1256,6 @@ void DubinsAirplaneStateSpace::getStateOnCircle(const ob::State* from, int rl /*
 }
 
 unsigned int DubinsAirplaneStateSpace::convert_idx(unsigned int i) const {
-  assert(i >= 0u && "In convert_idx, i < 0");
   assert(i < 6u && "In convert_idx, i > 5");
   switch (i) {
     case 0:  // start helix
