@@ -121,10 +121,7 @@ TerrainPlanner::TerrainPlanner() : Node("terrain_planner") {
   global_position_setpoint_pub_ =
       this->create_publisher<mavros_msgs::msg::GlobalPositionTarget>("mavros/setpoint_raw/global", 1);
   vehicle_pose_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("vehicle_pose_marker", 1);
-  camera_pose_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("camera_pose_marker", 1);
   planner_status_pub_ = this->create_publisher<planner_msgs::msg::NavigationStatus>("planner_status", 1);
-  viewpoint_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("viewpoints", 1);
-  planned_viewpoint_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("planned_viewpoints", 1);
   path_segment_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("path_segments", 1);
   tree_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("tree", 1);
 
@@ -139,8 +136,6 @@ TerrainPlanner::TerrainPlanner() : Node("terrain_planner") {
   global_origin_sub_ = this->create_subscription<geographic_msgs::msg::GeoPointStamped>(
       "mavros/global_position/gp_origin", mavros_position_qos,
       std::bind(&TerrainPlanner::mavGlobalOriginCallback, this, _1));
-  image_captured_sub_ = this->create_subscription<mavros_msgs::msg::CameraImageCaptured>(
-      "mavros/camera/image_captured", 1, std::bind(&TerrainPlanner::mavImageCapturedCallback, this, _1));
 
   setlocation_serviceserver_ = this->create_service<planner_msgs::srv::SetString>(
       "/terrain_planner/set_location", std::bind(&TerrainPlanner::setLocationCallback, this, _1, _2));
@@ -994,9 +989,9 @@ void TerrainPlanner::mavMissionCallback(const mavros_msgs::msg::WaypointList &ms
   }
 }
 
-bool TerrainPlanner::setLocationCallback(
-    const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
-    std::shared_ptr<planner_msgs::srv::SetString::Response> res) {
+bool TerrainPlanner::setLocationCallback(const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
+                                         std::shared_ptr<planner_msgs::srv::SetString::Response> res) {
+  //! @todo(srmainwaring) consolidate duplicate code from here and TerrainPlanner::plannerloopCallback
   std::string set_location = req->string;
   //! @todo(srmainwaring) interface supporting align_location has been removed,
   //!                     decide how to treat (and see below L1112)

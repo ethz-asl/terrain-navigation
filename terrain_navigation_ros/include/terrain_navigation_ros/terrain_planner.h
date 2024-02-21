@@ -43,7 +43,6 @@
 #define TERRAIN_PLANNER_H
 
 #include <terrain_navigation/profiler.h>
-#include <terrain_navigation/viewpoint.h>
 #include <terrain_planner/common.h>
 #include <terrain_planner/terrain_ompl_rrt.h>
 #include <terrain_planner/visualization.h>
@@ -100,7 +99,6 @@ class TerrainPlanner : public rclcpp::Node {
   void mavstateCallback(const mavros_msgs::msg::State &msg);
   void mavGlobalOriginCallback(const geographic_msgs::msg::GeoPointStamped &msg);
   void mavMissionCallback(const mavros_msgs::msg::WaypointList &msg);
-  void mavImageCapturedCallback(const mavros_msgs::msg::CameraImageCaptured &msg);
 
   bool setLocationCallback(const std::shared_ptr<planner_msgs::srv::SetString::Request> req,
                            std::shared_ptr<planner_msgs::srv::SetString::Response> res);
@@ -177,7 +175,6 @@ class TerrainPlanner : public rclcpp::Node {
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr vehicle_path_pub_;
   rclcpp::Publisher<grid_map_msgs::msg::GridMap>::SharedPtr grid_map_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr vehicle_pose_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr camera_pose_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr posehistory_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr referencehistory_pub_;
   rclcpp::Publisher<mavros_msgs::msg::GlobalPositionTarget>::SharedPtr global_position_setpoint_pub_;
@@ -187,8 +184,6 @@ class TerrainPlanner : public rclcpp::Node {
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr rallypoint_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr candidate_goal_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr candidate_start_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr viewpoint_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr planned_viewpoint_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr tree_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr vehicle_velocity_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr path_segment_pub_;
@@ -199,7 +194,6 @@ class TerrainPlanner : public rclcpp::Node {
   rclcpp::Subscription<mavros_msgs::msg::State>::SharedPtr mavstate_sub_;
   rclcpp::Subscription<mavros_msgs::msg::WaypointList>::SharedPtr mavmission_sub_;
   rclcpp::Subscription<geographic_msgs::msg::GeoPointStamped>::SharedPtr global_origin_sub_;
-  rclcpp::Subscription<mavros_msgs::msg::CameraImageCaptured>::SharedPtr image_captured_sub_;
 
   rclcpp::Service<planner_msgs::srv::SetString>::SharedPtr setlocation_serviceserver_;
   rclcpp::Service<planner_msgs::srv::SetString>::SharedPtr setmaxaltitude_serviceserver_;
