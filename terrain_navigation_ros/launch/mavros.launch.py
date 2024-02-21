@@ -79,7 +79,7 @@ def generate_launch_description():
         output="screen",
     )
 
-    # mavros node for PX4
+    # mavros node for ArduPilot
     mavros_ardupilot = Node(
         condition=condition_ardupilot,
         package="mavros",
