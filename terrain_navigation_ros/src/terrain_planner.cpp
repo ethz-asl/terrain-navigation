@@ -107,6 +107,7 @@ TerrainPlanner::TerrainPlanner() : Node("terrain_planner") {
   posehistory_pub_ = this->create_publisher<nav_msgs::msg::Path>("geometric_controller/path", 10);
   referencehistory_pub_ = this->create_publisher<nav_msgs::msg::Path>("reference/path", 10);
   position_target_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("position_target", 1);
+  curvature_target_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("curvature_target", 1);
   vehicle_velocity_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("vehicle_velocity", 1);
   goal_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("goal_marker", 1);
   rallypoint_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("rallypoints_marker", 1);
@@ -260,6 +261,7 @@ void TerrainPlanner::cmdloopCallback() {
     GeoConversions::reverse(lv03_reference_position(0), lv03_reference_position(1), lv03_reference_position(2),
                             latitude, longitude, altitude);
     publishReferenceMarker(position_target_pub_, reference_position, reference_tangent, reference_curvature);
+    publishReferenceCurvatureMarker(curvature_target_pub_, reference_position, reference_tangent, reference_curvature);
 
     // Run additional altitude control
     double altitude_correction = K_z_ * (vehicle_position_(2) - reference_position(2));
@@ -817,6 +819,23 @@ void TerrainPlanner::publishReferenceMarker(rclcpp::Publisher<visualization_msgs
   Eigen::Vector3d scaled_velocity = 20.0 * velocity;
   visualization_msgs::msg::Marker marker =
       vector2ArrowsMsg(position, scaled_velocity, 0, Eigen::Vector3d(0.0, 0.0, 1.0), "reference");
+
+  pub->publish(marker);
+}
+
+void TerrainPlanner::publishReferenceCurvatureMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                                                     const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
+                                                     const double curvature) {
+  // do not zero the radius completely for zero curvature as this results in
+  // a warning when displaying the marker in rviz.
+  double radius = std::fabs(curvature) < 1.0E-4 ? 1.0E-6 : 1.0 / std::fabs(curvature);
+  double direction = curvature > 0.0 ? 1.0 : -1.0;
+  auto direction_vector = Eigen::Vector3d(0.0, 0.0, direction);
+  auto projected_velocity = Eigen::Vector3d(velocity(0), velocity(1), 0.0);
+  auto unit_tangent_vector = projected_velocity.normalized();
+  Eigen::Vector3d curvature_vector = radius * direction_vector.cross(unit_tangent_vector);
+  visualization_msgs::msg::Marker marker =
+      vector2ArrowsMsg(position, curvature_vector, 0, Eigen::Vector3d(1.0, 0.0, 0.0), "reference_curvature");
 
   pub->publish(marker);
 }

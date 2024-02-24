@@ -130,6 +130,9 @@ class TerrainPlanner : public rclcpp::Node {
                                       const Eigen::Vector3d &velocity, const double curvature);
   void publishReferenceMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
                               const Eigen::Vector3d &position, const Eigen::Vector3d &velocity, const double curvature);
+  void publishReferenceCurvatureMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
+                                       const Eigen::Vector3d &position, const Eigen::Vector3d &velocity,
+                                       const double curvature);
   void publishVelocityMarker(rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub,
                              const Eigen::Vector3d &position, const Eigen::Vector3d &velocity);
   void publishPathSegments(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr, Path &trajectory);
@@ -179,6 +182,7 @@ class TerrainPlanner : public rclcpp::Node {
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr referencehistory_pub_;
   rclcpp::Publisher<mavros_msgs::msg::GlobalPositionTarget>::SharedPtr global_position_setpoint_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr position_target_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr curvature_target_pub_;
   rclcpp::Publisher<planner_msgs::msg::NavigationStatus>::SharedPtr planner_status_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr goal_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr rallypoint_pub_;
