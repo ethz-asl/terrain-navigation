@@ -8,7 +8,7 @@ Panels:
         - /Vehicle1
         - /Vehicle1/VehiclePoseMarker1/Namespaces1
       Splitter Ratio: 0.5
-    Tree Height: 285
+    Tree Height: 280
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -33,6 +33,7 @@ Panels:
     Topic: ""
   - Class: mav_planning_rviz/PlanningPanel
     Name: PlanningPanel
+    flight_stack: px4
     namespace: ""
     odometry_topic: ""
     planner_name: davosdorf
@@ -227,6 +228,19 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /position_target
           Value: true
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: CurvatureTargetMarker
+          Namespaces:
+            {}
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /curvature_target
+          Value: true
         - Class: rviz_default_plugins/InteractiveMarkers
           Enable Transparency: true
           Enabled: true
@@ -287,34 +301,6 @@ Visualization Manager:
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
-          Color: 0; 0; 255
-          Enabled: true
-          Head Diameter: 0.30000001192092896
-          Head Length: 0.20000000298023224
-          Length: 0.30000001192092896
-          Line Style: Lines
-          Line Width: 0.029999999329447746
-          Name: GeometricControllerPath
-          Offset:
-            X: 0
-            Y: 0
-            Z: 0
-          Pose Color: 255; 85; 255
-          Pose Style: None
-          Radius: 0.029999999329447746
-          Shaft Diameter: 0.10000000149011612
-          Shaft Length: 0.10000000149011612
-          Topic:
-            Depth: 5
-            Durability Policy: Volatile
-            Filter size: 10
-            History Policy: Keep Last
-            Reliability Policy: Reliable
-            Value: /geometric_controller/path
-          Value: true
-        - Alpha: 1
-          Buffer Length: 1
-          Class: rviz_default_plugins/Path
           Color: 255; 255; 0
           Enabled: true
           Head Diameter: 0.30000001192092896
@@ -339,6 +325,34 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /reference/path
+          Value: true
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz_default_plugins/Path
+          Color: 0; 255; 255
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: PlannedVehiclePath
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /vehicle_path
           Value: true
       Enabled: true
       Name: Planning
@@ -385,14 +399,14 @@ Visualization Manager:
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
-          Color: 0; 255; 255
+          Color: 0; 0; 255
           Enabled: true
           Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
           Length: 0.30000001192092896
           Line Style: Lines
           Line Width: 0.029999999329447746
-          Name: VehiclePath
+          Name: VehiclePoseHistory
           Offset:
             X: 0
             Y: 0
@@ -408,7 +422,7 @@ Visualization Manager:
             Filter size: 10
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /vehicle_path
+            Value: /geometric_controller/path
           Value: true
       Enabled: true
       Name: Vehicle
@@ -459,25 +473,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 4404.001953125
+      Distance: 3783.384765625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1531.7305908203125
-        Y: -52.1274299621582
-        Z: 1152.6519775390625
+        X: 808.8604736328125
+        Y: -174.71060180664062
+        Z: 1149.7601318359375
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.25479769706726074
+      Pitch: 1.5697963237762451
       Target Frame: map
       Value: Orbit (rviz_default_plugins)
-      Yaw: 6.203699588775635
+      Yaw: -1.5700000524520874
     Saved: ~
 Window Geometry:
   Displays:
@@ -487,7 +501,7 @@ Window Geometry:
   Hide Right Dock: true
   PlanningPanel:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000002ad000002dafc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000640000016c000000e300fffffffb0000001a0050006c0061006e006e0069006e006700500061006e0065006c01000001d10000016d0000016d00fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000020c000001b10000000000000000fb0000000c00540065006c0065006f00700000000368000000b20000007a00ffffff000000010000010f00000317fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000007c00000317000000c600fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000052b00000037fc0100000002fb0000000800540069006d006501000000000000052b0000023d00fffffffb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000014efc0100000001fb0000000800540069006d006501000000000000045000000000000000000000027d000002da00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002ad000002dafc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006200fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000006400000167000000e300fffffffb0000001a0050006c0061006e006e0069006e006700500061006e0065006c01000001cc000001720000017200fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000020c000001b10000000000000000fb0000000c00540065006c0065006f00700000000368000000b20000007a00ffffff000000010000010f000002dafc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000064000002da000000c600fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000052b00000037fc0100000002fb0000000800540069006d006501000000000000052b0000023d00fffffffb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000014efc0100000001fb0000000800540069006d006501000000000000045000000000000000000000027d000002da00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Teleop:
@@ -500,4 +514,4 @@ Window Geometry:
     collapsed: true
   Width: 1323
   X: 0
-  Y: 25
+  Y: 38
