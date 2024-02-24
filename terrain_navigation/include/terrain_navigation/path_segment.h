@@ -164,7 +164,7 @@ class PathSegment {
     return theta;
   }
 
-  double getLength(double epsilon = 0.001) {
+  double getLength(double epsilon = 1.0E-3) {
     double length{0.0};
     Eigen::Vector3d segment_start = states.front().position;
     Eigen::Vector3d segment_end = states.back().position;
@@ -198,7 +198,7 @@ class PathSegment {
   }
 
   double getClosestPoint(const Eigen::Vector3d &position, Eigen::Vector3d &closest_point, Eigen::Vector3d &tangent,
-                         double &segment_curvature, double epsilon = 0.001) {
+                         double &segment_curvature, double epsilon = 1.0E-4) {
     double theta{-std::numeric_limits<double>::infinity()};
     segment_curvature = curvature;
     Eigen::Vector3d segment_start = states.front().position;
