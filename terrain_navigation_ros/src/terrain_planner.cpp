@@ -247,7 +247,7 @@ void TerrainPlanner::cmdloopCallback() {
     double reference_curvature{0.0};
     auto current_segment = reference_primitive_.getCurrentSegment(vehicle_position_);
     double path_progress = current_segment.getClosestPoint(vehicle_position_, reference_position, reference_tangent,
-                                                           reference_curvature, 1.0);
+                                                           reference_curvature, 1.0E-4);
     // Publish global position setpoints in the global frame
     ESPG map_coordinate;
     Eigen::Vector3d map_origin;
