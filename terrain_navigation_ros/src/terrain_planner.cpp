@@ -765,7 +765,8 @@ void TerrainPlanner::publishGlobalPositionSetpoints(
   mavros_msgs::msg::GlobalPositionTarget msg;
   msg.header.stamp = this->get_clock()->now();
   msg.coordinate_frame = mavros_msgs::msg::GlobalPositionTarget::FRAME_GLOBAL_REL_ALT;
-  msg.type_mask = 0.0;
+  msg.type_mask =
+      mavros_msgs::msg::GlobalPositionTarget::IGNORE_YAW | mavros_msgs::msg::GlobalPositionTarget::IGNORE_YAW_RATE;
   msg.latitude = latitude;
   msg.longitude = longitude;
   msg.altitude = altitude - local_origin_altitude_;
@@ -790,7 +791,7 @@ void TerrainPlanner::publishPositionSetpoints(rclcpp::Publisher<mavros_msgs::msg
   mavros_msgs::msg::PositionTarget msg;
   msg.header.stamp = this->get_clock()->now();
   msg.coordinate_frame = mavros_msgs::msg::PositionTarget::FRAME_LOCAL_NED;
-  msg.type_mask = 0.0;
+  msg.type_mask = mavros_msgs::msg::PositionTarget::IGNORE_YAW | mavros_msgs::msg::PositionTarget::IGNORE_YAW_RATE;
   msg.position.x = position(0);
   msg.position.y = position(1);
   msg.position.z = position(2);
