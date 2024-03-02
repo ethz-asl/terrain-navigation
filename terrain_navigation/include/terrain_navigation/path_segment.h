@@ -164,10 +164,10 @@ class PathSegment {
     return theta;
   }
 
-  double getLength(double epsilon = 0.001) {
+  double getLength(double epsilon = 0.001) const {
     double length{0.0};
-    Eigen::Vector3d segment_start = states.front().position;
-    Eigen::Vector3d segment_end = states.back().position;
+    const Eigen::Vector3d segment_start = states.front().position;
+    const Eigen::Vector3d segment_end = states.back().position;
     if (states.size() == 1) {
       return 0.0;
     } else if (std::abs(curvature) < 0.0001) {
