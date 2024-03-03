@@ -200,7 +200,7 @@ void TerrainPlanner::cmdloopCallback(const ros::TimerEvent &event) {
       double next_segment_curvature = reference_primitive_.segments[current_segment_idx + 1].curvature;
 
       /// Blend current curvature with next curvature when close to the end
-      double segment_length = current_segment.getLength(1.0);
+      double segment_length = current_segment.getLength();
       double cut_off_distance = 10.0;
       double portion = std::min(
           1.0, std::max((path_progress * segment_length - segment_length + cut_off_distance) / cut_off_distance, 0.0));
