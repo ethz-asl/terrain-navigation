@@ -45,7 +45,6 @@
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 
-#include <geographic_msgs/GeoPointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <mavros_msgs/CameraImageCaptured.h>
@@ -95,7 +94,6 @@ class TerrainPlanner {
   void mavGlobalPoseCallback(const sensor_msgs::NavSatFix &msg);
   void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
   void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
-  void mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg);
   void mavMissionCallback(const mavros_msgs::WaypointListPtr &msg);
   void mavImageCapturedCallback(const mavros_msgs::CameraImageCaptured::ConstPtr &msg);
   bool setLocationCallback(planner_msgs::SetString::Request &req, planner_msgs::SetString::Response &res);
@@ -182,7 +180,6 @@ class TerrainPlanner {
   ros::Subscriber mavtwist_sub_;
   ros::Subscriber mavstate_sub_;
   ros::Subscriber mavmission_sub_;
-  ros::Subscriber global_origin_sub_;
 
   ros::ServiceServer setlocation_serviceserver_;
   ros::ServiceServer setmaxaltitude_serviceserver_;
@@ -193,7 +190,6 @@ class TerrainPlanner {
   ros::ServiceServer updatepath_serviceserver_;
   ros::ServiceServer setcurrentsegment_serviceserver_;
   ros::ServiceServer setplannerstate_service_server_;
-  ros::ServiceClient msginterval_serviceclient_;
 
   ros::Timer cmdloop_timer_, statusloop_timer_, plannerloop_timer_;
   ros::Time plan_time_;
@@ -257,13 +253,9 @@ class TerrainPlanner {
   double max_elevation_{120.0};
   double min_elevation_{50.0};
   double goal_radius_{66.67};
-  double local_origin_altitude_{0.0};
-  double local_origin_latitude_{0.0};
-  double local_origin_longitude_{0.0};
   double planner_time_budget_{30.0};
   double mission_loiter_radius_{66.67};
   double start_loiter_radius_{66.67};
-  bool local_origin_received_{false};
   bool map_initialized_{false};
   bool planner_enabled_{false};
   bool problem_updated_{true};
