@@ -50,6 +50,7 @@
 #include <mavros_msgs/PositionTarget.h>
 #include <mavros_msgs/Trajectory.h>
 #include <planner_msgs/NavigationStatus.h>
+#include <planner_msgs/Path.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -81,6 +82,7 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status", 1);
   path_segment_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("path_segments", 1);
   tree_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("tree", 1);
+  reference_path_pub_ = nh_.advertise<planner_msgs::Path>("reference_path", 1);
 
   mavlocalpose_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &TerrainPlanner::mavLocalPoseCallback, this,
                                     ros::TransportHints().tcpNoDelay());
@@ -461,6 +463,7 @@ void TerrainPlanner::plannerloopCallback(const ros::TimerEvent &event) {
 
   // double planner_time = planner_profiler_->toc();
   publishTrajectory(reference_primitive_.position());
+  publishPath(reference_path_pub_, reference_primitive_);
   // publishGoal(goal_pub_, goal_pos_, 66.67, Eigen::Vector3d(0.0, 1.0, 0.0));
 }
 
@@ -1159,4 +1162,22 @@ PathSegment TerrainPlanner::generateArcTrajectory(Eigen::Vector3d rate, const do
     time = time + dt;
   }
   return trajectory;
+}
+
+void TerrainPlanner::publishPath(const ros::Publisher &pub, Path &path) {
+  planner_msgs::Path path_msg;
+  for (const auto &path_segment : path.segments) {
+    planner_msgs::PathSegment segment_msg;
+    segment_msg.reached = path_segment.reached;
+    segment_msg.segment_start = toVector3(path_segment.states.front().position);
+    Eigen::Vector3d start_velocity = path_segment.states.front().velocity;
+    segment_msg.segment_tangent = toVector3(start_velocity.normalized());
+    segment_msg.periodic = path_segment.is_periodic;
+    segment_msg.curvature.data = double(path_segment.curvature);
+    double segment_length = path_segment.getLength();
+    segment_msg.segment_length.data = double(segment_length);
+    path_msg.segments.push_back(segment_msg);
+  }
+  pub.publish(path_msg);
+  return;
 }

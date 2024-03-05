@@ -124,6 +124,7 @@ class TerrainPlanner {
   void publishPathSegments(ros::Publisher &pub, Path &trajectory);
   void publishGoal(const ros::Publisher &pub, const Eigen::Vector3d &position, const double radius,
                    Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0), std::string name_space = "goal");
+  void publishPath(const ros::Publisher &pub, Path &path);
   void publishRallyPoints(const ros::Publisher &pub, const std::vector<Eigen::Vector3d> &positions, const double radius,
                           Eigen::Vector3d color = Eigen::Vector3d(1.0, 1.0, 0.0),
                           std::string name_space = "rallypoints");
@@ -175,6 +176,7 @@ class TerrainPlanner {
   ros::Publisher tree_pub_;
   ros::Publisher vehicle_velocity_pub_;
   ros::Publisher path_segment_pub_;
+  ros::Publisher reference_path_pub_;
   ros::Subscriber mavlocalpose_sub_;
   ros::Subscriber mavglobalpose_sub_;
   ros::Subscriber mavtwist_sub_;

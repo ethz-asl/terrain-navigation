@@ -11,6 +11,8 @@ add_message_files(
   NavigationStatus.msg
   TerrainInfo.msg
   MctsInfo.msg
+  Path.msg
+  PathSegment.msg
 )
 
 add_service_files(
