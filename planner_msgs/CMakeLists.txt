@@ -10,6 +10,7 @@ add_message_files(
   FILES
   NavigationStatus.msg
   TerrainInfo.msg
+  MctsInfo.msg
 )
 
 add_service_files(
