@@ -164,7 +164,7 @@ class PathSegment {
     return theta;
   }
 
-  double getLength(double epsilon = 0.001) const {
+  double getLength() const {
     double length{0.0};
     const Eigen::Vector3d segment_start = states.front().position;
     const Eigen::Vector3d segment_end = states.back().position;
@@ -177,7 +177,7 @@ class PathSegment {
       // Compute closest point on a Arc segment
       Eigen::Vector2d segment_start_2d = segment_start.head(2);
       Eigen::Vector2d segment_end_2d = segment_end.head(2);
-      if ((segment_start_2d - segment_end_2d).norm() < epsilon) {
+      if (is_periodic) {
         // Return full circle length
         length = 2 * M_PI * (1 / std::abs(curvature));
       } else {
