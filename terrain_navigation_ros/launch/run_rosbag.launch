@@ -19,5 +19,6 @@
         /mavros/state
         /mavros/wind_estimation
         /tree
-        /mavros/global_position/gp_origin"/>
+        /mavros/global_position/gp_origin
+        /mcts_info"/>
 </launch>
