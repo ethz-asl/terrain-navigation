@@ -236,7 +236,16 @@ class PathSegment {
         arc_center = getArcCenter(curvature, segment_start_2d, segment_start_tangent_2d, segment_end_2d);
         theta = getArcProgress(arc_center, position_2d, segment_start_2d, segment_end_2d, curvature);
       }
-      Eigen::Vector2d closest_point_2d = std::abs(1 / curvature) * (position_2d - arc_center).normalized() + arc_center;
+      Eigen::Vector2d closest_point_2d;
+      if (theta < 0) {
+        closest_point_2d = segment_start_2d;
+        theta = 0.0;
+      } else if (theta > 1.0) {
+        closest_point_2d = segment_end_2d;
+        theta = 1.0;
+      } else {
+        closest_point_2d = std::abs(1 / curvature) * (position_2d - arc_center).normalized() + arc_center;
+      }
       closest_point = Eigen::Vector3d(closest_point_2d(0), closest_point_2d(1),
                                       theta * segment_end(2) + (1 - theta) * segment_start(2));
       Eigen::Vector2d error_vector = (closest_point_2d - arc_center).normalized();  // Position to error vector

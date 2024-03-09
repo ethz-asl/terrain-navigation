@@ -44,6 +44,10 @@ TEST(PathSegmentTest, getArcProgress) {
   ASSERT_DOUBLE_EQ(theta, 0.0);
   theta = PathSegment::getArcProgress(arc_center, test_position, segment_start, segment_end, -1.0);
   ASSERT_DOUBLE_EQ(theta, 0.0);
+
+  Eigen::Vector2d test_position2(-1.0, -1.0);
+  theta = PathSegment::getArcProgress(arc_center, test_position2, segment_start, segment_end, 1.0);
+  ASSERT_DOUBLE_EQ(theta, 0.0);
 }
 
 TEST(PathSegmentTest, getArcProgress2) {
