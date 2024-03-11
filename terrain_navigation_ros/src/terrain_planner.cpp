@@ -90,8 +90,6 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
                                      ros::TransportHints().tcpNoDelay());
   mavtwist_sub_ = nh_.subscribe("mavros/local_position/velocity_local", 1, &TerrainPlanner::mavtwistCallback, this,
                                 ros::TransportHints().tcpNoDelay());
-  global_origin_sub_ = nh_.subscribe("mavros/global_position/gp_origin", 1, &TerrainPlanner::mavGlobalOriginCallback,
-                                     this, ros::TransportHints().tcpNoDelay());
 
   setlocation_serviceserver_ =
       nh_.advertiseService("/terrain_planner/set_location", &TerrainPlanner::setLocationCallback, this);
@@ -108,7 +106,6 @@ TerrainPlanner::TerrainPlanner(const ros::NodeHandle &nh, const ros::NodeHandle 
   setplanning_serviceserver_ =
       nh_.advertiseService("/terrain_planner/trigger_planning", &TerrainPlanner::setPlanningCallback, this);
   updatepath_serviceserver_ = nh_.advertiseService("/terrain_planner/set_path", &TerrainPlanner::setPathCallback, this);
-  msginterval_serviceclient_ = nh_.serviceClient<mavros_msgs::CommandLong>("mavros/cmd/command");
 
   std::string avalanche_map_path;
   nh_private.param<std::string>("terrain_path", map_path_, "resources/cadastre.tif");
@@ -266,7 +263,7 @@ void TerrainPlanner::statusloopCallback(const ros::TimerEvent &event) {
 
 void TerrainPlanner::plannerloopCallback(const ros::TimerEvent &event) {
   const std::lock_guard<std::mutex> lock(goal_mutex_);
-  if (local_origin_received_ && !map_initialized_) {
+  if (!map_initialized_) {
     std::cout << "[TerrainPlanner] Local origin received, loading map" << std::endl;
     map_initialized_ = terrain_map_->Load(map_path_, map_color_path_);
     terrain_map_->AddLayerDistanceTransform(min_elevation_, "distance_surface");
@@ -287,14 +284,6 @@ void TerrainPlanner::plannerloopCallback(const ros::TimerEvent &event) {
     } else {
       std::cout << "[TerrainPlanner]   - Failed to load map: " << map_path_ << std::endl;
     }
-    return;
-  }
-  if (!local_origin_received_) {
-    std::cout << "Requesting global origin messages" << std::endl;
-    mavros_msgs::CommandLong request_global_origin_msg;
-    request_global_origin_msg.request.command = mavros_msgs::CommandCode::REQUEST_MESSAGE;
-    request_global_origin_msg.request.param1 = 49;
-    msginterval_serviceclient_.call(request_global_origin_msg);
     return;
   }
 
@@ -660,11 +649,11 @@ void TerrainPlanner::publishGlobalPositionSetpoints(const ros::Publisher &pub, c
   // Publishes position setpoints sequentially as trajectory setpoints
   mavros_msgs::GlobalPositionTarget msg;
   msg.header.stamp = ros::Time::now();
-  msg.coordinate_frame = GlobalPositionTarget::FRAME_GLOBAL_REL_ALT;
+  msg.coordinate_frame = GlobalPositionTarget::FRAME_GLOBAL_INT;
   msg.type_mask = 0.0;
   msg.latitude = latitude;
   msg.longitude = longitude;
-  msg.altitude = altitude - local_origin_altitude_;
+  msg.altitude = altitude;
   msg.velocity.x = velocity(0);
   msg.velocity.y = velocity(1);
   msg.velocity.z = velocity(2);
@@ -833,23 +822,6 @@ void TerrainPlanner::publishPathSetpoints(const Eigen::Vector3d &position, const
   path_target_pub_.publish(trajectory_msg);
 }
 
-void TerrainPlanner::mavGlobalOriginCallback(const geographic_msgs::GeoPointStampedConstPtr &msg) {
-  std::cout << "[TerrainPlanner] Received Global Origin from FMU" << std::endl;
-
-  local_origin_received_ = true;
-
-  double X = static_cast<double>(msg->position.latitude);
-  double Y = static_cast<double>(msg->position.longitude);
-  double Z = static_cast<double>(msg->position.altitude);
-  GeographicLib::Geocentric earth(GeographicLib::Constants::WGS84_a(), GeographicLib::Constants::WGS84_f());
-  double lat, lon, alt;
-  earth.Reverse(X, Y, Z, lat, lon, alt);
-  enu_.emplace(lat, lon, alt, GeographicLib::Geocentric::WGS84());
-  local_origin_altitude_ = alt;
-  local_origin_latitude_ = lat;
-  local_origin_longitude_ = lon;
-}
-
 void TerrainPlanner::mavMissionCallback(const mavros_msgs::WaypointListPtr &msg) {
   for (auto &waypoint : msg->waypoints) {
     if (waypoint.is_current) {
@@ -860,7 +832,7 @@ void TerrainPlanner::mavMissionCallback(const mavros_msgs::WaypointListPtr &msg)
         std::cout << " - y_long: " << waypoint.y_long << std::endl;
         std::cout << " - alt   : " << waypoint.z_alt << std::endl;
         std::cout << " - Radius: " << waypoint.param3 << std::endl;
-        double waypoint_altitude = waypoint.z_alt + local_origin_altitude_;
+        double waypoint_altitude = waypoint.z_alt;
         const double loiter_radius = waypoint.param3;
         Eigen::Vector3d lv03_mission_loiter_center;
         GeoConversions::forward(waypoint.x_lat, waypoint.y_long, waypoint_altitude, lv03_mission_loiter_center.x(),
@@ -903,17 +875,6 @@ bool TerrainPlanner::setLocationCallback(planner_msgs::SetString::Request &req,
   std::cout << "[TerrainPlanner]   Computing safety layers" << std::endl;
   terrain_map_->addLayerSafety("safety", "ics_+", "ics_-");
 
-  if (!align_location) {
-    // Depending on Gdal versions, lon lat order are reversed
-    Eigen::Vector3d lv03_local_origin;
-    GeoConversions::forward(local_origin_latitude_, local_origin_longitude_, local_origin_altitude_,
-                            lv03_local_origin.x(), lv03_local_origin.y(), lv03_local_origin.z());
-    if (terrain_map_->getGridMap().isInside(Eigen::Vector2d(0.0, 0.0))) {
-      double terrain_altitude = terrain_map_->getGridMap().atPosition("elevation", Eigen::Vector2d(0.0, 0.0));
-      lv03_local_origin(2) = lv03_local_origin(2) - terrain_altitude;
-    }
-    terrain_map_->setGlobalOrigin(ESPG::CH1903_LV03, lv03_local_origin);
-  }
   if (result) {
     global_planner_->setBoundsFromMap(terrain_map_->getGridMap());
     global_planner_->setupProblem(start_pos_, goal_pos_, start_loiter_radius_);
