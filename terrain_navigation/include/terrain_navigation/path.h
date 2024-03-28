@@ -136,7 +136,7 @@ class Path {
         Eigen::Vector3d next_segment_start = segments[segment_idx].states.front().position;
         if ((closest_point - next_segment_start).norm() < epsilon_) {
           segment.reached = true;
-          return segment;
+          return segments[segment_idx];
         }
       }
 
