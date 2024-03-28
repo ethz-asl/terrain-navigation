@@ -75,7 +75,7 @@ class GeoConversions {
                      194.56 * std::pow(lon_aux, 2) * lat_aux + 119.79 * std::pow(lat_aux, 3);
     x = N - 1000000.00;
 
-    h = alt - 49.55 + 2.73 * lon_aux + 6.84 * lat_aux;
+    h = alt - 49.55 + 2.73 * lon_aux + 6.94 * lat_aux;
   };
 
   /**
