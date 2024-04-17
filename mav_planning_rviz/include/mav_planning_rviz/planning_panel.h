@@ -70,7 +70,7 @@ class PlanningPanel : public rviz::Panel {
   void publishWaypoint();
   void publishToController();
   void terrainAlignmentStateChanged(int state);
-  void EnableMaxAltitude();
+  void loadMissionService();
   void setPlannerModeServiceNavigate();
   void setPlannerModeServiceRollout();
   void setPlannerModeServiceAbort();

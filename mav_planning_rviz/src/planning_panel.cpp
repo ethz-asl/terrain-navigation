@@ -118,7 +118,7 @@ QGroupBox* PlanningPanel::createPlannerCommandGroup() {
   service_layout->addWidget(new QLabel("Planning budget:"), 2, 0, 1, 1);
   service_layout->addWidget(planning_budget_editor_, 2, 1, 1, 1);
   service_layout->addWidget(trigger_planning_button_, 2, 2, 1, 2);
-  service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 3, 0, 1, 1);
+  service_layout->addWidget(new QLabel("Load Preplanned Mission:"), 3, 0, 1, 1);
   service_layout->addWidget(max_altitude_button_enable_, 3, 1, 1, 1);
   service_layout->addWidget(planner_service_button_, 4, 0, 1, 2);
   service_layout->addWidget(waypoint_button_, 4, 2, 1, 2);
@@ -135,7 +135,7 @@ QGroupBox* PlanningPanel::createPlannerCommandGroup() {
   connect(waypoint_button_, SIGNAL(released()), this, SLOT(publishWaypoint()));
   connect(planning_budget_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlanningBudget()));
   connect(trigger_planning_button_, SIGNAL(released()), this, SLOT(setPlanningBudgetService()));
-  connect(max_altitude_button_enable_, SIGNAL(released()), this, SLOT(EnableMaxAltitude()));
+  connect(max_altitude_button_enable_, SIGNAL(released()), this, SLOT(loadMissionService()));
   connect(controller_button_, SIGNAL(released()), this, SLOT(publishToController()));
   connect(terrain_align_checkbox_, SIGNAL(stateChanged(int)), this, SLOT(terrainAlignmentStateChanged(int)));
 
@@ -387,8 +387,6 @@ void PlanningPanel::publishWaypoint() {
   t.detach();
 }
 
-void PlanningPanel::EnableMaxAltitude() { setMaxAltitudeConstrant(true); }
-
 void PlanningPanel::setMaxAltitudeConstrant(bool set_constraint) {
   std::cout << "[PlanningPanel] Loading new terrain:" << planner_name_.toStdString() << std::endl;
   // Load new environment using a service
@@ -474,6 +472,22 @@ void PlanningPanel::setPlanningBudgetService() {
     // if ()
     req.request.vector.z = planning_budget;
 
+    try {
+      ROS_DEBUG_STREAM("Service name: " << service_name);
+      if (!ros::service::call(service_name, req)) {
+        std::cout << "Couldn't call service: " << service_name << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Service Exception: " << e.what() << std::endl;
+    }
+  });
+  t.detach();
+}
+
+void PlanningPanel::loadMissionService() {
+  std::string service_name = "/terrain_planner/load_mission";
+  std::thread t([service_name] {
+    planner_msgs::SetVector3 req;
     try {
       ROS_DEBUG_STREAM("Service name: " << service_name);
       if (!ros::service::call(service_name, req)) {
