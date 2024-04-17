@@ -103,8 +103,7 @@ QGroupBox* PlanningPanel::createPlannerCommandGroup() {
   trigger_planning_button_ = new QPushButton("Plan");
   update_path_button_ = new QPushButton("Update Path");
   planning_budget_editor_ = new QLineEdit;
-  max_altitude_button_enable_ = new QPushButton("Enable Max altitude");
-  max_altitude_button_disable_ = new QPushButton("Disable Max altitude");
+  max_altitude_button_enable_ = new QPushButton("Load Mission");
 
   waypoint_button_ = new QPushButton("Disengage Planner");
   controller_button_ = new QPushButton("Send To Controller");
@@ -121,7 +120,6 @@ QGroupBox* PlanningPanel::createPlannerCommandGroup() {
   service_layout->addWidget(trigger_planning_button_, 2, 2, 1, 2);
   service_layout->addWidget(new QLabel("Max Altitude Constraints:"), 3, 0, 1, 1);
   service_layout->addWidget(max_altitude_button_enable_, 3, 1, 1, 1);
-  service_layout->addWidget(max_altitude_button_disable_, 3, 2, 1, 1);
   service_layout->addWidget(planner_service_button_, 4, 0, 1, 2);
   service_layout->addWidget(waypoint_button_, 4, 2, 1, 2);
 
@@ -138,7 +136,6 @@ QGroupBox* PlanningPanel::createPlannerCommandGroup() {
   connect(planning_budget_editor_, SIGNAL(editingFinished()), this, SLOT(updatePlanningBudget()));
   connect(trigger_planning_button_, SIGNAL(released()), this, SLOT(setPlanningBudgetService()));
   connect(max_altitude_button_enable_, SIGNAL(released()), this, SLOT(EnableMaxAltitude()));
-  connect(max_altitude_button_disable_, SIGNAL(released()), this, SLOT(DisableMaxAltitude()));
   connect(controller_button_, SIGNAL(released()), this, SLOT(publishToController()));
   connect(terrain_align_checkbox_, SIGNAL(stateChanged(int)), this, SLOT(terrainAlignmentStateChanged(int)));
 
@@ -391,8 +388,6 @@ void PlanningPanel::publishWaypoint() {
 }
 
 void PlanningPanel::EnableMaxAltitude() { setMaxAltitudeConstrant(true); }
-
-void PlanningPanel::DisableMaxAltitude() { setMaxAltitudeConstrant(false); }
 
 void PlanningPanel::setMaxAltitudeConstrant(bool set_constraint) {
   std::cout << "[PlanningPanel] Loading new terrain:" << planner_name_.toStdString() << std::endl;
