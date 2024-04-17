@@ -13,7 +13,7 @@
 #include "planner_msgs/NavigationStatus.h"
 #endif
 
-enum PLANNER_STATE { HOLD = 1, NAVIGATE = 2, ROLLOUT = 3, ABORT = 4, RETURN = 5 };
+enum PLANNER_STATE { HOLD = 1, NAVIGATE = 2, ROLLOUT = 3, ABORT = 4, RETURN = 5, COVERAGE = 6 };
 
 class QLineEdit;
 class QCheckBox;
