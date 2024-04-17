@@ -268,6 +268,7 @@ class PathSegment {
   bool viewed{false};
   bool reached{false};
   bool is_periodic{false};
+  bool trigger{false};
 
  private:
 };
