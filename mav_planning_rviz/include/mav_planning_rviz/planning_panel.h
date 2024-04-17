@@ -76,6 +76,7 @@ class PlanningPanel : public rviz::Panel {
   void setPlannerModeServiceRollout();
   void setPlannerModeServiceAbort();
   void setPlannerModeServiceReturn();
+  void setPlannerModeServiceCoverage();
 
  protected:
   // Set up the layout, only called by the constructor.

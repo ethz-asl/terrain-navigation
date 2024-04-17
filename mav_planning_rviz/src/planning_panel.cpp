@@ -73,17 +73,20 @@ QGroupBox* PlanningPanel::createPlannerModeGroup() {
   set_planner_state_buttons_.push_back(new QPushButton("ROLLOUT"));
   set_planner_state_buttons_.push_back(new QPushButton("ABORT"));
   set_planner_state_buttons_.push_back(new QPushButton("RETURN"));
+  set_planner_state_buttons_.push_back(new QPushButton("COVERAGE"));
 
   service_layout->addWidget(set_planner_state_buttons_[0], 0, 0, 1, 1);
   service_layout->addWidget(set_planner_state_buttons_[1], 0, 1, 1, 1);
   service_layout->addWidget(set_planner_state_buttons_[3], 0, 2, 1, 1);
   service_layout->addWidget(set_planner_state_buttons_[2], 0, 3, 1, 1);
+  service_layout->addWidget(set_planner_state_buttons_[4], 0, 4, 1, 1);
   groupBox->setLayout(service_layout);
 
   connect(set_planner_state_buttons_[0], SIGNAL(released()), this, SLOT(setPlannerModeServiceNavigate()));
   connect(set_planner_state_buttons_[1], SIGNAL(released()), this, SLOT(setPlannerModeServiceRollout()));
   connect(set_planner_state_buttons_[2], SIGNAL(released()), this, SLOT(setPlannerModeServiceAbort()));
   connect(set_planner_state_buttons_[3], SIGNAL(released()), this, SLOT(setPlannerModeServiceReturn()));
+  connect(set_planner_state_buttons_[4], SIGNAL(released()), this, SLOT(setPlannerModeServiceCoverage()));
 
   return groupBox;
 }
@@ -504,6 +507,11 @@ void PlanningPanel::setPlannerModeServiceRollout() {
   callSetPlannerStateService("/terrain_planner/set_planner_state", 3);
 }
 
+void PlanningPanel::setPlannerModeServiceCoverage() {
+  callSetPlannerStateService("/terrain_planner/set_planner_state", 6);
+}
+
+
 void PlanningPanel::callSetPlannerStateService(std::string service_name, const int mode) {
   std::thread t([service_name, mode] {
     planner_msgs::SetPlannerState req;
@@ -615,6 +623,7 @@ void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& m
       set_planner_state_buttons_[1]->setDisabled(false);  // ROLLOUT
       set_planner_state_buttons_[2]->setDisabled(true);   // ABORT
       set_planner_state_buttons_[3]->setDisabled(false);  // RETURN
+      set_planner_state_buttons_[4]->setDisabled(false);  // Coverage
       break;
     }
     case PLANNER_STATE::NAVIGATE: {
@@ -622,6 +631,7 @@ void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& m
       set_planner_state_buttons_[1]->setDisabled(true);   // ROLLOUT
       set_planner_state_buttons_[2]->setDisabled(false);  // ABORT
       set_planner_state_buttons_[3]->setDisabled(true);  // RETURN
+      set_planner_state_buttons_[4]->setDisabled(true);  // Coverage
       break;
     }
     case PLANNER_STATE::ROLLOUT: {
@@ -629,6 +639,7 @@ void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& m
       set_planner_state_buttons_[1]->setDisabled(true);   // ROLLOUT
       set_planner_state_buttons_[2]->setDisabled(false);  // ABORT
       set_planner_state_buttons_[3]->setDisabled(true);   // RETURN
+      set_planner_state_buttons_[4]->setDisabled(true);  // Coverage
       break;
     }
     case PLANNER_STATE::ABORT: {
@@ -636,6 +647,7 @@ void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& m
       set_planner_state_buttons_[1]->setDisabled(true);  // ROLLOUT
       set_planner_state_buttons_[2]->setDisabled(true);  // ABORT
       set_planner_state_buttons_[3]->setDisabled(true);  // RETURN
+      set_planner_state_buttons_[4]->setDisabled(true);  // Coverage
       break;
     }
     case PLANNER_STATE::RETURN: {
@@ -643,6 +655,15 @@ void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& m
       set_planner_state_buttons_[1]->setDisabled(true);   // ROLLOUT
       set_planner_state_buttons_[2]->setDisabled(false);  // ABORT
       set_planner_state_buttons_[3]->setDisabled(true);   // RETURN
+      set_planner_state_buttons_[4]->setDisabled(true);  // Coverage
+      break;
+    }
+    case PLANNER_STATE::COVERAGE: {
+      set_planner_state_buttons_[0]->setDisabled(true);   // NAVIGATE
+      set_planner_state_buttons_[1]->setDisabled(true);   // ROLLOUT
+      set_planner_state_buttons_[2]->setDisabled(false);  // ABORT
+      set_planner_state_buttons_[3]->setDisabled(true);  // RETURN
+      set_planner_state_buttons_[4]->setDisabled(true);  // Coverage
       break;
     }
   }
