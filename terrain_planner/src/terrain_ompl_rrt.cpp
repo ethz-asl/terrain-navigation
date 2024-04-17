@@ -162,6 +162,42 @@ void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen:
   problem_setup_->setup();
 }
 
+void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const double start_loiter_radius,
+                                  const Eigen::Vector3d& goal, const Eigen::Vector3d& goal_vel) {
+  configureProblem();
+  double radius =
+      problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
+  double delta_theta = 0.1;
+  for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
+    ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
+        problem_setup_->getSpaceInformation());
+
+    start_ompl->setX(start_pos(0) + std::abs(start_loiter_radius) * std::cos(theta));
+    start_ompl->setY(start_pos(1) + std::abs(start_loiter_radius) * std::sin(theta));
+    start_ompl->setZ(start_pos(2));
+    double start_yaw = bool(start_loiter_radius > 0) ? theta - M_PI_2 : theta + M_PI_2;
+    wrap_pi(start_yaw);
+    start_ompl->setYaw(start_yaw);
+    problem_setup_->addStartState(start_ompl);
+  }
+
+  goal_states_ = std::make_shared<ompl::base::GoalStates>(problem_setup_->getSpaceInformation());
+  ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
+      problem_setup_->getSpaceInformation());
+  goal_ompl->setX(goal(0));
+  goal_ompl->setY(goal(1));
+  goal_ompl->setZ(goal(2));
+  double goal_yaw = std::atan2(goal_vel(1), goal_vel(0));
+  goal_ompl->setYaw(goal_yaw);
+  goal_states_->addState(goal_ompl);
+  problem_setup_->setGoal(goal_states_);
+
+  problem_setup_->setup();
+
+  auto planner_ptr = problem_setup_->getPlanner();
+  // std::cout << "Planner Range: " << planner_ptr->as<ompl::geometric::RRTstar>()->getRange() << std::endl;
+}
+
 void TerrainOmplRrt::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
                                   const std::vector<Eigen::Vector3d>& goal_positions) {
   if (goal_positions.empty()) {
