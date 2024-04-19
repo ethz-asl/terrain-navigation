@@ -125,18 +125,18 @@ class Path {
     Eigen::Vector3d closest_point;
     Eigen::Vector3d tangent;
     double curvature;
-    int next_segment_idx{0};
+    int segment_idx{-1};
     for (auto &segment : segments) {
-      next_segment_idx++;
+      segment_idx++;
       if (segment.reached && (&segment != &segments.back())) continue;
       auto theta = segment.getClosestPoint(position, closest_point, tangent, curvature);
 
       // If current segment is a full circle, and has a next segment, escape when close to start of next segment
       if (segment.is_periodic && (&segment != &segments.back())) {  // Segment is a terminal periodic set
-        Eigen::Vector3d next_segment_start = segments[next_segment_idx].states.front().position;
+        Eigen::Vector3d next_segment_start = segments[segment_idx+1].states.front().position;
         if ((closest_point - next_segment_start).norm() < epsilon_) {
           segment.reached = true;
-          return segments[next_segment_idx]; // Return next segment
+          return segments[segment_idx+1]; // Return next segment
         }
       }
 
