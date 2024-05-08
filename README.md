@@ -22,8 +22,9 @@ If you find this package useful in an academic context, please consider citing t
 @article{lim2024safe,
   title={Safe Low-Altitude Navigation in Steep Terrain with Fixed-Wing Aerial Vehicles},
   author={Lim, Jaeyoung and Achermann, Florian and Girod, Rik and Lawrance, Nicholas and Siegwart, Roland},
-  journal={arXiv preprint arXiv:2401.04831},
-  year={2024}
+  journal={IEEE Robotics and Automation Letters},
+  year={2024},
+  publisher={IEEE}
 }
 ```
 
