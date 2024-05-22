@@ -64,7 +64,7 @@ void DataLogger::writeToFile(const std::string path) {
       if (std::string* s = std::any_cast<std::string>(&data.at(key))) {
         output_file << std::any_cast<std::string&>(data.at(key)) << field_seperator;
       } else if (double* i = std::any_cast<double>(&data.at(key))) {
-        output_file << std::any_cast<double&>(data.at(key)) << field_seperator;
+        output_file << std::to_string(std::any_cast<double&>(data.at(key))) << field_seperator;
       }
     }
     output_file << "\n";
