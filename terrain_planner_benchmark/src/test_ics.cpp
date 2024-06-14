@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
   nh_private.param<bool>("visualize", visualize, true);
 
   std::shared_ptr<TerrainMap> reference_map = std::make_shared<TerrainMap>();
-  reference_map->Load(map_path, false, map_color_path);
+  reference_map->Load(map_path, map_color_path);
   reference_map->AddLayerDistanceTransform(50.0, "distance_surface");
   reference_map->AddLayerDistanceTransform(120.0, "max_elevation");
   double width = reference_map->getGridMap().getLength().y();
@@ -261,7 +261,7 @@ int main(int argc, char** argv) {
   std::cout << "Valid circlular terminal state coverage" << std::endl;
 
   std::shared_ptr<TerrainMap> terrain_map = std::make_shared<TerrainMap>();
-  terrain_map->Load(map_path, false, map_color_path);
+  terrain_map->Load(map_path, map_color_path);
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
 
