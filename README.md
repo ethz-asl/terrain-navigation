@@ -90,7 +90,10 @@ Run a simple planning example:
 roslaunch terrain_planner_benchmark test_ompl_rrt_circle.launch 
 ```
 
-<img src="https://github.com/ethz-asl/terrain-navigation/assets/5248102/f630d1da-37c1-4e8d-9127-83a07ba22f45" width="300">
+<p align="center">
+    <img src="https://github.com/ethz-asl/terrain-navigation/assets/5248102/f630d1da-37c1-4e8d-9127-83a07ba22f45" alt="example" width="480">
+</p>
+
 
 ## Running with PX4 SITL(Software-In-The-Loop)
 
