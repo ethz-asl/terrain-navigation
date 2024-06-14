@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
 
   // Load terrain map from defined tif paths
   auto terrain_map = std::make_shared<TerrainMap>();
-  terrain_map->initializeFromGeotiff(map_path, false);
+  terrain_map->initializeFromGeotiff(map_path);
   if (!color_file_path.empty()) {  // Load color layer if the color path is nonempty
     terrain_map->addColorFromGeotiff(color_file_path);
   }

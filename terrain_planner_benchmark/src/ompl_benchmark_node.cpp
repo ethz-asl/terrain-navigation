@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
   nh_private.param<std::string>("output_file_path", output_file_path, "");
 
   auto terrain_map = std::make_shared<TerrainMap>();
-  terrain_map->initializeFromGeotiff(map_path, false);
+  terrain_map->initializeFromGeotiff(map_path);
   if (!color_file_path.empty()) {  // Load color layer if the color path is nonempty
     terrain_map->addColorFromGeotiff(color_file_path);
   }
