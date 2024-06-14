@@ -255,7 +255,7 @@ int main(int argc, char** argv) {
   } else {
     throw std::runtime_error("Specified start position is NOT valid");
   }
-  Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.4 * map_width_x, map_pos(1) + 0.4 * map_width_y, 0.0)};
+  Eigen::Vector3d goal{Eigen::Vector3d(map_pos(0) - 0.3 * map_width_x, map_pos(1) + 0.3 * map_width_y, 0.0)};
   Eigen::Vector3d updated_goal;
   if (validatePosition(terrain_map, goal, updated_goal)) {
     goal = updated_goal;
@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
   }
 
   planner->setupProblem(start, goal);
-  if (planner->Solve(100.0, path)) {
+  if (planner->Solve(10.0, path)) {
     std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
   } else {
     std::cout << "[TestRRTCircleGoal] Unable to find solution" << std::endl;

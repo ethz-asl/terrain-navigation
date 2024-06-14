@@ -79,6 +79,20 @@ Build the package
 catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False
 catkin build -j$(nproc) -l$(nproc) terrain_navigation_ros
 ```
+## Running an example of the planner
+In order to run the examples, build the `terrain_planner_benchmark` package.
+```
+catkin build terrain_planner_benchmark
+```
+Run a simple planning example:
+```
+roslaunch terrain_planner_benchmark test_ompl_rrt_circle.launch 
+```
+
+<p align="center">
+    <img src="https://github.com/ethz-asl/terrain-navigation/assets/5248102/f630d1da-37c1-4e8d-9127-83a07ba22f45" alt="example" width="480">
+</p>
+
 
 ## Running with PX4 SITL(Software-In-The-Loop)
 
