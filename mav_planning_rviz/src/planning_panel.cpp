@@ -621,7 +621,7 @@ void PlanningPanel::plannerstateCallback(const planner_msgs::NavigationStatus& m
       set_planner_state_buttons_[0]->setDisabled(true);   // NAVIGATE
       set_planner_state_buttons_[1]->setDisabled(true);   // ROLLOUT
       set_planner_state_buttons_[2]->setDisabled(false);  // ABORT
-      set_planner_state_buttons_[3]->setDisabled(true);  // RETURN
+      set_planner_state_buttons_[3]->setDisabled(true);   // RETURN
       break;
     }
     case PLANNER_STATE::ROLLOUT: {
