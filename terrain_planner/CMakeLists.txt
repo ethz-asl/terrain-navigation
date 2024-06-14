@@ -35,6 +35,7 @@ include_directories(
 add_library(${PROJECT_NAME}
   src/terrain_ompl.cpp
   src/terrain_ompl_rrt.cpp
+  src/terrain_mm_prm.cpp
   src/DubinsPath.cpp
   src/DubinsAirplane.cpp
 )
