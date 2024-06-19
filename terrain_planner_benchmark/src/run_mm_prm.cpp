@@ -185,6 +185,7 @@ int main(int argc, char** argv) {
   auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
+  auto mc_tree_pub = nh.advertise<visualization_msgs::MarkerArray>("tree_euclidean", 1, true);
 
   std::string map_path, color_file_path, output_directory, location;
   nh_private.param<std::string>("map_path", map_path, "");
@@ -210,10 +211,16 @@ int main(int argc, char** argv) {
 
   // Initialize planner with loaded terrain map
   auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
-  auto planner = std::make_shared<TerrainMmPrm>(dubins_ss);
-  planner->setMap(terrain_map);
+  auto dubins_planner = std::make_shared<TerrainMmPrm>(dubins_ss);
+  dubins_planner->setMap(terrain_map);
   /// TODO: Get bounds from gridmap
-  planner->setBoundsFromMap(terrain_map->getGridMap());
+  dubins_planner->setBoundsFromMap(terrain_map->getGridMap());
+
+  auto mc_ss = std::make_shared<ompl::base::RealVectorStateSpace>(3);
+  auto mc_planner = std::make_shared<TerrainMmPrm>(mc_ss);
+  mc_planner->setMap(terrain_map);
+  /// TODO: Get bounds from gridmap
+  mc_planner->setBoundsFromMap(terrain_map->getGridMap());
 
   const double map_width_x = terrain_map->getGridMap().getLength().x();
   const double map_width_y = terrain_map->getGridMap().getLength().y();
@@ -238,8 +245,13 @@ int main(int argc, char** argv) {
 
   Path path;
 
-  planner->setupProblem(start, goal);
-  bool found_solution = planner->Solve(0.1, path);
+  dubins_planner->setupProblem(start, goal);
+  bool found_solution = dubins_planner->Solve(0.1, path);
+  std::cout << "starting MC planning" << std::endl;
+  mc_planner->setupProblem(start, goal);
+  std::vector<Eigen::Vector3d> dummy;
+  std::cout << "Solving problem" << std::endl;
+  bool found_mc_solution = mc_planner->Solve(0.1, dummy);
   if (found_solution) {
     std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
     Eigen::Vector3d start_position = path.firstSegment().states.front().position;
@@ -273,7 +285,8 @@ int main(int argc, char** argv) {
   /// TODO: Publish a circle instead of a goal marker!
   publishCircleSetpoints(start_pos_pub, start, radius);
   publishCircleSetpoints(goal_pos_pub, goal, radius);
-  publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
+  publishTree(trajectory_pub, dubins_planner->getPlannerData(), dubins_planner->getProblemSetup());
+  // publishTree(mc_tree_pub, mc_planner->getPlannerData(), mc_planner->getProblemSetup());
   /// TODO: Save planned path into a csv file for plotting
 
   data_logger->setPrintHeader(true);
