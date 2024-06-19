@@ -80,7 +80,7 @@ void TerrainMmPrm::configureProblem() {
 }
 
 void TerrainMmPrm::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal,
-                                  double start_loiter_radius) {
+                                double start_loiter_radius) {
   configureProblem();
   double radius =
       problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
@@ -123,7 +123,7 @@ void TerrainMmPrm::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::V
 }
 
 void TerrainMmPrm::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
-                                  const Eigen::Vector3d& goal, double goal_radius) {
+                                const Eigen::Vector3d& goal, double goal_radius) {
   configureProblem();
 
   double radius;
@@ -167,7 +167,7 @@ void TerrainMmPrm::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::V
 }
 
 void TerrainMmPrm::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
-                                  const std::vector<Eigen::Vector3d>& goal_positions) {
+                                const std::vector<Eigen::Vector3d>& goal_positions) {
   if (goal_positions.empty()) {
     std::cout << "Failed to configure problem: Goal position list empty" << std::endl;
     return;
@@ -212,7 +212,7 @@ void TerrainMmPrm::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::V
 }
 
 void TerrainMmPrm::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& start_vel,
-                                  const Eigen::Vector3d& goal, const Eigen::Vector3d& goal_vel) {
+                                const Eigen::Vector3d& goal, const Eigen::Vector3d& goal_vel) {
   configureProblem();
 
   ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
@@ -326,7 +326,7 @@ bool TerrainMmPrm::getSolutionPath(std::vector<Eigen::Vector3d>& path) {
 }
 
 double TerrainMmPrm::getSegmentCurvature(std::shared_ptr<ompl::OmplSetup> problem_setup,
-                                           fw_planning::spaces::DubinsPath& dubins_path, const size_t start_idx) const {
+                                         fw_planning::spaces::DubinsPath& dubins_path, const size_t start_idx) const {
   double segment_curvature{0.0};
   double maximum_curvature = 1 / problem_setup->getGeometricComponentStateSpace()
                                      ->as<fw_planning::spaces::DubinsAirplaneStateSpace>()
@@ -349,7 +349,7 @@ double TerrainMmPrm::getSegmentCurvature(std::shared_ptr<ompl::OmplSetup> proble
 }
 
 void TerrainMmPrm::solutionPathToPath(ompl::geometric::PathGeometric path, Path& trajectory_segments,
-                                        double resolution) const {
+                                      double resolution) const {
   trajectory_segments.segments.clear();
 
   std::vector<ompl::base::State*>& state_vector = path.getStates();
@@ -427,7 +427,7 @@ void TerrainMmPrm::solutionPathToPath(ompl::geometric::PathGeometric path, Path&
 }
 
 void TerrainMmPrm::solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric path,
-                                                    std::vector<Eigen::Vector3d>& trajectory_points) const {
+                                                  std::vector<Eigen::Vector3d>& trajectory_points) const {
   trajectory_points.clear();
   path.interpolate();
 

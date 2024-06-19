@@ -208,10 +208,9 @@ int main(int argc, char** argv) {
   terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
   terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
 
-  Path path;
-
   // Initialize planner with loaded terrain map
-  auto planner = std::make_shared<TerrainMmPrm>();
+  auto dubins_ss = std::make_shared<fw_planning::spaces::DubinsAirplaneStateSpace>();
+  auto planner = std::make_shared<TerrainMmPrm>(dubins_ss);
   planner->setMap(terrain_map);
   /// TODO: Get bounds from gridmap
   planner->setBoundsFromMap(terrain_map->getGridMap());
@@ -237,44 +236,45 @@ int main(int argc, char** argv) {
     throw std::runtime_error("Specified goal position is NOT valid");
   }
 
+  Path path;
+
   planner->setupProblem(start, goal);
-  if (planner->Solve(10.0, path)) {
+  bool found_solution = planner->Solve(0.1, path);
+  if (found_solution) {
     std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
+    Eigen::Vector3d start_position = path.firstSegment().states.front().position;
+    Eigen::Vector3d start_velocity = path.firstSegment().states.front().velocity;
+
+    PathSegment start_loiter_path = getLoiterPath(start_position, start_velocity, start);
+    path.prependSegment(start_loiter_path);
+
+    Eigen::Vector3d end_position = path.lastSegment().states.back().position;
+    Eigen::Vector3d end_velocity = path.lastSegment().states.back().velocity;
+    PathSegment goal_loiter_path = getLoiterPath(end_position, end_velocity, goal);
+
+    path.appendSegment(goal_loiter_path);
+    publishTrajectory(path_pub, path.position());
+    for (auto& point : path.position()) {
+      std::unordered_map<std::string, std::any> state;
+      state.insert(std::pair<std::string, double>("x", point(0) + 0.5 * map_width_x));
+      state.insert(std::pair<std::string, double>("y", point(1) + 0.5 * map_width_y));
+      state.insert(std::pair<std::string, double>("z", point(2)));
+      data_logger->record(state);
+    }
   } else {
     std::cout << "[TestRRTCircleGoal] Unable to find solution" << std::endl;
   }
-
-  Eigen::Vector3d start_position = path.firstSegment().states.front().position;
-  Eigen::Vector3d start_velocity = path.firstSegment().states.front().velocity;
-
-  PathSegment start_loiter_path = getLoiterPath(start_position, start_velocity, start);
-  path.prependSegment(start_loiter_path);
-
-  Eigen::Vector3d end_position = path.lastSegment().states.back().position;
-  Eigen::Vector3d end_velocity = path.lastSegment().states.back().velocity;
-  PathSegment goal_loiter_path = getLoiterPath(end_position, end_velocity, goal);
-
-  path.appendSegment(goal_loiter_path);
-
   // Repeatedly publish results
   terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
   grid_map_msgs::GridMap message;
   grid_map::GridMapRosConverter::toMessage(terrain_map->getGridMap(), message);
   grid_map_pub.publish(message);
-  publishTrajectory(path_pub, path.position());
 
   /// TODO: Publish a circle instead of a goal marker!
   publishCircleSetpoints(start_pos_pub, start, radius);
   publishCircleSetpoints(goal_pos_pub, goal, radius);
   publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
   /// TODO: Save planned path into a csv file for plotting
-  for (auto& point : path.position()) {
-    std::unordered_map<std::string, std::any> state;
-    state.insert(std::pair<std::string, double>("x", point(0) + 0.5 * map_width_x));
-    state.insert(std::pair<std::string, double>("y", point(1) + 0.5 * map_width_y));
-    state.insert(std::pair<std::string, double>("z", point(2)));
-    data_logger->record(state);
-  }
 
   data_logger->setPrintHeader(true);
   std::string output_file_path = output_directory + "/" + location + "_planned_path.csv";
