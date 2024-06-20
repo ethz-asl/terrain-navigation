@@ -71,8 +71,12 @@ void TerrainMmPrm::configureProblem() {
   bounds.setHigh(2, upper_bound_.z());
 
   // Define start and goal positions.
-  problem_setup_->getGeometricComponentStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->setBounds(
-      bounds);
+  if (problem_setup_->getStateSpace()->getName() == "DubinsAirplaneCompoundSpace0") {
+    problem_setup_->getGeometricComponentStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->setBounds(
+        bounds);
+  } else {
+    problem_setup_->getStateSpace()->as<ompl::base::RealVectorStateSpace>()->setBounds(bounds);
+  }
 
   problem_setup_->setStateValidityCheckingResolution(0.001);
 
@@ -82,43 +86,62 @@ void TerrainMmPrm::configureProblem() {
 void TerrainMmPrm::setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal,
                                 double start_loiter_radius) {
   configureProblem();
-  double radius =
-      problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
-  double delta_theta = 0.1;
-  for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
-    ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
-        problem_setup_->getSpaceInformation());
+  if (problem_setup_->getStateSpace()->getName() == "DubinsAirplaneCompoundSpace0") {
+    double radius =
+        problem_setup_->getStateSpace()->as<fw_planning::spaces::DubinsAirplaneStateSpace>()->getMinTurningRadius();
+    double delta_theta = 0.1;
+    for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
+      ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> start_ompl(
+          problem_setup_->getSpaceInformation());
 
-    start_ompl->setX(start_pos(0) + std::abs(start_loiter_radius) * std::cos(theta));
-    start_ompl->setY(start_pos(1) + std::abs(start_loiter_radius) * std::sin(theta));
-    start_ompl->setZ(start_pos(2));
-    double start_yaw = bool(start_loiter_radius > 0) ? theta - M_PI_2 : theta + M_PI_2;
-    wrap_pi(start_yaw);
-    start_ompl->setYaw(start_yaw);
+      start_ompl->setX(start_pos(0) + std::abs(start_loiter_radius) * std::cos(theta));
+      start_ompl->setY(start_pos(1) + std::abs(start_loiter_radius) * std::sin(theta));
+      start_ompl->setZ(start_pos(2));
+      double start_yaw = bool(start_loiter_radius > 0) ? theta - M_PI_2 : theta + M_PI_2;
+      wrap_pi(start_yaw);
+      start_ompl->setYaw(start_yaw);
+      problem_setup_->addStartState(start_ompl);
+    }
+
+    goal_states_ = std::make_shared<ompl::base::GoalStates>(problem_setup_->getSpaceInformation());
+    for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
+      ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
+          problem_setup_->getSpaceInformation());
+      goal_ompl->setX(goal(0) + radius * std::cos(theta));
+      goal_ompl->setY(goal(1) + radius * std::sin(theta));
+      goal_ompl->setZ(goal(2));
+      double goal_yaw = theta + M_PI_2;
+      wrap_pi(goal_yaw);
+      goal_ompl->setYaw(goal_yaw);
+      goal_states_->addState(goal_ompl);
+      goal_yaw = theta - M_PI_2;
+      wrap_pi(goal_yaw);
+      goal_ompl->setYaw(goal_yaw);
+      goal_states_->addState(goal_ompl);  // Add additional state for bidirectional tangents
+    }
+    problem_setup_->setGoal(goal_states_);
+  } else {
+    std::cout << "Configuring problem" << std::endl;
+    ompl::base::ScopedState<ompl::base::RealVectorStateSpace> start_ompl(problem_setup_->getSpaceInformation());
+    start_ompl->as<ob::RealVectorStateSpace::StateType>()->values[0] = start_pos(0);
+    start_ompl->as<ob::RealVectorStateSpace::StateType>()->values[1] = start_pos(1);
+    start_ompl->as<ob::RealVectorStateSpace::StateType>()->values[2] = start_pos(2);
     problem_setup_->addStartState(start_ompl);
+    goal_states_ = std::make_shared<ompl::base::GoalStates>(problem_setup_->getSpaceInformation());
+    ompl::base::ScopedState<ompl::base::RealVectorStateSpace> goal_ompl(problem_setup_->getSpaceInformation());
+    goal_ompl->as<ob::RealVectorStateSpace::StateType>()->values[0] = goal(0);
+    goal_ompl->as<ob::RealVectorStateSpace::StateType>()->values[1] = goal(1);
+    goal_ompl->as<ob::RealVectorStateSpace::StateType>()->values[2] = goal(2);
+
+    goal_states_->addState(goal_ompl);
+    problem_setup_->setGoal(goal_states_);
+    std::cout << "WTF" << std::endl;
   }
 
-  goal_states_ = std::make_shared<ompl::base::GoalStates>(problem_setup_->getSpaceInformation());
-  for (double theta = -M_PI; theta < M_PI; theta += (delta_theta * 2 * M_PI)) {
-    ompl::base::ScopedState<fw_planning::spaces::DubinsAirplaneStateSpace> goal_ompl(
-        problem_setup_->getSpaceInformation());
-    goal_ompl->setX(goal(0) + radius * std::cos(theta));
-    goal_ompl->setY(goal(1) + radius * std::sin(theta));
-    goal_ompl->setZ(goal(2));
-    double goal_yaw = theta + M_PI_2;
-    wrap_pi(goal_yaw);
-    goal_ompl->setYaw(goal_yaw);
-    goal_states_->addState(goal_ompl);
-    goal_yaw = theta - M_PI_2;
-    wrap_pi(goal_yaw);
-    goal_ompl->setYaw(goal_yaw);
-    goal_states_->addState(goal_ompl);  // Add additional state for bidirectional tangents
-  }
-  problem_setup_->setGoal(goal_states_);
 
   problem_setup_->setup();
 
-  auto planner_ptr = problem_setup_->getPlanner();
+  // auto planner_ptr = problem_setup_->getPlanner();
   // std::cout << "Planner Range: " << planner_ptr->as<ompl::geometric::RRTstar>()->getRange() << std::endl;
 }
 
@@ -434,7 +457,17 @@ void TerrainMmPrm::solutionPathToTrajectoryPoints(ompl::geometric::PathGeometric
   std::vector<ompl::base::State*>& state_vector = path.getStates();
 
   for (ompl::base::State* state_ptr : state_vector) {
-    auto position = dubinsairplanePosition(state_ptr);
-    trajectory_points.emplace_back(position);
+    if (problem_setup_->getStateSpace()->getName() == "DubinsAirplaneCompoundSpace0") {
+      auto position = dubinsairplanePosition(state_ptr);
+      trajectory_points.emplace_back(position);
+    } else {
+      std::cout << "Trajectory points" << std::endl;
+      Eigen::Vector3d position;
+      position(0) = state_ptr->as<ob::RealVectorStateSpace::StateType>()->values[0];
+      position(1) = state_ptr->as<ob::RealVectorStateSpace::StateType>()->values[1];
+      position(2) = state_ptr->as<ob::RealVectorStateSpace::StateType>()->values[2];
+      trajectory_points.emplace_back(position);
+      std::cout << "Appending" << std::endl;
+    }
   }
 }
