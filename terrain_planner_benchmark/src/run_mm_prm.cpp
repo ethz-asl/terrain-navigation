@@ -238,7 +238,7 @@ int main(int argc, char** argv) {
   }
 
   planner->setupProblem(start, goal);
-  if (planner->Solve(10.0, path)) {
+  if (planner->Solve(0.3, path)) {
     std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
   } else {
     std::cout << "[TestRRTCircleGoal] Unable to find solution" << std::endl;
