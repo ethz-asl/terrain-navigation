@@ -33,6 +33,7 @@
  ****************************************************************************/
 
 #include "terrain_planner/terrain_mm_prm.h"
+#include "terrain_planner/mm_prm.h"
 
 // Constructor
 TerrainMmPrm::TerrainMmPrm() {
@@ -50,7 +51,8 @@ void TerrainMmPrm::configureProblem() {
   problem_setup_->clear();
   problem_setup_->clearStartStates();
 
-  problem_setup_->setDefaultPlanner();
+  auto planner = std::make_shared<ompl::geometric::MultimodalPRM>(problem_setup_->getSpaceInformation());
+  problem_setup_->setPlanner(planner);
   problem_setup_->setDefaultObjective();
   // assert(map);
   problem_setup_->setTerrainCollisionChecking(map_->getGridMap(), check_max_altitude_);
