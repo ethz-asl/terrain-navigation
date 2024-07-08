@@ -95,9 +95,11 @@ int main(int argc, char** argv) {
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
   std::string map_path, color_file_path;
   bool random{false};
+  double turn_radius{80.0};
   nh_private.param<std::string>("map_path", map_path, "");
   nh_private.param<std::string>("color_file_path", color_file_path, "");
   nh_private.param<bool>("random", random, false);
+  nh_private.param<double>("turn_radius", turn_radius, turn_radius);
 
   // Load terrain map from defined tif paths
   auto terrain_map = std::make_shared<TerrainMap>();
@@ -107,6 +109,9 @@ int main(int argc, char** argv) {
   }
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
+  terrain_map->AddLayerHorizontalDistanceTransform(turn_radius, "ics_+", "distance_surface");
+  terrain_map->AddLayerHorizontalDistanceTransform(-turn_radius, "ics_-", "max_elevation");
+  terrain_map->addLayerSafety("safety", "ics_+", "ics_-");
 
   Path path;
   std::vector<Eigen::Vector3d> interpolated_path;

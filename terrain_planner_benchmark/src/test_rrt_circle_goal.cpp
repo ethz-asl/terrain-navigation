@@ -231,9 +231,10 @@ int main(int argc, char** argv) {
   }
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
-  double radius = 66.667;
+  double radius = 80.0;
   terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
   terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
+  terrain_map->addLayerSafety("safety", "ics_+", "ics_-");
 
   Path path;
 
