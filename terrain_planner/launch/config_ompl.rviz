@@ -56,21 +56,21 @@ Visualization Manager:
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /start_position
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /goal_position
       Name: Marker
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -189,13 +189,13 @@ Visualization Manager:
       Use Rainbow: true
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
-      Marker Topic: /tree
+      Enabled: true
+      Marker Topic: /path_segments
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -224,7 +224,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3568.750732421875
+      Distance: 3427.78515625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -232,17 +232,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -563.4105224609375
-        Y: -486.2438659667969
-        Z: 1342.529296875
+        X: -520.7752685546875
+        Y: -527.2047119140625
+        Z: 1348.615478515625
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6747965216636658
+      Pitch: 0.6847965121269226
       Target Frame: <Fixed Frame>
-      Yaw: 0.6231585741043091
+      Yaw: 0.7231584787368774
     Saved: ~
 Window Geometry:
   Displays:

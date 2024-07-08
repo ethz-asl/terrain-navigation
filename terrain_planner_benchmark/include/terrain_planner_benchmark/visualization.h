@@ -51,13 +51,13 @@ void publishPathSegments(ros::Publisher& pub, Path& trajectory) {
   std::vector<visualization_msgs::Marker> segment_markers;
   int i = 0;
   for (auto& segment : trajectory.segments) {
-    Eigen::Vector3d color = Eigen::Vector3d(1.0, 0.0, 0.0);
-    if (segment.curvature > 0.0) {  // Green is DUBINS_LEFT
-      color = Eigen::Vector3d(0.0, 1.0, 0.0);
-    } else if (segment.curvature < 0.0) {  // Blue is DUBINS_RIGHT
-      color = Eigen::Vector3d(0.0, 0.0, 1.0);
-    }
-    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, color));
+    Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0);
+    // if (segment.curvature > 0.0) {  // Green is DUBINS_LEFT
+    //   color = Eigen::Vector3d(0.0, 1.0, 0.0);
+    // } else if (segment.curvature < 0.0) {  // Blue is DUBINS_RIGHT
+    //   color = Eigen::Vector3d(0.0, 0.0, 1.0);
+    // }
+    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, color, 10.0));
     segment_markers.insert(segment_markers.begin(),
                            vector2ArrowsMsg(segment.position().front(), 5.0 * segment.velocity().front(), i++, color));
     segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().back(), i++, color));
