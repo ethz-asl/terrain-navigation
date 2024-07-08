@@ -51,34 +51,7 @@
 #include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
-
-void publishPathSegments(ros::Publisher& pub, Path& trajectory) {
-  visualization_msgs::MarkerArray msg;
-
-  std::vector<visualization_msgs::Marker> marker;
-  visualization_msgs::Marker mark;
-  mark.action = visualization_msgs::Marker::DELETEALL;
-  marker.push_back(mark);
-  msg.markers = marker;
-  pub.publish(msg);
-
-  std::vector<visualization_msgs::Marker> segment_markers;
-  int i = 0;
-  for (auto& segment : trajectory.segments) {
-    Eigen::Vector3d color = Eigen::Vector3d(1.0, 0.0, 0.0);
-    if (segment.curvature > 0.0) {  // Green is DUBINS_LEFT
-      color = Eigen::Vector3d(0.0, 1.0, 0.0);
-    } else if (segment.curvature < 0.0) {  // Blue is DUBINS_RIGHT
-      color = Eigen::Vector3d(0.0, 0.0, 1.0);
-    }
-    segment_markers.insert(segment_markers.begin(), trajectory2MarkerMsg(segment, i++, color));
-    segment_markers.insert(segment_markers.begin(),
-                           vector2ArrowsMsg(segment.position().front(), 5.0 * segment.velocity().front(), i++, color));
-    segment_markers.insert(segment_markers.begin(), point2MarkerMsg(segment.position().back(), i++, color));
-  }
-  msg.markers = segment_markers;
-  pub.publish(msg);
-}
+#include "terrain_planner_benchmark/visualization.h"
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ompl_rrt_planner");

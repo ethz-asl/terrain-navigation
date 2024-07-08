@@ -54,70 +54,7 @@
 #include "terrain_navigation_ros/visualization.h"
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
-
-void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
-  visualization_msgs::Marker marker;
-  marker.header.stamp = ros::Time::now();
-  marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.header.frame_id = "map";
-  marker.id = 0;
-  marker.header.stamp = ros::Time::now();
-  std::vector<geometry_msgs::Point> points;
-  for (double t = 0.0; t <= 1.0; t += 0.02) {
-    geometry_msgs::Point point;
-    point.x = position.x() + radius * std::cos(t * 2 * M_PI);
-    point.y = position.y() + radius * std::sin(t * 2 * M_PI);
-    point.z = position.z();
-    points.push_back(point);
-  }
-  geometry_msgs::Point start_point;
-  start_point.x = position.x() + radius * std::cos(0.0);
-  start_point.y = position.y() + radius * std::sin(0.0);
-  start_point.z = position.z();
-  points.push_back(start_point);
-
-  marker.points = points;
-  marker.scale.x = 5.0;
-  marker.scale.y = 5.0;
-  marker.scale.z = 5.0;
-  marker.color.a = 0.5;  // Don't forget to set the alpha!
-  marker.color.r = 0.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
-  marker.pose.orientation.w = 1.0;
-  marker.pose.orientation.x = 0.0;
-  marker.pose.orientation.y = 0.0;
-  marker.pose.orientation.z = 0.0;
-  pub.publish(marker);
-}
-
-void getDubinsShortestPath(std::shared_ptr<fw_planning::spaces::DubinsAirplaneStateSpace>& dubins_ss,
-                           const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
-                           const double goal_yaw, std::vector<Eigen::Vector3d>& path) {
-  ompl::base::State* from = dubins_ss->allocState();
-  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(start_pos.x());
-  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(start_pos.y());
-  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start_pos.z());
-  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start_yaw);
-
-  ompl::base::State* to = dubins_ss->allocState();
-  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(goal_pos.x());
-  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(goal_pos.y());
-  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(goal_pos.z());
-  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(goal_yaw);
-
-  ompl::base::State* state = dubins_ss->allocState();
-  double dt = 0.02;
-  for (double t = 0.0; t <= 1.0 + dt; t += dt) {
-    dubins_ss->interpolate(from, to, t, state);
-    auto interpolated_state =
-        Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
-                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
-                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
-    path.push_back(interpolated_state);
-  }
-}
+#include "terrain_planner_benchmark/visualization.h"
 
 bool validatePosition(std::shared_ptr<TerrainMap> map, const Eigen::Vector3d goal, Eigen::Vector3d& valid_goal) {
   double upper_surface = map->getGridMap().atPosition("ics_+", goal.head(2));
@@ -212,6 +149,7 @@ int main(int argc, char** argv) {
   auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
+  auto path_segment_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
 
   std::string map_path, color_file_path, output_directory, location;
   nh_private.param<std::string>("map_path", map_path, "");
@@ -231,7 +169,7 @@ int main(int argc, char** argv) {
   }
   terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
   terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
-  double radius = 80.0;
+  double radius = 66.67;
   terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
   terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
   terrain_map->addLayerSafety("safety", "ics_+", "ics_-");
@@ -295,6 +233,7 @@ int main(int argc, char** argv) {
   publishCircleSetpoints(start_pos_pub, start, radius);
   publishCircleSetpoints(goal_pos_pub, goal, radius);
   publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
+  publishPathSegments(path_segment_pub, path);
   /// TODO: Save planned path into a csv file for plotting
   for (auto& point : path.position()) {
     std::unordered_map<std::string, std::any> state;

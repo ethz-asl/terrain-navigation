@@ -133,10 +133,10 @@ class Path {
 
       // If current segment is a full circle, and has a next segment, escape when close to start of next segment
       if (segment.is_periodic && (&segment != &segments.back())) {  // Segment is a terminal periodic set
-        Eigen::Vector3d next_segment_start = segments[segment_idx+1].states.front().position;
+        Eigen::Vector3d next_segment_start = segments[segment_idx + 1].states.front().position;
         if ((closest_point - next_segment_start).norm() < epsilon_) {
           segment.reached = true;
-          return segments[segment_idx+1]; // Return next segment
+          return segments[segment_idx + 1];  // Return next segment
         }
       }
 

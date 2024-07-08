@@ -167,14 +167,14 @@ Visualization Manager:
       Unreliable: false
       Use Rainbow: true
       Value: false
-    - Alpha: 1
+    - Alpha: 0.5
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
-      Color: 200; 200; 200
+      Color: 85; 170; 255
       Color Layer: elevation
-      Color Transformer: GridMapLayer
+      Color Transformer: FlatColor
       Enabled: true
-      Height Layer: distance_surface
+      Height Layer: safety
       Height Transformer: GridMapLayer
       History Length: 1
       Invert Rainbow: false
@@ -232,17 +232,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -620.2510986328125
-        Y: -510.701416015625
-        Z: 1389.6817626953125
+        X: -563.4105224609375
+        Y: -486.2438659667969
+        Z: 1342.529296875
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6597965359687805
+      Pitch: 0.6747965216636658
       Target Frame: <Fixed Frame>
-      Yaw: 0.6381592154502869
+      Yaw: 0.6231585741043091
     Saved: ~
 Window Geometry:
   Displays:
