@@ -10,6 +10,8 @@ Panels:
         - /Marker2
         - /GridMap4
         - /MarkerArray1
+        - /MarkerArray2
+        - /MarkerArray3
       Splitter Ratio: 0.5
     Tree Height: 845
   - Class: rviz/Selection
@@ -191,6 +193,22 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /path_segments
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /path_segments_abort
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /rallypoints_marker
       Name: MarkerArray
       Namespaces:
         {}

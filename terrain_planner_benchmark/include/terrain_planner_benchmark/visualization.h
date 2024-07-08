@@ -38,7 +38,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include "terrain_navigation_ros/visualization.h"
 
-void publishPathSegments(ros::Publisher& pub, Path& trajectory) {
+void publishPathSegments(ros::Publisher& pub, Path& trajectory, Eigen::Vector3d color=Eigen::Vector3d(0.0, 1.0, 0.0)) {
   visualization_msgs::MarkerArray msg;
 
   std::vector<visualization_msgs::Marker> marker;
@@ -51,7 +51,6 @@ void publishPathSegments(ros::Publisher& pub, Path& trajectory) {
   std::vector<visualization_msgs::Marker> segment_markers;
   int i = 0;
   for (auto& segment : trajectory.segments) {
-    Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0);
     // if (segment.curvature > 0.0) {  // Green is DUBINS_LEFT
     //   color = Eigen::Vector3d(0.0, 1.0, 0.0);
     // } else if (segment.curvature < 0.0) {  // Blue is DUBINS_RIGHT

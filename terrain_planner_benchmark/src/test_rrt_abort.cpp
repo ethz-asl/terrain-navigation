@@ -130,12 +130,13 @@ PathSegment generateArcTrajectory(Eigen::Vector3d rate, const double horizon, Ei
 std::vector<Eigen::Vector3d> sampleRallyPoints(const int num_rally_points, Eigen::Vector3d start_position,
                                                grid_map::GridMap &map) {
   std::vector<Eigen::Vector3d> rally_points;
+  double region_size = 500.0;
   for (int i = 0; i < num_rally_points; i++) {
     bool sample_is_valid = false;
     while (!sample_is_valid) {
       Eigen::Vector3d random_sample;
-      random_sample(0) = getRandom(-200.0, 200.0);
-      random_sample(1) = getRandom(-200.0, 200.0);
+      random_sample(0) = getRandom(-region_size, region_size);
+      random_sample(1) = getRandom(-region_size, region_size);
       Eigen::Vector3d candidate_loiter_position = start_position + random_sample;
       Eigen::Vector3d new_loiter_position;
       sample_is_valid = validatePosition(map, candidate_loiter_position, new_loiter_position);
@@ -166,9 +167,9 @@ visualization_msgs::Marker getGoalMarker(const int id, const Eigen::Vector3d &po
     points.push_back(point);
   }
   marker.points = points;
-  marker.scale.x = 5.0;
-  marker.scale.y = 5.0;
-  marker.scale.z = 5.0;
+  marker.scale.x = 10.0;
+  marker.scale.y = 10.0;
+  marker.scale.z = 10.0;
   marker.color.a = 0.5;  // Don't forget to set the alpha!
   marker.pose.orientation.w = 1.0;
   marker.pose.orientation.x = 0.0;
@@ -275,7 +276,7 @@ int main(int argc, char **argv) {
   }
 
   planner->setupProblem(start, goal);
-  if (planner->Solve(15.0, path)) {
+  if (planner->Solve(20.0, path)) {
     std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
   } else {
     std::cout << "[TestRRTCircleGoal] Unable to find solution" << std::endl;
@@ -293,12 +294,18 @@ int main(int argc, char **argv) {
 
   path.appendSegment(goal_loiter_path);
 
+  ///TODO: Find abort path
+  int num_segments = path.segments.size();
+  int halfway_idx = num_segments/2;
+  auto abort_start = path.segments[halfway_idx].states.back().position;
+  auto abort_velocity = path.segments[halfway_idx].states.back().velocity;
+
   Path path_abort;
   /// Sample rally points
-  auto rally_points = sampleRallyPoints(3, start_position, terrain_map->getGridMap());
+  auto rally_points = sampleRallyPoints(3, abort_start, terrain_map->getGridMap());
   /// TODO: Get end of some segment
-  planner->setupProblem(start_position, start_velocity, rally_points);
-  if (planner->Solve(15.0, path_abort)) {
+  planner->setupProblem(abort_start, abort_velocity, rally_points);
+  if (planner->Solve(20.0, path_abort)) {
     std::cout << "[TestRRTCircleGoal] Found Abort Solution!" << std::endl;
   }
   Eigen::Vector3d end_position_abort = path_abort.lastSegment().states.back().position;
@@ -307,17 +314,19 @@ int main(int argc, char **argv) {
   double min_distance_error = std::numeric_limits<double>::infinity();
   int min_distance_index = -1;
   for (int idx = 0; idx < rally_points.size(); idx++) {
-    double radial_error = std::abs((end_position - rally_points[idx]).norm() - radius);
+    double radial_error = std::abs((end_position_abort - rally_points[idx]).norm() - radius);
     if (radial_error < min_distance_error) {
       min_distance_index = idx;
       min_distance_error = radial_error;
     }
   }
-  // PathSegment rally_loiter_path = getLoiterPath(end_position_abort, end_velocity_abort,
-  // rally_points[min_distance_index]);
+  PathSegment rally_loiter_path = getLoiterPath(end_position_abort, end_velocity_abort,
+  rally_points[min_distance_index]);
+  path_abort.appendSegment(rally_loiter_path);
 
-  publishPathSegments(abort_path_segment_pub, path_abort);
+
   publishRallyPoints(rallypoint_pub, rally_points, 66.67, Eigen::Vector3d(1.0, 1.0, 0.0));
+  publishPathSegments(abort_path_segment_pub, path_abort, Eigen::Vector3d(1.0, 0.0, 0.0));
 
   // Repeatedly publish results
   terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
