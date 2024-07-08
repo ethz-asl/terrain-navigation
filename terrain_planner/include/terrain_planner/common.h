@@ -687,7 +687,8 @@ visualization_msgs::Marker trajectory2MarkerMsg(std::vector<Eigen::Vector3d> &tr
 }
 
 visualization_msgs::Marker trajectory2MarkerMsg(PathSegment &trajectory, const int id,
-                                                Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0), double scale=2.0) {
+                                                Eigen::Vector3d color = Eigen::Vector3d(0.0, 1.0, 0.0),
+                                                double scale = 2.0) {
   visualization_msgs::Marker marker;
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time();

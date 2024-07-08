@@ -56,7 +56,7 @@
 #include "terrain_planner/terrain_ompl_rrt.h"
 #include "terrain_planner_benchmark/visualization.h"
 
-bool validatePosition(std::shared_ptr<TerrainMap> map, const Eigen::Vector3d goal, Eigen::Vector3d& valid_goal) {
+bool validatePosition(std::shared_ptr<TerrainMap> map, const Eigen::Vector3d goal, Eigen::Vector3d &valid_goal) {
   double upper_surface = map->getGridMap().atPosition("ics_+", goal.head(2));
   double lower_surface = map->getGridMap().atPosition("ics_-", goal.head(2));
   const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
@@ -127,6 +127,59 @@ PathSegment generateArcTrajectory(Eigen::Vector3d rate, const double horizon, Ei
   return trajectory;
 }
 
+std::vector<Eigen::Vector3d> sampleRallyPoints(const int num_rally_points, Eigen::Vector3d start_position,
+                                               grid_map::GridMap &map) {
+  std::vector<Eigen::Vector3d> rally_points;
+  for (int i = 0; i < num_rally_points; i++) {
+    bool sample_is_valid = false;
+    while (!sample_is_valid) {
+      Eigen::Vector3d random_sample;
+      random_sample(0) = getRandom(-200.0, 200.0);
+      random_sample(1) = getRandom(-200.0, 200.0);
+      Eigen::Vector3d candidate_loiter_position = start_position + random_sample;
+      Eigen::Vector3d new_loiter_position;
+      sample_is_valid = validatePosition(map, candidate_loiter_position, new_loiter_position);
+      if (sample_is_valid) {
+        rally_points.push_back(new_loiter_position);
+      }
+    }
+  }
+  return rally_points;
+}
+
+visualization_msgs::Marker getGoalMarker(const int id, const Eigen::Vector3d &position, const double radius,
+                                         const Eigen::Vector3d color) {
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time::now();
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  std::vector<geometry_msgs::Point> points;
+  /// TODO: Generate circular path
+  double delta_theta = 0.05 * 2 * M_PI;
+  for (double theta = 0.0; theta < 2 * M_PI + delta_theta; theta += delta_theta) {
+    geometry_msgs::Point point;
+    point.x = position(0) + radius * std::cos(theta);
+    point.y = position(1) + radius * std::sin(theta);
+    point.z = position(2);
+    points.push_back(point);
+  }
+  marker.points = points;
+  marker.scale.x = 5.0;
+  marker.scale.y = 5.0;
+  marker.scale.z = 5.0;
+  marker.color.a = 0.5;  // Don't forget to set the alpha!
+  marker.pose.orientation.w = 1.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  marker.color.r = color(0);
+  marker.color.g = color(1);
+  marker.color.b = color(2);
+  return marker;
+}
+
 PathSegment getLoiterPath(Eigen::Vector3d end_position, Eigen::Vector3d end_velocity, Eigen::Vector3d center_pos) {
   Eigen::Vector3d radial_vector = (end_position - center_pos);
   radial_vector(2) = 0.0;  // Only consider horizontal loiters
@@ -138,7 +191,23 @@ PathSegment getLoiterPath(Eigen::Vector3d end_position, Eigen::Vector3d end_velo
   return loiter_trajectory;
 }
 
-int main(int argc, char** argv) {
+void publishRallyPoints(const ros::Publisher &pub, const std::vector<Eigen::Vector3d> &positions, const double radius,
+                        Eigen::Vector3d color, std::string name_space = "rallypoints") {
+  visualization_msgs::MarkerArray marker_array;
+  std::vector<visualization_msgs::Marker> markers;
+  int marker_id = 1;
+  for (const auto &position : positions) {
+    visualization_msgs::Marker marker;
+    marker = getGoalMarker(marker_id, position, radius, color);
+    marker.ns = name_space;
+    markers.push_back(marker);
+    marker_id++;
+  }
+  marker_array.markers = markers;
+  pub.publish(marker_array);
+}
+
+int main(int argc, char **argv) {
   ros::init(argc, argv, "ompl_rrt_planner");
   ros::NodeHandle nh("");
   ros::NodeHandle nh_private("~");
@@ -150,6 +219,8 @@ int main(int argc, char** argv) {
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
   auto path_segment_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
+  auto abort_path_segment_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments_abort", 1, true);
+  auto rallypoint_pub = nh.advertise<visualization_msgs::MarkerArray>("rallypoints_marker", 1);
 
   std::string map_path, color_file_path, output_directory, location;
   nh_private.param<std::string>("map_path", map_path, "");
@@ -222,6 +293,32 @@ int main(int argc, char** argv) {
 
   path.appendSegment(goal_loiter_path);
 
+  Path path_abort;
+  /// Sample rally points
+  auto rally_points = sampleRallyPoints(3, start_position, terrain_map->getGridMap());
+  /// TODO: Get end of some segment
+  planner->setupProblem(start_position, start_velocity, rally_points);
+  if (planner->Solve(15.0, path_abort)) {
+    std::cout << "[TestRRTCircleGoal] Found Abort Solution!" << std::endl;
+  }
+  Eigen::Vector3d end_position_abort = path_abort.lastSegment().states.back().position;
+  Eigen::Vector3d end_velocity_abort = path_abort.lastSegment().states.back().velocity;
+  /// TODO: Figure out which rally point the planner is using
+  double min_distance_error = std::numeric_limits<double>::infinity();
+  int min_distance_index = -1;
+  for (int idx = 0; idx < rally_points.size(); idx++) {
+    double radial_error = std::abs((end_position - rally_points[idx]).norm() - radius);
+    if (radial_error < min_distance_error) {
+      min_distance_index = idx;
+      min_distance_error = radial_error;
+    }
+  }
+  // PathSegment rally_loiter_path = getLoiterPath(end_position_abort, end_velocity_abort,
+  // rally_points[min_distance_index]);
+
+  publishPathSegments(abort_path_segment_pub, path_abort);
+  publishRallyPoints(rallypoint_pub, rally_points, 66.67, Eigen::Vector3d(1.0, 1.0, 0.0));
+
   // Repeatedly publish results
   terrain_map->getGridMap().setTimestamp(ros::Time::now().toNSec());
   grid_map_msgs::GridMap message;
@@ -235,7 +332,7 @@ int main(int argc, char** argv) {
   publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
   publishPathSegments(path_segment_pub, path);
   /// Save planned path into a csv file for plotting
-  for (auto& point : path.position()) {
+  for (auto &point : path.position()) {
     std::unordered_map<std::string, std::any> state;
     state.insert(std::pair<std::string, double>("x", point(0) + 0.5 * map_width_x));
     state.insert(std::pair<std::string, double>("y", point(1) + 0.5 * map_width_y));

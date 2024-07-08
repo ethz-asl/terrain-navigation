@@ -1,0 +1,17 @@
+<launch>
+    <arg name="visualization" default="true"/>
+    <!-- <arg name="location" default="dischma_valley"/> -->
+    <arg name="location" default="sertig"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+
+    <node pkg="terrain_planner_benchmark" type="test_rrt_abort" name="rrt_planner" output="screen">
+        <param name="location" value="$(arg location)"/>
+        <param name="map_path" value="$(find terrain_models)/models/$(arg location).tif"/>
+        <param name="color_file_path" value="$(find terrain_models)/models/$(arg location)_color.tif"/>
+        <param name="output_directory" value="$(find terrain_planner_benchmark)/../output"/>
+    </node>
+    <group if="$(arg visualization)">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner)/launch/config_ompl.rviz" />
+    </group>
+</launch>
