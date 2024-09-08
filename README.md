@@ -11,6 +11,23 @@ The implementation includes a global planner based on a RRT* in the Dubins Airpl
     <img src="https://github.com/ethz-asl/terrain-navigation/assets/5248102/90e43b60-ea8c-49db-9fb3-257b145fc35c" alt="overview">
 </p>
 
+## Paper and Video
+If you find this package useful in an academic context, please consider citing the paper
+
+- Lim, Jaeyoung, Florian Achermann, Rik Girod, Nicholas Lawrance, and Roland Siegwart. "Safe Low-Altitude Navigation in Steep Terrain With Fixed-Wing Aerial Vehicles." arXiv preprint arXiv:2401.04831 (2024). [[paper](https://arxiv.org/abs/2401.04831)] [[video](https://youtu.be/7C5SsRn_L5Q?si=cMNtX16F1aFNrV8_)]
+
+```
+@article{lim2024safe,
+  title={Safe Low-Altitude Navigation in Steep Terrain With Fixed-Wing Aerial Vehicles},
+  author={Lim, Jaeyoung and Achermann, Florian and Girod, Rik and Lawrance, Nicholas and Siegwart, Roland},
+  journal={IEEE Robotics and Automation Letters},
+  year={2024},
+  volume={9},
+  number={5},
+  pages={4599-4606},
+  doi={10.1109/LRA.2024.3368800}}
+```
+
 ## Setup
 
 ### Setting up the Build Environment using Docker
