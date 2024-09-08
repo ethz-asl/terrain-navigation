@@ -14,7 +14,7 @@ The implementation includes a global planner based on a RRT* in the Dubins Airpl
 ## Paper and Video
 If you find this package useful in an academic context, please consider citing the paper
 
-- Lim, Jaeyoung, Florian Achermann, Rik Girod, Nicholas Lawrance, and Roland Siegwart. "Safe Low-Altitude Navigation in Steep Terrain With Fixed-Wing Aerial Vehicles." arXiv preprint arXiv:2401.04831 (2024). [[paper](https://arxiv.org/abs/2401.04831)] [[video](https://youtu.be/7C5SsRn_L5Q?si=cMNtX16F1aFNrV8_)]
+- Lim, Jaeyoung, Florian Achermann, Rik Girod, Nicholas Lawrance, and Roland Siegwart. "Safe Low-Altitude Navigation in Steep Terrain With Fixed-Wing Aerial Vehicles." arXiv preprint arXiv:2401.04831 (2024). [[paper](https://ieeexplore.ieee.org/abstract/document/10443502)] [[video](https://youtu.be/7C5SsRn_L5Q?si=cMNtX16F1aFNrV8_)]
 
 ```
 @article{lim2024safe,
