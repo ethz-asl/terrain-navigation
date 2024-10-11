@@ -31,6 +31,10 @@ If you find this package useful in an academic context, please consider citing t
   doi={10.1109/LRA.2024.3368800}}
 ```
 
+<p align="center">
+    <img src="https://github.com/user-attachments/assets/c3723ce4-83a6-44f0-b008-bdba7c189055" alt="fieldtests">
+</p>
+
 ## Setup
 
 ### Setting up the Build Environment using Docker
