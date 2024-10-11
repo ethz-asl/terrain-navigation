@@ -4,6 +4,9 @@
     <arg name="path" default="/home/jaeyoung/Downloads/_2023-04-22-12-54-59.bag"/>
     <arg name="start_time" default="290.0"/>
     <arg name="duration" default="750.0"/>
+    <group if="$(arg visualization)">
+        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner_benchmark)/launch/replay.rviz" output="screen"/>
+    </group>
 
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
     <node pkg="terrain_planner_benchmark" type="run_replay" name="run_replay" output="screen">
@@ -13,7 +16,4 @@
 
     <node pkg="rosbag" type="record" name="rosbag_recorder" args="record -o $(find terrain_planner_benchmark)/../output/
     /terrain_info"/>
-    <group if="$(arg visualization)">
-        <node type="rviz" name="rviz" pkg="rviz" args="-d $(find terrain_planner_benchmark)/launch/replay.rviz" output="screen"/>
-    </group>
 </launch>

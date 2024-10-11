@@ -43,6 +43,7 @@
 #include <planner_msgs/NavigationStatus.h>
 #include <planner_msgs/TerrainInfo.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 #include "terrain_planner/common.h"
 
@@ -55,6 +56,7 @@ class ReplayRunner {
     planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status2", 1);
     path_segment_pub_ = nh_.advertise<visualization_msgs::Marker>("visualized_path", 1);
     reference_visual_pub_ = nh_.advertise<visualization_msgs::Marker>("visualized_reference", 1);
+    tree_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("tree", 1);
     terrain_info_pub_ = nh_.advertise<planner_msgs::TerrainInfo>("terrain_info", 1);
     double statusloop_dt_ = 0.05;
     ros::TimerOptions statuslooptimer_options(
@@ -96,6 +98,16 @@ class ReplayRunner {
       if (is_segment_periodic != prev_segment_is_periodic_) {
         segment_id_++;
         prev_segment_is_periodic_ = is_segment_periodic;
+        ///TODO: Remove tree
+        {
+          visualization_msgs::MarkerArray msg;
+          std::vector<visualization_msgs::Marker> marker;
+          visualization_msgs::Marker mark;
+          mark.action = visualization_msgs::Marker::DELETEALL;
+          marker.push_back(mark);
+          msg.markers = marker;
+          tree_pub_.publish(msg);
+        }
       }
       segment_history_.push_back(segment_id_);
 
@@ -162,6 +174,7 @@ class ReplayRunner {
   ros::Publisher planner_status_pub_;
   ros::Publisher path_segment_pub_;
   ros::Publisher reference_visual_pub_;
+  ros::Publisher tree_pub_;
   ros::Publisher terrain_info_pub_;
   ros::Subscriber vehicle_position_sub_;
 

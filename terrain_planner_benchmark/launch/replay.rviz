@@ -5,12 +5,14 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1
+        - /MarkerArray2
         - /MarkerArray3
         - /MarkerArray4
         - /Marker5
         - /Marker6
+        - /Marker7
       Splitter Ratio: 0.5
-    Tree Height: 880
+    Tree Height: 850
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -26,7 +28,6 @@ Panels:
     Name: Views
     Splitter Ratio: 0.5
   - Class: rviz/Time
-    Experimental: false
     Name: Time
     SyncMode: 0
     SyncSource: ""
@@ -35,7 +36,6 @@ Panels:
     Topic: ""
   - Class: mav_planning_rviz/PlanningPanel
     Name: PlanningPanel
-    goal_altitude: ""
     namespace: ""
     odometry_topic: ""
     planner_name: sertig
@@ -82,6 +82,7 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
+      Queue Size: 10
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
@@ -105,6 +106,7 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
+      Queue Size: 10
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
@@ -174,12 +176,14 @@ Visualization Manager:
       Unreliable: false
       Use Rainbow: true
       Value: false
-    - Class: rviz/Axes
+    - Alpha: 1
+      Class: rviz/Axes
       Enabled: false
       Length: 100
       Name: Axes
       Radius: 10
       Reference Frame: map
+      Show Trail: false
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
@@ -207,13 +211,13 @@ Visualization Manager:
       Value: true
     - Class: rviz/InteractiveMarkers
       Enable Transparency: true
-      Enabled: true
+      Enabled: false
       Name: InteractiveMarkers
       Show Axes: true
       Show Descriptions: true
       Show Visual Aids: true
       Update Topic: /goal/update
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /arc_center
@@ -247,6 +251,7 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
+      Queue Size: 10
       Radius: 0.029999999329447746
       Shaft Diameter: 0.10000000149011612
       Shaft Length: 0.10000000149011612
@@ -262,21 +267,22 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /tree
       Name: MarkerArray
       Namespaces:
-        {}
+        edge: true
+        vertex: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /path_segments
       Name: MarkerArray
       Namespaces:
-        {}
+        normals: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /visualized_reference
@@ -294,13 +300,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
-      Enabled: false
-      Marker Topic: /vehicle_velocity
+      Enabled: true
+      Marker Topic: /candidate_goal_marker
       Name: Marker
       Namespaces:
-        {}
+        goal: true
       Queue Size: 100
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -329,35 +335,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1068.679931640625
+      Distance: 1011.73876953125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
+      Field of View: 0.7853981852531433
       Focal Point:
-        X: -192.50350952148438
-        Y: -281.66351318359375
-        Z: 1757.108154296875
+        X: 295.3905944824219
+        Y: 85.41887664794922
+        Z: 1478.994384765625
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3697982430458069
+      Pitch: 0.47979646921157837
       Target Frame: map
-      Value: Orbit (rviz)
-      Yaw: 3.463697910308838
+      Yaw: 3.4586920738220215
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: true
-  Height: 1172
+  Height: 1136
   Hide Left Dock: true
   Hide Right Dock: true
   PlanningPanel:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001a1000003fbfc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000007c000003fb000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000020c000001b10000000000000000fb0000000c00540065006c0065006f00700000000368000000b20000004700ffffff000000010000010f00000317fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000007c00000317000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000078000000039fc0100000002fb0000000800540069006d0065010000000000000780000002eb00fffffffb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000780000000fbfc0100000002fb0000001a0050006c0061006e006e0069006e006700500061006e0065006c0000000000000007800000009600fffffffb0000000800540069006d0065010000000000000450000000000000000000000780000003fb00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001a1000003dbfc020000000afb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073000000007a000003db000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000020c000001b10000000000000000fb0000000c00540065006c0065006f00700000000368000000b20000004500ffffff000000010000010f00000317fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000007c00000317000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b20000000000000000000000020000073800000039fc0100000002fb0000000800540069006d00650100000000000007380000030700fffffffb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000780000000fbfc0100000002fb0000001a0050006c0061006e006e0069006e006700500061006e0065006c0000000000000007800000024700fffffffb0000000800540069006d0065010000000000000450000000000000000000000738000003db00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Teleop:
@@ -368,6 +374,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 1920
-  X: 1920
-  Y: 0
+  Width: 1848
+  X: 72
+  Y: 27
