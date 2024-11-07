@@ -21,8 +21,8 @@ print(data_df)
 fig1 = plt.figure("Terrain and Path Visualization", figsize=(5, 3))
 ax1 = fig1.add_subplot(2, 1, 1)
 plot_terrain = ax1.plot(position, terrain, label=r"$H$")
-plot_min_distance = ax1.plot(position, min_distance, label=r"$D^-$")
-plot_max_distance = ax1.plot(position, max_distance, label=r"$D^+$")
+plot_min_distance = ax1.plot(position, min_distance, label=r"$D^-$", color='b')
+plot_max_distance = ax1.plot(position, max_distance, label=r"$D^+$", color='r')
 # ax1.plot(position, circle_lower)red
 # ax1.plot(position, circle_upper)
 ax1.set_ylabel('Altitude [m]')
@@ -37,27 +37,29 @@ ax1.tick_params(axis='x',          # changes apply to the x-axis
     top=False,         # ticks along the top edge are off
     labelbottom=False)
 
-ax2 = fig1.add_subplot(2, 1, 2)
+fig2 = plt.figure("Step by Step", figsize=(10, 3))
+ax2 = fig2.add_subplot(1, 1, 1)
 # ax2.plot(position, terrain)
-ax2.plot(position, min_distance, '--', color=plot_min_distance[0].get_color(),label=r"$D^-$")
-ax2.plot(position, max_distance, '--', color=plot_max_distance[0].get_color(), label=r"$D^+$")
-ax2.plot(position, circle_upper, color=plot_min_distance[0].get_color(), label=r"$H^+$")
-ax2.plot(position, circle_lower, color=plot_max_distance[0].get_color(), label=r"$H^-$")
+ax2.plot(position, terrain, label=r"Terrain Elevation")
+ax2.plot(position, min_distance, '-', color=plot_min_distance[0].get_color(),label=r"$D^-$")
+ax2.plot(position, max_distance, '-', color=plot_max_distance[0].get_color(), label=r"$D^+$")
+ax2.plot(position, circle_upper, '--',color=plot_min_distance[0].get_color(), label=r"$H^+$")
+ax2.plot(position, circle_lower, '--',color=plot_max_distance[0].get_color(), label=r"$H^-$")
 
-ax2.set_ylabel('Altitude [m]')
-cmap = cm.get_cmap('winter')
+# ax2.set_ylabel('Altitude [m]')
+# cmap = cm.get_cmap('winter')
 
-valid_region = []
-invalid_region = []
-for i in range(1,len(position)):
-    if circle_lower[i] >= circle_upper[i]:
-        valid_region.append([position[i-1], position[i]])
-    elif circle_lower[i] < circle_upper[i]:
-        invalid_region.append([position[i-1], position[i]])
-for i in valid_region:
-    ax2.axvspan(i[0], i[1], -10, 10, facecolor=cmap(1.0), alpha=0.2)
-for i in invalid_region:
-    ax2.axvspan(i[0], i[1], -10, 10, facecolor=cmap(0.0), alpha=0.2)
+# valid_region = []
+# invalid_region = []
+# for i in range(1,len(position)):
+#     if circle_lower[i] >= circle_upper[i]:
+#         valid_region.append([position[i-1], position[i]])
+#     elif circle_lower[i] < circle_upper[i]:
+#         invalid_region.append([position[i-1], position[i]])
+# for i in valid_region:
+#     ax2.axvspan(i[0], i[1], -10, 10, facecolor=cmap(1.0), alpha=0.2)
+# for i in invalid_region:
+#     ax2.axvspan(i[0], i[1], -10, 10, facecolor=cmap(0.0), alpha=0.2)
 
 # ax2.axis('equal')
 # ax2.set_ylim([1900.0, 2630.0])
@@ -65,7 +67,7 @@ for i in invalid_region:
 ax2.set_xlim([np.min(position), np.max(position)])
 ax2.set_xlabel('X [m]')
 
-ax2.legend(ncol=2)
+ax2.legend(ncol=1)
 
 plt.tight_layout()
 

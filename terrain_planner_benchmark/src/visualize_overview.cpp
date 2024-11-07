@@ -151,6 +151,39 @@ void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& po
   pub.publish(marker);
 }
 
+void publishCrossSection(const ros::Publisher& pub, const std::vector<Eigen::Vector3d> cross_section, Eigen::Vector3d color = Eigen::Vector3d(1.0, 0.0, 0.0)) {
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.header.frame_id = "map";
+  marker.id = 0;
+  marker.header.stamp = ros::Time::now();
+  std::vector<geometry_msgs::Point> points;
+  for (auto sample : cross_section) {
+    geometry_msgs::Point point;
+    point.x = sample.x();
+    point.y = sample.y();
+    point.z = sample.z();
+    points.push_back(point);
+    std::cout << "sample: " << sample.transpose() << std::endl;
+  }
+
+  marker.points = points;
+  marker.scale.x = 10.0;
+  marker.scale.y = 10.0;
+  marker.scale.z = 10.0;
+  marker.color.a = 1.0;  // Don't forget to set the alpha!
+  marker.color.r = color(0);
+  marker.color.g = color(1);
+  marker.color.b = color(2);
+  marker.pose.orientation.w = 1.0;
+  marker.pose.orientation.x = 0.0;
+  marker.pose.orientation.y = 0.0;
+  marker.pose.orientation.z = 0.0;
+  pub.publish(marker);
+}
+
 void addErrorLayer(const std::string layer_name, const std::string query_layer, const std::string reference_layer,
                    grid_map::GridMap& map) {
   map.add(layer_name);
@@ -161,13 +194,14 @@ void addErrorLayer(const std::string layer_name, const std::string query_layer, 
   }
 }
 
-void extractCrossSection(grid_map::GridMap& map, std::shared_ptr<DataLogger>& logger) {
+std::vector<Eigen::Vector3d> extractCrossSection(grid_map::GridMap& map, std::shared_ptr<DataLogger>& logger) {
   const Eigen::Vector2d map_pos = map.getPosition();
   const double map_width_x = map.getLength().x();
   const double map_width_y = map.getLength().y();
 
   const Eigen::Vector2d start{Eigen::Vector2d(map_pos(0) - 0.5 * map_width_x, map_pos(1))};
   const Eigen::Vector2d end{Eigen::Vector2d(map_pos(0) + 0.5 * map_width_x, map_pos(1))};
+  std::vector<Eigen::Vector3d> cross_section;
   for (grid_map::LineIterator submapIterator(map, start, end); !submapIterator.isPastEnd(); ++submapIterator) {
     const grid_map::Index index = *submapIterator;
     std::unordered_map<std::string, std::any> state;
@@ -180,7 +214,10 @@ void extractCrossSection(grid_map::GridMap& map, std::shared_ptr<DataLogger>& lo
     state.insert(std::pair<std::string, double>("H_+", map.at("ics_+", index)));
     state.insert(std::pair<std::string, double>("H_-", map.at("ics_-", index)));
     logger->record(state);
+    Eigen::Vector3d surface_position(position(0), position(1), map.at("elevation", index));
+    cross_section.push_back(surface_position);
   }
+  return cross_section;
 }
 
 int main(int argc, char** argv) {
@@ -195,6 +232,7 @@ int main(int argc, char** argv) {
   auto yaw_path_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments_yaw", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
+  auto path_pub = nh.advertise<visualization_msgs::MarkerArray>("cross_section", 1, true);
 
   std::string map_path, color_file_path, location, output_directory;
   nh_private.param<std::string>("location", location, "");
@@ -220,7 +258,7 @@ int main(int argc, char** argv) {
   terrain_map->getGridMap()["offset"].setConstant(1000.0);
   addErrorLayer("error", "ics_-", "ics_+", terrain_map->getGridMap());
 
-  extractCrossSection(terrain_map->getGridMap(), data_logger);
+  std::vector<Eigen::Vector3d> cross_section = extractCrossSection(terrain_map->getGridMap(), data_logger);
   // Initialize planner with loaded terrain map
   auto planner = std::make_shared<TerrainOmplRrt>();
   planner->setMap(terrain_map);
@@ -274,6 +312,7 @@ int main(int argc, char** argv) {
   publishCircleSetpoints(start_pos_pub, start, radius, Eigen::Vector3d(0.0, 1.0, 1.0));
   publishCircleSetpoints(goal_pos_pub, goal, radius, Eigen::Vector3d(0.0, 1.0, 1.0));
   publishTree(trajectory_pub, planner->getPlannerData(), planner->getProblemSetup());
+  publishCrossSection(path_pub, cross_section);
   data_logger->setPrintHeader(true);
   std::string output_file_path = output_directory + "/" + location + "_cross_section.csv";
   data_logger->writeToFile(output_file_path);
