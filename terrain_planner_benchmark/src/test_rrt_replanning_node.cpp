@@ -83,11 +83,11 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh_private("~");
 
   // Initialize ROS related publishers for visualization
-  auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
-  auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
+  auto start_pos_pub = nh.advertise<visualization_msgs::msg::Marker>("start_position", 1, true);
+  auto goal_pos_pub = nh.advertise<visualization_msgs::msg::Marker>("goal_position", 1, true);
   auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
-  auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
+  auto trajectory_pub = nh.advertise<visualization_msgs::msg::MarkerArray>("tree", 1, true);
 
   std::string map_path, color_file_path, location, output_directory;
   nh_private.param<std::string>("location", location, "");

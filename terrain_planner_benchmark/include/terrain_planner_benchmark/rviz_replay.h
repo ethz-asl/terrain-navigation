@@ -55,8 +55,8 @@ class ReplayRunner {
         nh_.subscribe("/grid_map", 1, &ReplayRunner::GridmapCallback, this, ros::TransportHints().tcpNoDelay());
     vehicle_position_sub_ = nh_.subscribe("/planner_status", 10, &ReplayRunner::plannerStatusCallback, this);
     planner_status_pub_ = nh_.advertise<planner_msgs::NavigationStatus>("planner_status2", 1);
-    path_segment_pub_ = nh_.advertise<visualization_msgs::Marker>("visualized_path", 1);
-    reference_visual_pub_ = nh_.advertise<visualization_msgs::Marker>("visualized_reference", 1);
+    path_segment_pub_ = nh_.advertise<visualization_msgs::msg::Marker>("visualized_path", 1);
+    reference_visual_pub_ = nh_.advertise<visualization_msgs::msg::Marker>("visualized_reference", 1);
     terrain_info_pub_ = nh_.advertise<planner_msgs::TerrainInfo>("terrain_info", 1);
     double statusloop_dt_ = 0.05;
     ros::TimerOptions statuslooptimer_options(
@@ -133,10 +133,10 @@ class ReplayRunner {
     }
 
     // Visualize vehicle path and path reference
-    visualization_msgs::Marker marker = trajectory2MarkerMsg(vehicle_history_, 0, Eigen::Vector3d(1.0, 0.0, 1.0));
+    visualization_msgs::msg::Marker marker = trajectory2MarkerMsg(vehicle_history_, 0, Eigen::Vector3d(1.0, 0.0, 1.0));
     path_segment_pub_.publish(marker);
 
-    // visualization_msgs::Marker reference_marker = trajectory2MarkerMsg(reference_history_, 0, "viridis");
+    // visualization_msgs::msg::Marker reference_marker = trajectory2MarkerMsg(reference_history_, 0, "viridis");
     std::vector<Eigen::Vector3d> segment_colors;
     for (auto& segment_id : segment_history_) {
       const std::vector<std::vector<float>>& ctable = colorMap.at("gist_rainbow");
@@ -154,7 +154,7 @@ class ReplayRunner {
                                     static_cast<double>(rgb[2]));
       segment_colors.push_back(segment_color);
     }
-    visualization_msgs::Marker reference_marker = trajectory2MarkerMsg(reference_history_, 0, segment_colors);
+    visualization_msgs::msg::Marker reference_marker = trajectory2MarkerMsg(reference_history_, 0, segment_colors);
     reference_visual_pub_.publish(reference_marker);
   };
 

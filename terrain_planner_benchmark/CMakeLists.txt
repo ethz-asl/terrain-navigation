@@ -1,88 +1,65 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.14.4)
 project(terrain_planner_benchmark)
 
-add_definitions(-std=c++17 -Wall)
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+endif()
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 
-find_package(GDAL)
+# Set policy for 3.16 for CMP0076 defaulting to ON
+cmake_policy(VERSION 3.16)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(GDAL 3.5)
 find_package(OpenCV REQUIRED)
 find_package(ompl REQUIRED)
 
-find_package(catkin REQUIRED COMPONENTS
-    eigen_catkin
-    grid_map_core
-    grid_map_cv
-    grid_map_msgs
-    grid_map_ros
-    grid_map_pcl
-    grid_map_geo
-    terrain_navigation
-    terrain_planner
+find_package(grid_map_core REQUIRED)
+find_package(grid_map_cv REQUIRED)
+find_package(grid_map_msgs REQUIRED)
+find_package(grid_map_ros REQUIRED)
+find_package(grid_map_pcl REQUIRED)
+find_package(grid_map_geo REQUIRED)
+find_package(terrain_navigation REQUIRED)
+find_package(Boost REQUIRED) # Workaround for terrain_planner not exporting this correctly
+find_package(terrain_planner REQUIRED)
+
+add_library(${PROJECT_NAME})
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC 
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
 )
 
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES terrain_planner_benchmark
+add_executable(terrain_planner_benchmark_node)
+add_executable(ompl_benchmark_node EXCLUDE_FROM_ALL)
+add_executable(test_ics EXCLUDE_FROM_ALL)
+add_executable(test_rrt_replanning_node EXCLUDE_FROM_ALL)
+add_executable(surface_visualization EXCLUDE_FROM_ALL)
+add_executable(test_dubins_classification EXCLUDE_FROM_ALL)
+add_executable(run_replay EXCLUDE_FROM_ALL)
+add_executable(test_rrt_circle_goal EXCLUDE_FROM_ALL)
+add_subdirectory(src)
+
+include(GNUInstallDirs)
+install(
+  TARGETS
+    terrain_planner_benchmark_node
+  EXPORT export_${PROJECT_NAME}
+  DESTINATION lib/${PROJECT_NAME}
 )
 
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-  include
-  ${Boost_INCLUDE_DIR}
-  ${Eigen_INCLUDE_DIRS}
-  ${GeographicLib_INCLUDE_DIRS}
-  ${OMPL_INCLUDE_DIR}
+install(DIRECTORY
+  launch
+  resource
+  DESTINATION share/${PROJECT_NAME}/
 )
 
-add_library(${PROJECT_NAME}
-  src/terrain_planner_benchmark.cpp
-)
-add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${GeographicLib_LIBRARIES} ${OMPL_LIBRARIES})
-
-add_executable(terrain_planner_benchmark_node
-  src/terrain_planner_benchmark_node.cpp
-)
-add_dependencies(terrain_planner_benchmark_node ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(terrain_planner_benchmark_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
-
-add_executable(ompl_benchmark_node
-  src/ompl_benchmark_node.cpp
-)
-add_dependencies(ompl_benchmark_node ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(ompl_benchmark_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} pthread)
-
-add_executable(test_ics
-  src/test_ics.cpp
-)
-add_dependencies(test_ics ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_ics ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
-
-add_executable(test_rrt_replanning_node
-  src/test_rrt_replanning_node.cpp
-)
-add_dependencies(test_rrt_replanning_node ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_rrt_replanning_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
-
-add_executable(surface_visualization
-  src/surface_visualization.cpp
-)
-add_dependencies(surface_visualization ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(surface_visualization ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
-
-add_executable(test_dubins_classification
-  src/test_dubins_classification.cpp
-)
-add_dependencies(test_dubins_classification ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_dubins_classification ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
-
-add_executable(run_replay
-  src/rviz_replay.cpp
-)
-add_dependencies(run_replay ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(run_replay ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
-
-add_executable(test_rrt_circle_goal
-  src/test_rrt_circle_goal.cpp
-)
-add_dependencies(test_rrt_circle_goal terrain_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${GDAL_LIBRARY})
-target_link_libraries(test_rrt_circle_goal ${PROJECT_NAME} ${catkin_LIBRARIES} ${GDAL_LIBRARY} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES})
+ament_package()

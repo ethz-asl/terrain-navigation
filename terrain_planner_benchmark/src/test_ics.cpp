@@ -164,8 +164,8 @@ int main(int argc, char** argv) {
 
   auto grid_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   auto reference_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("reference_map", 1, true);
-  auto yaw_pub = nh.advertise<visualization_msgs::Marker>("yaw", 1, true);
-  auto circle_pub = nh.advertise<visualization_msgs::Marker>("circle", 1, true);
+  auto yaw_pub = nh.advertise<visualization_msgs::msg::Marker>("yaw", 1, true);
+  auto circle_pub = nh.advertise<visualization_msgs::msg::Marker>("circle", 1, true);
 
   std::string map_path, map_color_path, output_file_dir, location;
   bool visualize{true};
