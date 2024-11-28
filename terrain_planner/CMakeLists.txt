@@ -33,7 +33,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(grid_map_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS serialization system filesystem)
+find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(ompl REQUIRED)
@@ -74,6 +74,7 @@ ament_target_dependencies(${PROJECT_NAME} PUBLIC
   grid_map_core
   grid_map_geo
   terrain_navigation
+  Boost
 )
 
 # Executables
@@ -174,6 +175,12 @@ install(
 install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
+)
+
+ament_export_dependencies(
+  Boost
+  tf2_geometry_msgs
+  tf2_eigen
 )
 
 # Test
