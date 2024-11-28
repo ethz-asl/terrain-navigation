@@ -46,7 +46,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS serialization system filesystem)
+find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 if(CMAKE_SYSTEM_NAME STREQUAL Linux)
