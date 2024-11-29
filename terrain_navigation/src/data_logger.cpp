@@ -41,6 +41,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <cstring>
 
 DataLogger::DataLogger() {}
 
@@ -53,6 +54,10 @@ void DataLogger::writeToFile(const std::string path) {
   std::cout << "[DataLogger] Writing data to file! " << path << std::endl;
   std::ofstream output_file;
   output_file.open(path, std::ios::trunc);
+  if (output_file.fail()) {
+    std::cerr << "[DataLogger]: Failed to write to file: " << path << " with error " << strerror(errno) << std::endl;
+    return;
+  }
   if (print_header_) {
     for (auto key : keys_) {
       output_file << key << field_seperator;
