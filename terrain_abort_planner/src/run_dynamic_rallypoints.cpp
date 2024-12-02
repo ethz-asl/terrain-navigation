@@ -291,8 +291,8 @@ int main(int argc, char** argv) {
   if (!color_file_path.empty()) {  // Load color layer if the color path is nonempty
     terrain_map->addColorFromGeotiff(color_file_path);
   }
-  terrain_map->AddLayerDistanceTransform(50.0, "distance_surface");
-  terrain_map->AddLayerDistanceTransform(120.0, "max_elevation");
+  terrain_map->AddLayerDistanceTransform(20.0, "distance_surface");
+  terrain_map->AddLayerDistanceTransform(200.0, "max_elevation");
   double radius = 66.667;
   terrain_map->AddLayerHorizontalDistanceTransform(radius, "ics_+", "distance_surface");
   terrain_map->AddLayerHorizontalDistanceTransform(-radius, "ics_-", "max_elevation");
@@ -385,20 +385,20 @@ int main(int argc, char** argv) {
   /// TODO: Iterate over path segments to find abort paths
   int segment_id = 0;
   Path abort_path_list;
-  // for (const auto& path_segment : path.segments) {
-  //   std::cout << "  - segment ID: " << segment_id << std::endl;
-  //   Eigen::Vector3d segment_end = path_segment.states.back().position;
-  //   Eigen::Vector3d segment_end_tangent = path_segment.states.back().velocity;
-  //   planner->setupProblem(segment_end, segment_end_tangent, rallypoint_list);
-  //   Path abort_path;
-  //   if (planner->Solve(10.0, abort_path)) {
-  //     std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
-  //     abort_path_list.appendSegment(abort_path);
-  //   } else {
-  //     std::cout << "[TestRRTCircleGoal] Unable to find solution" << std::endl;
-  //   }
-  //   segment_id++;
-  // }
+  for (const auto& path_segment : mission_path.segments) {
+    std::cout << "  - segment ID: " << segment_id << " / " << mission_path.segments.size() << std::endl;
+    Eigen::Vector3d segment_end = path_segment.states.back().position;
+    Eigen::Vector3d segment_end_tangent = path_segment.states.back().velocity;
+    planner->setupProblem(segment_end, segment_end_tangent, rallypoint_list);
+    Path abort_path;
+    if (planner->Solve(1.0, abort_path)) {
+      std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
+      abort_path_list.appendSegment(abort_path);
+    } else {
+      std::cout << "[TestRRTCircleGoal] Unable to find solution" << std::endl;
+    }
+    segment_id++;
+  }
 
   // Repeatedly publish results
   while (true) {
