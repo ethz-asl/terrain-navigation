@@ -19,16 +19,14 @@ Path generatePathFromWaypoints (std::vector<Eigen::Vector3d> waypoint_list, cons
 
     double turn_angle = getTurnAngle(current_course, next_course);
     double distance_to_tangent = radius / std::abs(std::tan(0.5 * turn_angle));
-    std::cout << "turn_angle: " << turn_angle / M_PI << " pi" << std::endl;
-    std::cout << "  - current_edge_length: " << current_edge_length << std::endl;
-    std::cout << "  - next_edge_length: " << next_edge_length << std::endl;
-    std::cout << "  - distance_to_tangent: " << distance_to_tangent << std::endl;
 
     /// TODO: Arc segment
     Eigen::Vector3d arc_segment_start = current_vertex - distance_to_tangent * current_tangent;
     Eigen::Vector3d arc_segment_end = current_vertex + distance_to_tangent * next_tangent;
-    double arc_segment_length = std::abs(turn_angle) * radius;
-    double curvature = (next_course - current_course) > 0.0 ? 1.0 / radius : -1.0 / radius;
+    double arc_segment_length = std::abs(M_PI - turn_angle) * radius;
+    Eigen::Vector3d rotation_vector = current_tangent.cross(next_tangent);
+    double curvature = rotation_vector(2) > 0.0 ? 1.0 / radius : -1.0 / radius;
+
     auto arc_segment =
         generateTrajectory(curvature, arc_segment_length, arc_segment_start, arc_segment_end, current_tangent, 0.1);
     /// TODO: Line segment
