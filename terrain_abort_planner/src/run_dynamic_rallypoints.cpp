@@ -216,42 +216,6 @@ void publishGridMap(const ros::Publisher& pub, const grid_map::GridMap& map) {
   pub.publish(message);
 }
 
-void getDubinsShortestPath(std::shared_ptr<fw_planning::spaces::DubinsAirplaneStateSpace>& dubins_ss,
-                           const Eigen::Vector3d start_pos, const double start_yaw, const Eigen::Vector3d goal_pos,
-                           const double goal_yaw, std::vector<Eigen::Vector3d>& path) {
-  ompl::base::State* from = dubins_ss->allocState();
-  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(start_pos.x());
-  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(start_pos.y());
-  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(start_pos.z());
-  from->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(start_yaw);
-
-  ompl::base::State* to = dubins_ss->allocState();
-  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setX(goal_pos.x());
-  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setY(goal_pos.y());
-  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setZ(goal_pos.z());
-  to->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->setYaw(goal_yaw);
-
-  ompl::base::State* state = dubins_ss->allocState();
-  double dt = 0.02;
-  for (double t = 0.0; t <= 1.0 + dt; t += dt) {
-    dubins_ss->interpolate(from, to, t, state);
-    auto interpolated_state =
-        Eigen::Vector3d(state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getX(),
-                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getY(),
-                        state->as<fw_planning::spaces::DubinsAirplaneStateSpace::StateType>()->getZ());
-    path.push_back(interpolated_state);
-  }
-}
-
-bool validatePosition(std::shared_ptr<TerrainMap> map, const Eigen::Vector3d goal, Eigen::Vector3d& valid_goal) {
-  double upper_surface = map->getGridMap().atPosition("ics_+", goal.head(2));
-  double lower_surface = map->getGridMap().atPosition("ics_-", goal.head(2));
-  const bool is_goal_valid = (upper_surface < lower_surface) ? true : false;
-  valid_goal(0) = goal(0);
-  valid_goal(1) = goal(1);
-  valid_goal(2) = (upper_surface + lower_surface) / 2.0;
-  return is_goal_valid;
-}
 
 double mod2pi(double x) { return x - 2 * M_PI * floor(x * (0.5 / M_PI)); }
 
