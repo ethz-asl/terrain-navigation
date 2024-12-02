@@ -17,7 +17,7 @@ Path generatePathFromWaypoints (std::vector<Eigen::Vector3d> waypoint_list, cons
     Eigen::Vector3d next_tangent = next_edge / next_edge_length;
     double next_course = std::atan2(next_tangent[1], next_tangent[0]);
 
-    double turn_angle = M_PI - std::abs(next_course - current_course);
+    double turn_angle = getTurnAngle(current_course, next_course);
     double distance_to_tangent = radius / std::abs(std::tan(0.5 * turn_angle));
     std::cout << "turn_angle: " << turn_angle / M_PI << " pi" << std::endl;
     std::cout << "  - current_edge_length: " << current_edge_length << std::endl;

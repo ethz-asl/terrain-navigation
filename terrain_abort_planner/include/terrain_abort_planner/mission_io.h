@@ -95,3 +95,8 @@ PathSegment generateTrajectory(const double curvature, const double length, Eige
  * @return Path 
  */
 Path generatePathFromWaypoints (std::vector<Eigen::Vector3d> waypoint_list, const double radius);
+
+double getTurnAngle(double current_course, double next_course) {
+    double turn_angle = std::abs(M_PI - std::abs(next_course - current_course));
+    return turn_angle;
+}

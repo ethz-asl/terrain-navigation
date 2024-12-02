@@ -50,3 +50,17 @@ add_executable(run_dynamic_rallypoints
 )
 add_dependencies(run_dynamic_rallypoints ${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(run_dynamic_rallypoints ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${OMPL_LIBRARIES} nlohmann_json::nlohmann_json)
+
+if(CATKIN_ENABLE_TESTING)
+    # Add gtest based cpp test target and link libraries
+    catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
+                                          test/test_mission_io.cpp)
+                                          # test/test_terrain_map.cpp)
+
+    if(TARGET ${PROJECT_NAME}-test)
+        target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
+                                                 ${catkin_LIBRARIES}
+                                                 ${YAML_CPP_LIBRARIES} ${OpenCV_LIBRARIES})
+    endif()
+
+endif()
