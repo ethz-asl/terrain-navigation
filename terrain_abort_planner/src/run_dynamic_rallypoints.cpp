@@ -402,7 +402,7 @@ int main(int argc, char** argv) {
     Eigen::Vector3d segment_end_tangent = path_segment.states.back().velocity;
     planner->setupProblem(segment_end, segment_end_tangent, rallypoint_list);
     Path abort_path;
-    if (planner->Solve(1.0, abort_path)) {
+    if (planner->Solve(2.0, abort_path)) {
       std::cout << "[TestRRTCircleGoal] Found Solution!" << std::endl;
       abort_path_list.appendSegment(abort_path);
     } else {
