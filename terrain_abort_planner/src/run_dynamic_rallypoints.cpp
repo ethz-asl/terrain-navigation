@@ -303,6 +303,10 @@ int main(int argc, char** argv) {
   json data = json::parse(f);
   json polygons = data["geoFence"]["polygons"];
   std::cout << "Number of vertices: " << polygons[0]["polygon"].size() << std::endl;
+
+  grid_map::Polygon map_polygon;
+  map_polygon.setFrameId(terrain_map->getGridMap().getFrameId());
+
   for (auto polygon_vertex : polygons[0]["polygon"]) {
     Eigen::Vector2d vertex_wgs84 = Eigen::Vector2d(polygon_vertex[0], polygon_vertex[1]);
     // Convert vertex into lv03
@@ -316,11 +320,18 @@ int main(int argc, char** argv) {
     terrain_map->getGlobalOrigin(map_coordinate, map_origin);
     Eigen::Vector3d vertex_local = vertex_lv03 - map_origin;
     geofence_polygon.push_back(vertex_local.head(2));
+    map_polygon.addVertex(vertex_local.head(2));
   }
 
-  for (auto vertex : geofence_polygon) {
-    std::cout << "Parsed Geofence vertex: " << vertex.transpose() << std::endl;
+  terrain_map->getGridMap().add("valid");
+  terrain_map->getGridMap()["valid"].setConstant(0.0);
+  for (grid_map::PolygonIterator iterator(terrain_map->getGridMap(), map_polygon); !iterator.isPastEnd(); ++iterator) {
+    terrain_map->getGridMap().at("valid", *iterator) = 1.0;
   }
+
+  // for (auto vertex : polygon) {
+  //   std::cout << "Parsed Geofence vertex: " << vertex.transpose() << std::endl;
+  // }
 
   // Parse mission to generate reference path
   std::vector<Eigen::Vector3d> waypoint_list;
