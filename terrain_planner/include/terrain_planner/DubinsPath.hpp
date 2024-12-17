@@ -83,12 +83,6 @@ class DubinsPath {
   /** \brief Set foundOptimalPath_ */
   void setFoundOptimalPath(bool found_optimal_path);
 
-  /** \brief Return additionalManeuver_ */
-  bool getAdditionalManeuver() const;
-
-  /** \brief Set additionalManeuver_ */
-  void setAdditionalManeuver(bool additional_maneuver);
-
   /** \brief Return lmh_ */
   AltitudeCase getAltitudeCase() const;
 
@@ -216,12 +210,6 @@ class DubinsPath {
    *     high (2)
    */
   AltitudeCase lmh_;
-
-  /** \brief path_case_
-   * Indicates if the path consists of three parts (CCC and CSC) with a value of 0 or of four parts
-   * CCSC with a value of 1
-   */
-  bool additionalManeuver_;
 
   /** \brief foundOptimalPath_
    * True if an optimal path was found, false if no or a suboptimal path was found.

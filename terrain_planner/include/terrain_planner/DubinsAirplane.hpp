@@ -481,72 +481,7 @@ class DubinsAirplaneStateSpace : public ob::CompoundStateSpace {
    */
   unsigned int convert_idx(unsigned int i) const;
 
-  /** \brief dubins
-   * Compute the 2D dubins path using path classification for the long distance case and
-   * no classification for the short distance case.
-   *
-   * @param[in] d: euclidean distance between start and goal state
-   * @param[in] alpha: Corrected heading of the start state
-   * @param[in] beta: Corrected heading of the goal state
-   * @param[out] path: The computed dubins path.
-   */
-  void dubins(double d, double alpha, double beta, DubinsPath& path) const;
-
  protected:
-  /** \brief calcDubPathWithClassification
-   * Compute the dubins airplane path with path classification.
-   *
-   * TODO Currently, classifies only samples that far enough from each other ("long paths")!
-   *    Does not work properly when OPTIMAL Dubins AIRPLANE State Space is used! For intermediate case, there are cases
-   * with d > ... and still CCC may be optimal (not 100% sure) Bigger parts of work:
-   *      - Implement classification for short path case (see "Classification of the Dubins set, Shkel & Lumelsky, 2001)
-   *      - Implement fast and fully optimal Dubins state space. Note that classification of the Dubins set will not be
-   * correct anymore for some cases. *
-   *
-   * @param[out] path: The computed dubins path.
-   * @param[in] d: euclidean distance between start and goal state
-   * @param[in] alpha: Corrected heading of the start state
-   * @param[in] beta: Corrected heading of the goal state
-   * @param[in] sa: Precomputed sin(alpha)
-   * @param[in] sb: Precomputed sin(beta)
-   * @param[in] ca: Precomputed cos(alpha)
-   * @param[in] cb: Precomputed cos(beta)
-   */
-  void calcDubPathWithClassification(DubinsPath& path, double d, double alpha, double beta, double sa, double sb,
-                                     double ca, double cb) const;
-
-  /** \brief calcDubPathWithoutClassification
-   * Compute the dubins airplane path without path classification.
-   * That means computing the paths for all six cases and returning the shortest
-   * path.
-   * Slower than calcDubPathWithClassification.
-   *
-   * @param[out] path: The computed dubins path.
-   * @param[in] d: euclidean distance between start and goal state
-   * @param[in] alpha: Corrected heading of the start state
-   * @param[in] beta: Corrected heading of the goal state
-   * @param[in] sa: Precomputed sin(alpha)
-   * @param[in] sb: Precomputed sin(beta)
-   * @param[in] ca: Precomputed cos(alpha)
-   * @param[in] cb: Precomputed cos(beta)
-   */
-  void calcDubPathWithoutClassification(DubinsPath& path, double d, double alpha, double beta, double sa, double sb,
-                                        double ca, double cb) const;
-
-  /** \brief additionalManeuver
-   * Calculates an additional maneuver such that in the intermediate altitude case an optimal path is returned.
-   *
-   * The implementation is based on the paper:
-   *      Implementing Dubins Airplane Paths on Fixed-wing UAVs, Beard, McLain, 2013
-   *
-   * WARNING: This function does not yet work properly and hence does not yet find an optimal path in all cases.
-   * Deviations in z-direction of the temporary goal and the final state of the calculated intermediate Dubins airplane
-   * path are possible!
-   * TODO: fix this function
-   */
-  std::tuple<double, bool, double, double, double> additionalManeuver(const DubinsPath& dp, double& L_2D,
-                                                                      const ob::State* state1,
-                                                                      const ob::State* state2) const;
 
   /** \brief classifyPath
    * Classify the path based on the heading from the start and goal state.

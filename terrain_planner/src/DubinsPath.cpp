@@ -34,7 +34,6 @@ DubinsPath::DubinsPath(Index type, double t, double p, double q, double gam, uns
       gamma_(gam),
       one_div_cos_abs_gamma_(1.0 / cosf(fabs(gamma_))),
       lmh_(DubinsPath::ALT_CASE_LOW),
-      additionalManeuver_(false),
       idx_(type),
       foundOptimalPath_(true),
       classification_(NOT_ASSIGNED),
@@ -62,10 +61,6 @@ double DubinsPath::length_3D() const { return length_2D() * one_div_cos_abs_gamm
 bool DubinsPath::getFoundOptimalPath() const { return foundOptimalPath_; }
 
 void DubinsPath::setFoundOptimalPath(bool found_optimal_path) { foundOptimalPath_ = found_optimal_path; }
-
-bool DubinsPath::getAdditionalManeuver() const { return additionalManeuver_; }
-
-void DubinsPath::setAdditionalManeuver(bool additional_maneuver) { additionalManeuver_ = additional_maneuver; }
 
 DubinsPath::AltitudeCase DubinsPath::getAltitudeCase() const { return lmh_; }
 
