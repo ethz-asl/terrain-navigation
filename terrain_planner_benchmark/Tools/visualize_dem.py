@@ -206,7 +206,7 @@ fig1 = plt.figure("Terrain and Path Visualization", figsize=(4.0, 2.7))
 
 ax2 = fig1.add_subplot(1, 1, 1)
 visualizeICS(fig1, ax2, ics_dataset)
-ax2.plot(1220 - path_y/10, 742.0 - path_x/10, 'r-')
+# ax2.plot(1220 - path_y/10, 742.0 - path_x/10, 'r-')
 ax2.tick_params(axis='both',          # changes apply to the x-axis
     which='both',      # both major and minor ticks are affected
     # bottom=False,      # ticks along the bottom edge are off
@@ -217,7 +217,7 @@ ax2.tick_params(axis='both',          # changes apply to the x-axis
 
 # ax2.set_title('Mask')
 fig2 = plt.figure("Dummy", figsize=(5, 5.8))
-visualizeDEM3DMayavi(fig2, reference_dataset, path_df)
+# visualizeDEM3DMayavi(fig2, reference_dataset, path_df)
 
 
 plt.tight_layout()
