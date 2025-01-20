@@ -266,6 +266,11 @@ int main(int argc, char** argv) {
   calculateCircleICS("windy_circle_error", reference_map, 1.6 * radius);
   double windy_circle_coverage = getCoverage("windy_circle_error", 0.0, reference_map->getGridMap());
   std::cout << "  - windy coverage: " << windy_circle_coverage << std::endl;
+
+  calculateCircleICS("baseline_circle_error", reference_map, M_PI * radius);
+  double baseline_coverage = getCoverage("baseline_circle_error", 0.0, reference_map->getGridMap());
+  std::cout << "  - baseline coverage: " << baseline_coverage << std::endl;
+
   combineErrors(reference_map->getGridMap(), "circle_error", "windy_circle_error");
 
   Eigen::Vector3d marker_position{Eigen::Vector3d(reference_map_position(0), reference_map_position(1), 400.0)};
