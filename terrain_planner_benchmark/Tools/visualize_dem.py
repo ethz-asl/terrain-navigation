@@ -186,18 +186,18 @@ def visualizeICS(fig, ax, dataset):
     # ax.set_ylabel("Y [m]")
 
 # location='dischma_valley'
-# location='sargans'
-location='gotthard'
+location='sargans'
+# location='gotthard'
 
 
 # initialize the graph:
 reference_dataset = gdal.Open('/home/jaeyoung/catkin_ws/src/terrain-models/models/' + location + '.tif')
 ics_dataset = mpimg.imread('/home/jaeyoung/catkin_ws/src/terrain-navigation/output/' + location + '_circle_goal.png')
-path_df = pd.read_csv('/home/jaeyoung/catkin_ws/src/terrain-navigation/output/' + location + '_planned_path.csv')
+# path_df = pd.read_csv('/home/jaeyoung/catkin_ws/src/terrain-navigation/output/' + location + '_planned_path.csv')
 
-path_x = path_df["x"].to_numpy()
-path_y = path_df["y"].to_numpy()
-path_z = path_df["z"].to_numpy()
+# path_x = path_df["x"].to_numpy()
+# path_y = path_df["y"].to_numpy()
+# path_z = path_df["z"].to_numpy()
 
 fig1 = plt.figure("Terrain and Path Visualization", figsize=(4.0, 2.7))
 

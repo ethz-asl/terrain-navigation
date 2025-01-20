@@ -1,6 +1,8 @@
 <launch>
     <arg name="visualization" default="false"/>
-    <arg name="location" default="gotthard"/>
+    <!-- <arg name="location" default="gotthard"/> -->
+    <!-- <arg name="location" default="dischma_valley"/> -->
+    <arg name="location" default="sargans"/>
 
     <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
 
