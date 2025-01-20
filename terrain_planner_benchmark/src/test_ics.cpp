@@ -52,6 +52,23 @@
 #include <vector>
 #include "opencv2/core.hpp"
 
+void combineErrors(grid_map::GridMap& map, const std::string larger_layer, const std::string smaller_layer) {
+  std::string layer_name = "combined_error";
+  map.add(layer_name);
+
+  for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator) {
+    const grid_map::Index index = *iterator;
+    if (map.at(larger_layer, index) < 0.5) {
+      map.at(layer_name, index) = 0.0;
+    } else if (map.at(smaller_layer, index) < 0.5) {
+      map.at(layer_name, index) = 0.5;
+    } else {
+      map.at(layer_name, index) = 1.0;
+    }
+  }
+}
+
+
 void addErrorLayer(const std::string layer_name, const std::string query_layer, const std::string reference_layer,
                    grid_map::GridMap& map) {
   map.add(layer_name);
@@ -244,10 +261,13 @@ int main(int argc, char** argv) {
   const double radius = 66.67;
 
   calculateCircleICS("circle_error", reference_map, radius);
-  calculateCircleICS("windy_circle_error", reference_map, 1.6 * radius);
-
   double circle_coverage = getCoverage("circle_error", 0.0, reference_map->getGridMap());
   std::cout << "  - coverage: " << circle_coverage << std::endl;
+  calculateCircleICS("windy_circle_error", reference_map, 1.6 * radius);
+  double windy_circle_coverage = getCoverage("windy_circle_error", 0.0, reference_map->getGridMap());
+  std::cout << "  - windy coverage: " << windy_circle_coverage << std::endl;
+  combineErrors(reference_map->getGridMap(), "circle_error", "windy_circle_error");
+
   Eigen::Vector3d marker_position{Eigen::Vector3d(reference_map_position(0), reference_map_position(1), 400.0)};
   publishCirclularPath(circle_pub, marker_position, 200.0);
   grid_map_msgs::GridMap message;
@@ -255,7 +275,7 @@ int main(int argc, char** argv) {
   reference_map_pub_.publish(message);
 
   std::string reference_map_path = output_file_dir + "/" + location + "_circle_goal.png";
-  writeGridmapToImage(reference_map->getGridMap(), "circle_error", reference_map_path);
+  writeGridmapToImage(reference_map->getGridMap(), "combined_error", reference_map_path);
 
   // std::cout << "Valid yaw terminal state coverage" << std::endl;
   // auto data_logger = std::make_shared<DataLogger>();

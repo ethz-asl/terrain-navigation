@@ -175,14 +175,14 @@ def visualizeDEM3DMayavi(fig, dataset, path_df):
 def visualizeICS(fig, ax, dataset):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
-    im = ax.imshow(dataset, cmap=cm.get_cmap('winter', 2), origin='upper')
+    im = ax.imshow(dataset, cmap=cm.get_cmap('winter', 3), origin='upper')
     cb = fig.colorbar(im, cax=cax, orientation='vertical')
     # cb.remove()
     ax.set_xlabel("X [km]")
     ax.set_xticklabels(['', '0.0', '2.0', '4.0', '6.0', '8.0', '10.0', '12.0'])
     cb.ax.get_yaxis().set_ticks([])
-    for j, lab in enumerate(['Invalid', 'Valid']):
-        cb.ax.text(0.6, 0.5*j + 0.25, lab, ha='center', va='center', rotation=90)
+    for j, lab in enumerate(['Invalid', 'No Wind ',' Valid']):
+        cb.ax.text(0.6, 0.33*j + 0.18, lab, ha='center', va='center', rotation=90)
     # ax.set_ylabel("Y [m]")
 
 # location='dischma_valley'
@@ -214,6 +214,7 @@ ax2.tick_params(axis='both',          # changes apply to the x-axis
     left = False, right = False,
     # labelbottom=False,
     labelleft = False)
+fig1.set_tight_layout(True)
 
 # ax2.set_title('Mask')
 fig2 = plt.figure("Dummy", figsize=(5, 5.8))
