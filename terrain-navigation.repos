@@ -1,8 +1,4 @@
 repositories:
-  ANYbotics/grid_map:
-    type: git
-    url: https://github.com/ANYbotics/grid_map.git
-    version: humble
   ethz-asl/grid_map_geo:
     type: git
     url: https://github.com/ethz-asl/grid_map_geo.git
