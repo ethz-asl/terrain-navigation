@@ -1,5 +1,5 @@
 # https://github.com/osrf/docker_images/blob/27cc0b68263bbbb10bb58dd814efc0a6b0a01ec7/ros/humble/ubuntu/jammy/ros-core/Dockerfile
-FROM ros:humble-ros-core-jammy as repo-deps
+FROM ros:humble-ros-core-jammy AS repo-deps
 # This layer installs basic tools and the direct dependencies of terrain-navigation.
 
 SHELL ["/bin/bash", "-c"]
@@ -29,7 +29,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 
-FROM repo-deps as all-deps
+FROM repo-deps AS all-deps
 # This layer installs dependencies of the other source packages.
 
 COPY terrain-navigation.repos src/ethz-asl/terrain-navigation/terrain-navigation.repos
@@ -44,7 +44,7 @@ RUN apt-get update \
     && rosdep install --from-paths src --ignore-src -r -y \
     && rm -rf /var/lib/apt/lists/*
 
-FROM all-deps as build
+FROM all-deps AS build
 
 WORKDIR /root/ros2_ws/src/ethz-asl/terrain-navigation
 COPY . .
