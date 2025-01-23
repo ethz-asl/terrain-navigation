@@ -52,7 +52,7 @@
 #include <vector>
 #include "opencv2/core.hpp"
 
-void combineErrors(grid_map::GridMap& map, const std::string larger_layer, const std::string smaller_layer) {
+void combineErrors(grid_map::GridMap& map, const std::string larger_layer, const std::string smaller_layer, const std::string baseline_layer) {
   std::string layer_name = "combined_error";
   map.add(layer_name);
 
@@ -61,7 +61,9 @@ void combineErrors(grid_map::GridMap& map, const std::string larger_layer, const
     if (map.at(larger_layer, index) < 0.5) {
       map.at(layer_name, index) = 0.0;
     } else if (map.at(smaller_layer, index) < 0.5) {
-      map.at(layer_name, index) = 0.5;
+      map.at(layer_name, index) = 0.33;
+    } else if (map.at(baseline_layer, index) < 0.5) {
+      map.at(layer_name, index) = 0.67;
     } else {
       map.at(layer_name, index) = 1.0;
     }
@@ -271,7 +273,7 @@ int main(int argc, char** argv) {
   double baseline_coverage = getCoverage("baseline_circle_error", 0.0, reference_map->getGridMap());
   std::cout << "  - baseline coverage: " << baseline_coverage << std::endl;
 
-  combineErrors(reference_map->getGridMap(), "circle_error", "windy_circle_error");
+  combineErrors(reference_map->getGridMap(), "circle_error", "windy_circle_error", "baseline_circle_error");
 
   Eigen::Vector3d marker_position{Eigen::Vector3d(reference_map_position(0), reference_map_position(1), 400.0)};
   publishCirclularPath(circle_pub, marker_position, 200.0);
