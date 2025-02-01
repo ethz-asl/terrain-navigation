@@ -93,7 +93,7 @@ First set up the PX4 development environment:
 ```bash
 git clone https://github.com/srmainwaring/PX4-AutoPilot --branch prs/pr-hinwil-testing-rebased --recursive
 cd PX4-AutoPilot
-./Tools/setup/ubuntu.sh
+./Tools/setup/ubuntu.sh --no-nuttx
 ```
 
 Now, configure the shell environment to run `gz_standard_vtol`.
