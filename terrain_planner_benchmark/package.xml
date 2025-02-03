@@ -1,4 +1,6 @@
-<package>
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>terrain_planner_benchmark</name>
   <version>0.0.1</version>
   <description>Benchmarking framework for terrain planners</description>
@@ -13,8 +15,7 @@
   <url type="bugtracker">https://github.com/Jaeyoung-Lim/steep-terrain-navigation/issues</url>
 
   <!-- Dependencies which this package needs to build itself. -->
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>eigen_catkin</build_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>grid_map_core</build_depend>
   <build_depend>grid_map_cv</build_depend>
   <build_depend>grid_map_ros</build_depend>
@@ -24,8 +25,9 @@
   <build_depend>terrain_navigation</build_depend>
   <build_depend>ompl</build_depend>
   <build_depend>terrain_planner</build_depend>
-  <run_depend>eigen_catkin</run_depend>
-  <run_depend>python3-gdal</run_depend>
+  <exec_depend>python3-gdal</exec_depend>
+
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

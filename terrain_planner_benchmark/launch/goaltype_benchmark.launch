@@ -2,14 +2,14 @@
     <arg name="location" default="dischma"/>
     <arg name="runs" default="50"/>
 
-    <node pkg="tf" type="static_transform_publisher" name="world_map" args="0 0 0 0 0 0 world map 10"/>
+    <node pkg="tf2_ros" exec="static_transform_publisher" name="world_map" args="--frame-id world --child-frame-id map"/>
 
-    <node pkg="terrain_planner_benchmark" type="terrain_planner_benchmark_node" name="benchmark_planner" output="screen" required="true">
-        <param name="location" value="$(arg location)"/>
-        <param name="map_path" value="$(find terrain_models)/models/$(arg location).tif"/>
-        <param name="color_file_path" value="$(find terrain_models)/models/$(arg location)_color.tif"/>
-        <param name="output_directory" value="$(find terrain_planner)/../output"/>
-        <param name="number_of_runs" value="$(arg runs)"/>
+    <node pkg="terrain_planner_benchmark" exec="terrain_planner_benchmark_node" name="benchmark_planner" output="screen">
+        <param name="location" value="$(var location)"/>
+        <param name="map_path" value="$(find-pkg-share terrain_models)/models/$(var location).tif"/>
+        <param name="color_file_path" value="$(find-pkg-share terrain_models)/models/$(var location)_color.tif"/>
+        <param name="output_directory" value="$(find-pkg-share terrain_planner)/../output"/>
+        <param name="number_of_runs" value="$(var runs)"/>
         <param name="random" value="true"/>
     </node>
 </launch>

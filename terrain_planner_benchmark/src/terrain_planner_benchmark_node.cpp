@@ -38,15 +38,15 @@
  * @author Jaeyoung Lim <jalim@ethz.ch>
  */
 
-#include <geometry_msgs/Point.h>
-#include <ros/ros.h>
 #include <terrain_navigation/terrain_map.h>
 #include <tf2/LinearMath/Quaternion.h>
-#include <tf2_eigen/tf2_eigen.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <visualization_msgs/MarkerArray.h>
 
+#include <geometry_msgs/msg/point.hpp>
 #include <grid_map_ros/GridMapRosConverter.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "terrain_planner/common.h"
 #include "terrain_planner/terrain_ompl_rrt.h"
@@ -54,29 +54,35 @@
 #include "terrain_planner_benchmark/terrain_planner_benchmark.h"
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "ompl_rrt_planner");
-  ros::NodeHandle nh("");
-  ros::NodeHandle nh_private("~");
+  rclcpp::init(argc, argv);
+  auto node = rclcpp::Node::make_shared("ompl_rrt_planner");
 
   // Initialize ROS related publishers for visualization
-  auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
-  auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
-  auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
-  auto interpolate_path_pub = nh.advertise<nav_msgs::Path>("interpolated_path", 1, true);
-  auto path_segment_pub = nh.advertise<visualization_msgs::MarkerArray>("path_segments", 1, true);
-  auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
-  auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
-  std::string map_path, color_file_path, output_file_dir, location;
-  int number_of_runs;
-  nh_private.param<std::string>("map_path", map_path, "");
-  nh_private.param<std::string>("location", location, "");
-  nh_private.param<std::string>("color_file_path", color_file_path, "");
-  nh_private.param<std::string>("output_directory", output_file_dir, "");
-  nh_private.param<int>("number_of_runs", number_of_runs, 10);
+  auto start_pos_pub =
+      node->create_publisher<visualization_msgs::msg::Marker>("start_position", rclcpp::QoS(1).transient_local());
+  auto goal_pos_pub =
+      node->create_publisher<visualization_msgs::msg::Marker>("goal_position", rclcpp::QoS(1).transient_local());
+  auto path_pub = node->create_publisher<nav_msgs::msg::Path>("path", rclcpp::QoS(1).transient_local());
+  auto interpolate_path_pub =
+      node->create_publisher<nav_msgs::msg::Path>("interpolated_path", rclcpp::QoS(1).transient_local());
+  auto path_segment_pub =
+      node->create_publisher<visualization_msgs::msg::MarkerArray>("path_segments", rclcpp::QoS(1).transient_local());
+  auto grid_map_pub = node->create_publisher<grid_map_msgs::msg::GridMap>("grid_map", rclcpp::QoS(1).transient_local());
+  auto trajectory_pub =
+      node->create_publisher<visualization_msgs::msg::MarkerArray>("tree", rclcpp::QoS(1).transient_local());
+
+  auto const map_path = node->declare_parameter("map_path", "");
+  auto const location = node->declare_parameter("location", "");
+  auto const color_file_path = node->declare_parameter("color_file_path", "");
+  auto const output_file_dir = node->declare_parameter("output_directory", "");
+  auto const number_of_runs = node->declare_parameter("number_of_runs", 10);
 
   // Load terrain map from defined tif paths
   auto terrain_map = std::make_shared<TerrainMap>();
-  terrain_map->initializeFromGeotiff(map_path, false);
+  if (!terrain_map->initializeFromGeotiff(map_path)) {
+    RCLCPP_ERROR_STREAM(node->get_logger(), "Unable to load geotiff from '" << map_path << "'!");
+    return 1;
+  }
   if (!color_file_path.empty()) {  // Load color layer if the color path is nonempty
     terrain_map->addColorFromGeotiff(color_file_path);
   }

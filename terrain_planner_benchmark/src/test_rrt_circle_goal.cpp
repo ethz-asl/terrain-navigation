@@ -55,10 +55,10 @@
 #include "terrain_planner/visualization.h"
 
 void publishCircleSetpoints(const ros::Publisher& pub, const Eigen::Vector3d& position, const double radius) {
-  visualization_msgs::Marker marker;
+  visualization_msgs::msg::Marker marker;
   marker.header.stamp = rclcpp::Clock().now();
-  marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.action = visualization_msgs::Marker::ADD;
+  marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   marker.header.frame_id = "map";
   marker.id = 0;
   marker.header.stamp = rclcpp::Clock().now();
@@ -148,11 +148,11 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh_private("~");
 
   // Initialize ROS related publishers for visualization
-  auto start_pos_pub = nh.advertise<visualization_msgs::Marker>("start_position", 1, true);
-  auto goal_pos_pub = nh.advertise<visualization_msgs::Marker>("goal_position", 1, true);
+  auto start_pos_pub = nh.advertise<visualization_msgs::msg::Marker>("start_position", 1, true);
+  auto goal_pos_pub = nh.advertise<visualization_msgs::msg::Marker>("goal_position", 1, true);
   auto path_pub = nh.advertise<nav_msgs::Path>("path", 1, true);
   auto grid_map_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
-  auto trajectory_pub = nh.advertise<visualization_msgs::MarkerArray>("tree", 1, true);
+  auto trajectory_pub = nh.advertise<visualization_msgs::msg::MarkerArray>("tree", 1, true);
 
   std::string map_path, color_file_path, output_directory, location;
   nh_private.param<std::string>("map_path", map_path, "");
