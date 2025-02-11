@@ -66,9 +66,6 @@ class TerrainOmplRrt {
    *
    * @param start_pos center of the start loiter position
    * @param goal center of the goal loiter position
-   * @param start_loiter_radius Specify direction of the start circle.
-   *          - Positive: anti clockwise
-   *          - Negative: Clockwise
    */
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal) {
     this->setupProblem(
@@ -81,9 +78,25 @@ class TerrainOmplRrt {
    *
    * @param start_pos
    * @param goal
-   * @param start_loiter_radius
+   * @param start_loiter_radius Specify direction of the start circle.
+   *          - Positive: anti clockwise
+   *          - Negative: Clockwise
    */
   void setupProblem(const Eigen::Vector3d& start_pos, const Eigen::Vector3d& goal, double start_loiter_radius);
+
+  /**
+   * @brief
+   *
+   * @param start_pos
+   * @param start_loiter_radius Specify direction of the start circle.
+   *          - Positive: anti clockwise
+   *          - Negative: Clockwise
+   * @param goal
+   * @param goal_velocity
+   */
+  void setupProblem(const Eigen::Vector3d& start_pos, const double start_loiter_radius, const Eigen::Vector3d& goal,
+                    const Eigen::Vector3d& goal_vel);
+
 
   /**
    * @brief Setup problem with center position of start and goal loiter circle with specific radius

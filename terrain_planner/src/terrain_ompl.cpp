@@ -19,7 +19,7 @@ bool TerrainValidityChecker::checkCollision(const Eigen::Vector3d state) const {
   }
   bool valid;
   if (map_.isInside(state.head(2))) {
-    valid = bool(map_.atPosition("valid", state.head(2)) > 0.5);
+    valid = map_.exists("valid") ? bool(map_.atPosition("valid", state.head(2)) > 0.5) : true;
   }
   return in_collision | in_collision_max | !valid;
 }
