@@ -52,7 +52,7 @@
 #include <vector>
 #include "opencv2/core.hpp"
 
-void combineErrors(grid_map::GridMap& map, const std::string larger_layer, const std::string smaller_layer, const std::string baseline_layer) {
+void combineErrors(grid_map::GridMap& map, const std::string larger_layer, const std::string smaller_layer, const std::string bigger_layer, const std::string baseline_layer) {
   std::string layer_name = "combined_error";
   map.add(layer_name);
 
@@ -61,9 +61,11 @@ void combineErrors(grid_map::GridMap& map, const std::string larger_layer, const
     if (map.at(larger_layer, index) < 0.5) {
       map.at(layer_name, index) = 0.0;
     } else if (map.at(smaller_layer, index) < 0.5) {
-      map.at(layer_name, index) = 0.33;
+      map.at(layer_name, index) = 0.25;
+    } else if (map.at(bigger_layer, index) < 0.5) {
+      map.at(layer_name, index) = 0.5;
     } else if (map.at(baseline_layer, index) < 0.5) {
-      map.at(layer_name, index) = 0.67;
+      map.at(layer_name, index) = 0.75;
     } else {
       map.at(layer_name, index) = 1.0;
     }
@@ -269,11 +271,15 @@ int main(int argc, char** argv) {
   double windy_circle_coverage = getCoverage("windy_circle_error", 0.0, reference_map->getGridMap());
   std::cout << "  - windy coverage: " << windy_circle_coverage << std::endl;
 
+  calculateCircleICS("feasible_circle_error", reference_map, 2.0 * radius);
+  double feasible_coverage = getCoverage("feasible_circle_error", 0.0, reference_map->getGridMap());
+  std::cout << "  - feasible_circle coverage: " << feasible_coverage << std::endl;
+
   calculateCircleICS("baseline_circle_error", reference_map, M_PI * radius);
   double baseline_coverage = getCoverage("baseline_circle_error", 0.0, reference_map->getGridMap());
   std::cout << "  - baseline coverage: " << baseline_coverage << std::endl;
 
-  combineErrors(reference_map->getGridMap(), "circle_error", "windy_circle_error", "baseline_circle_error");
+  combineErrors(reference_map->getGridMap(), "circle_error", "windy_circle_error", "feasible_circle_error", "baseline_circle_error");
 
   Eigen::Vector3d marker_position{Eigen::Vector3d(reference_map_position(0), reference_map_position(1), 400.0)};
   publishCirclularPath(circle_pub, marker_position, 200.0);
