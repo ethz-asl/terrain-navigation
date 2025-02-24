@@ -175,19 +175,19 @@ def visualizeDEM3DMayavi(fig, dataset, path_df):
 def visualizeICS(fig, ax, dataset):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
-    im = ax.imshow(dataset, cmap=cm.get_cmap('winter', 4), origin='upper')
+    im = ax.imshow(dataset, cmap=cm.get_cmap('coolwarm_r', 5), origin='upper')
     cb = fig.colorbar(im, cax=cax, orientation='vertical')
     # cb.remove()
     ax.set_xlabel("X [km]")
     ax.set_xticklabels(['', '0.0', '2.0', '4.0', '6.0', '8.0', '10.0', '12.0'])
     cb.ax.get_yaxis().set_ticks([])
-    for j, lab in enumerate(['Invalid', 'No Wind ',' Valid']):
-        cb.ax.text(0.6, 0.33*j + 0.18, lab, ha='center', va='center', rotation=90)
+    for j, lab in enumerate([r'$R_{min}$', r'$1.6R$',r'$2R$', r'$\pi R$', 'Valid']):
+        cb.ax.text(0.6, 0.2*j + 0.1, lab, ha='center', va='center', rotation=90)
     # ax.set_ylabel("Y [m]")
 
-# location='dischma_valley'
+location='dischma_valley'
 # location='sargans'
-location='gotthard'
+# location='gotthard'
 
 
 # initialize the graph:
