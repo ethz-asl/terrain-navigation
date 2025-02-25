@@ -173,9 +173,17 @@ def visualizeDEM3DMayavi(fig, dataset, path_df):
 
 
 def visualizeICS(fig, ax, dataset):
+    from matplotlib.colors import ListedColormap
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
-    im = ax.imshow(dataset, cmap=cm.get_cmap('coolwarm_r', 5), origin='upper')
+    coolwarm_r = cm.get_cmap('coolwarm', 5)
+    newcolors = coolwarm_r(np.linspace(0, 1, 5))
+    print(newcolors)
+    newcolors[2, :] = newcolors[3, :]
+    newcolors[3, :] = newcolors[4, :]
+    newcolors[4, :] = [1.0, 1.0, 1.0, 1.0]
+    newcmp = ListedColormap(newcolors)
+    im = ax.imshow(dataset, cmap=newcmp, origin='upper')
     cb = fig.colorbar(im, cax=cax, orientation='vertical')
     # cb.remove()
     ax.set_xlabel("X [km]")
