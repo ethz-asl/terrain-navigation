@@ -267,6 +267,7 @@ class PathSegment {
   double utility{0.0};
   bool viewed{false};
   bool reached{false};
+  bool forward_transition{false};
   bool is_periodic{false};
 
  private:
