@@ -20,7 +20,6 @@ set(SRC_FILES
   src/planning_panel.cpp
   src/pose_widget.cpp
   src/edit_button.cpp
-  src/planning_interactive_markers.cpp
   src/goal_marker.cpp
 )
 
