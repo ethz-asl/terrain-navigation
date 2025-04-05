@@ -2,13 +2,14 @@
 #define MAV_PLANNING_RVIZ_PLANNING_PANEL_H_
 
 #ifndef Q_MOC_RUN
+#include <mav_msgs/conversions.h>
+#include <mav_msgs/eigen_mav_msgs.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <rviz/panel.h>
 #include <QGroupBox>
 #include "mav_planning_rviz/edit_button.h"
 #include "mav_planning_rviz/goal_marker.h"
-#include "mav_planning_rviz/planning_interactive_markers.h"
 #include "mav_planning_rviz/pose_widget.h"
 #include "planner_msgs/NavigationStatus.h"
 #endif
@@ -123,8 +124,6 @@ class PlanningPanel : public rviz::Panel {
   // Keep track of all the pose <-> button widgets as they're related:
   std::map<std::string, PoseWidget*> pose_widget_map_;
   std::map<std::string, EditButton*> edit_button_map_;
-  // ROS state:
-  PlanningInteractiveMarkers interactive_markers_;
 
   // QT state:
   QString namespace_;
