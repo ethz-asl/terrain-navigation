@@ -148,6 +148,7 @@ class Path {
         segment.reached = true;
       }
     }
+    return segments.back();
   }
 
   int getCurrentSegmentIndex(const Eigen::Vector3d &position, double epsilon = 0.1) {
