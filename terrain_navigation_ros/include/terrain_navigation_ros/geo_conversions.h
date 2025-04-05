@@ -35,29 +35,33 @@
 #ifndef GEOCONVERSIONS_H
 #define GEOCONVERSIONS_H
 
+#include <grid_map_geo/transform.h>
 #include <math.h>
 #include <Eigen/Dense>
 
-enum class EPSG { ECEF = 4978, WGS84 = 4326, WGS84_32N = 32632, CH1903_LV03 = 21781, AT_GK_West = 31254 };
-
-/**
- * @brief Helper function for transforming using gdal
- *
- * @param src_coord
- * @param tgt_coord
- * @param source_coordinates
- * @return Eigen::Vector3d
- */
+#include <gdal/cpl_string.h>
+#include <gdal/gdal.h>
+#include <gdal/gdal_priv.h>
+#include <gdal/ogr_p.h>
+#include <gdal/ogr_spatialref.h>
 
 class GeoConversions {
  public:
   GeoConversions();
   virtual ~GeoConversions();
 
-  Eigen::Vector3d transformCoordinates(EPSG src_coord, EPSG tgt_coord, const Eigen::Vector3d source_coordinates);
+  static Eigen::Vector3d transformCoordinates(EPSG src_coord, EPSG tgt_coord, const Eigen::Vector3d source_coordinates);
 
  private:
-  Eigen::Vector3d _transformUsingGDAL(EPSG src_coord, EPSG tgt_coord, const Eigen::Vector3d source_coordinates);
+  /**
+   * @brief Helper function for transforming using gdal
+   *
+   * @param src_coord
+   * @param tgt_coord
+   * @param source_coordinates
+   * @return Eigen::Vector3d
+   */
+  static Eigen::Vector3d transformUsingGDAL(EPSG src_coord, EPSG tgt_coord, const Eigen::Vector3d source_coordinates);
 
   /**
    * @brief Convert WGS84 (LLA) to LV03/CH1903

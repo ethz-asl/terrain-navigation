@@ -1,21 +1,6 @@
 
 #include <terrain_navigation_ros/geo_conversions.h>
 
-Eigen::Vector3d GeoConversions::transformCoordinates(EPSG src_coord, EPSG tgt_coord,
-                                                     const Eigen::Vector3d source_coordinates) {
-  Eigen::Vector3d target_coordinates;
-  if (src_coord == EPSG::WGS84 && tgt_coord == EPSG::CH1903_LV03) {
-    GeoConversions::_forward(source_coordinates(0), source_coordinates(1), source_coordinates(2), target_coordinates(0),
-                             target_coordinates(1), target_coordinates(2));
-    return target_coordinates;
-  } else if (src_coord == EPSG::CH1903_LV03 && tgt_coord == EPSG::WGS84) {
-    GeoConversions::_reverse(source_coordinates(0), source_coordinates(1), source_coordinates(2), target_coordinates(0),
-                             target_coordinates(1), target_coordinates(2));
-    return target_coordinates;
-  } else
-    return GeoConversions::_transformUsingGDAL(src_coord, tgt_coord, source_coordinates);
-};
-
 Eigen::Vector3d _transformUsingGDAL(EPSG src_coord, EPSG tgt_coord, const Eigen::Vector3d source_coordinates) {
   OGRSpatialReference source, target;
   source.importFromEPSG(static_cast<int>(src_coord));
@@ -39,8 +24,23 @@ Eigen::Vector3d _transformUsingGDAL(EPSG src_coord, EPSG tgt_coord, const Eigen:
   return target_coordinates;
 };
 
-static void GeoConversions::_forward(const double lat, const double lon, const double alt, double &y, double &x,
-                                     double &h) {
+Eigen::Vector3d GeoConversions::transformCoordinates(EPSG src_coord, EPSG tgt_coord,
+                                                     const Eigen::Vector3d source_coordinates) {
+  Eigen::Vector3d target_coordinates;
+  if (src_coord == EPSG::WGS84 && tgt_coord == EPSG::CH1903_LV03) {
+    _forward(source_coordinates(0), source_coordinates(1), source_coordinates(2), target_coordinates(0),
+             target_coordinates(1), target_coordinates(2));
+    return target_coordinates;
+  } else if (src_coord == EPSG::CH1903_LV03 && tgt_coord == EPSG::WGS84) {
+    _reverse(source_coordinates(0), source_coordinates(1), source_coordinates(2), target_coordinates(0),
+             target_coordinates(1), target_coordinates(2));
+    return target_coordinates;
+  }
+  // else
+  return _transformUsingGDAL(src_coord, tgt_coord, source_coordinates);
+};
+
+void GeoConversions::_forward(const double lat, const double lon, const double alt, double &y, double &x, double &h) {
   // 1. Convert the ellipsoidal latitudes φ and longitudes λ into arcseconds ["]
   const double lat_arc = lat * 3600.0;
   const double lon_arc = lon * 3600.0;
@@ -66,8 +66,7 @@ static void GeoConversions::_forward(const double lat, const double lon, const d
   h = alt - 49.55 + 2.73 * lon_aux + 6.94 * lat_aux;
 };
 
-static void GeoConversions::_reverse(const double y, const double x, const double h, double &lat, double &lon,
-                                     double &alt) {
+void GeoConversions::_reverse(const double y, const double x, const double h, double &lat, double &lon, double &alt) {
   // 1. Convert the projection coordinates E (easting) and N (northing) in LV95 (or y / x in LV03) into the civilian
   // system (Bern = 0 / 0) and express in the unit [1000 km]: E' = (E – 2600000 m)/1000000 = (y – 600000 m)/1000000
   // N' = (N – 1200000 m)/1000000 = (x – 200000 m)/1000000
